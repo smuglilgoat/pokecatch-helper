@@ -13,7 +13,8 @@ A Tampermonkey helper for [Poke'Catch](https://pokecatch-online.netlify.app/) th
 1. Install [Tampermonkey](https://www.tampermonkey.net/).
 2. Open `pokecatch-team-optimizer.user.js` → Tampermonkey offers to install it.
 3. Open <https://pokecatch-online.netlify.app/> and log in to your account. A small
-   **Poke'Catch Optimizer** panel appears in the bottom-right corner.
+   **Team Optimizer** panel appears in the bottom-right corner. It is built from the game's own
+   CSS (same buttons, badges, colours and light/dark theme), so it looks like part of the UI.
 
 ## Using it
 
@@ -22,7 +23,7 @@ A Tampermonkey helper for [Poke'Catch](https://pokecatch-online.netlify.app/) th
 | **Defense / Offense / Balanced** | Chooses the scoring preset: incoming damage, outgoing damage, or both. |
 | **optimize** | Reads the chapter events + your PC and computes the best team of 6. |
 | **apply to team** | Puts the recommended team into the game (drag & drop on the real UI). |
-| **watch for wipes** | Records every wipe: the step it happened on, the foes, and your team at that moment. A wipe also triggers a new optimisation. |
+| **watch for wipes** | Records every wipe: the step it happened on, the first step where a member fell, the foes and your team at that moment. The watcher resets itself as soon as the team is back up, so the next wipe is recorded too. |
 | **moves** (per Pokémon) | Opens the game's own *moves panel* for that Pokémon — the authoritative learnset. |
 | **api** (per Pokémon) | Fetches the same species from [PokéAPI](https://pokeapi.co/api/v2) and shows its canonical types/learnset next to the game's freer one. |
 
@@ -42,6 +43,17 @@ their game knobs (HP, damage, burst move) and the five **elite** tiers the game 
 Pick a boss and a tier, then **optimize for this boss**: the boss fights the whole team every round
 (main move + burst + counter, the same way the game does it) and the boss scales with the team
 (shiny and level raise the boss' HP and damage, like the game's aura scaling).
+
+### Scoring
+
+* **Defense** – how many rounds the team survives against the chapter's foes.
+* **Offense** – how much damage the team puts into them.
+* **Balanced** – rounds survived ÷ rounds needed to win (the classic "turns to die / turns to kill" margin).
+
+For a legendary boss the same three numbers are used, but the boss fights the **whole team** every
+round (its best move ÷ 6, plus its burst and counter moves) and it **scales with your team**
+(shiny and level raise the boss' HP and damage, exactly like the game's aura scaling).
+Elite tiers add the game's per-species `[HP, damage]` multipliers and make the boss take less damage.
 
 ## Where the data comes from
 

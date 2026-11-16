@@ -693,17 +693,27 @@
       if (remaining <= 0) break;
     }
     const roundsDie = incoming > 0 ? teamHp / incoming : 99;
-    return { win: remaining <= 0, roundsKill: rounds, dmgDealt: dealt, roundsDie, hpLeft: Math.max(0, remaining) };
+    return {
+      win: remaining <= 0,
+      roundsKill: remaining <= 0 ? rounds : Infinity,
+      dmgDealt: dealt, roundsDie, hpLeft: Math.max(0, remaining)
+    };
   }
 
   /** Score of a whole team against the chapter's foes. */
+  /** Higher is better: how well a team wins a fight (turns to die / turns to kill). */
+  function fightScore(res, preset) {
+    if (preset === 'offense') return res.dmgDealt;
+    if (preset === 'defense') return res.roundsDie;
+    return res.roundsDie / Math.max(0.5, res.roundsKill);
+  }
+
   function evaluateTeam(team, enemies, eng, data, preset) {
     let score = 0;
     for (const e of enemies) {
       const res = simulate(team, e, eng);
       if (preset === 'offense') score += e.weight * res.dmgDealt / Math.max(1, e.hp);
-      else if (preset === 'defense') score += e.weight * res.roundsDie;
-      else score += e.weight * Math.min(res.roundsKill, res.roundsDie);
+      else score += e.weight * fightScore(res, preset);
     }
     return score;
   }
@@ -795,7 +805,7 @@
     const perRound = team.length ? team.reduce((a, c) => a + boss.damageTo(c.proj), 0) / team.length : 0;
     return {
       win: bossHp <= 0,
-      roundsKill: rounds,
+      roundsKill: bossHp <= 0 ? rounds : Infinity,
       roundsDie: perRound > 0 ? teamHp / perRound : 999,
       hpLeft: Math.max(0, bossHp),
       dealt
@@ -806,14 +816,25 @@
     const boss = legendBoss(zone, tier, team, eng, data);
     if (!boss) return 0;
     const res = simulateLegend(team, boss, eng);
-    if (state.preset === 'offense') return res.roundsKill;
-    if (state.preset === 'defense') return res.roundsDie;
-    return Math.min(res.roundsKill, res.roundsDie);
+    if (state.preset === 'offense') return res.dealt / Math.max(1, boss.hp);
+    return fightScore(res, state.preset);
   }
 
   /** Greedy team builder for one legendary boss. */
   function pickLegendTeam(cands, zone, tier, eng, data, size = 6) {
-    const pool = cands.slice().sort((a, b) => b.proj.level - a.proj.level).slice(0, 80);
+    // rank the candidates by what they actually bring against that boss
+    const boss = legendBoss(zone, tier, cands.slice(0, 6), eng, data);
+    const contribution = c => {
+      if (!boss) return c.proj.level;
+      const mv = eng.bestMove(c.proj, boss.types);
+      if (!mv) return 0;
+      const eff = eng.typeEff(mv.type, boss.types);
+      const dps = eng.damage(c.proj, boss.mon, mv, eff) * (mv.acc / 100);
+      const inc = boss.damageTo(c.proj);
+      const alive = inc > 0 ? c.hp / inc : 999;
+      return dps * Math.min(alive, 400);
+    };
+    const pool = cands.slice().sort((a, b) => contribution(b) - contribution(a)).slice(0, 80);
     const chosen = [];
     const usedSpecies = new Set();
     const usedShiny = new Set();
@@ -851,6 +872,11 @@
       if (this.running) return;
       this.running = true;
       this.timer = setInterval(() => this.poll(), 700);
+      // if the team is already wiped, do not report it as a new failure
+      const save = readSave();
+      const team = save ? (save.team || []).map(u => monByUid(save, u)).filter(Boolean) : [];
+      this.wiped = team.length > 0 && team.every(m => m.hp != null && m.hp <= 0);
+      this.firstKo = null;
       this.poll();
     }
     stop() {
@@ -900,6 +926,7 @@
       this.fails.unshift(rec);
       this.fails = this.fails.slice(0, 25);
       store.set('fails', this.fails);
+      this.firstKo = null;
       this.onChange && this.onChange(rec);
     }
     clear() {
@@ -914,8 +941,8 @@
   /* ------------------------------------------------------------------ *
    * 8. Team editing (drag & drop, the way the game does it)
    * ------------------------------------------------------------------ */
-  /** Open the Team/PC screen (resuming the game first when it sits on the start screen). */
-  async function gotoTeamScreen(tries = 6) {
+  /** Open the Team/PC screen (resuming the game first, and waiting out a running battle). */
+  async function gotoTeamScreen(tries = 30) {
     const slots = () => document.querySelectorAll('#team-slots .slot').length;
     for (let i = 0; i < tries; i++) {
       if (slots()) return true;
@@ -923,7 +950,11 @@
       if (cont) { cont.click(); await sleep(500); continue; }
       const btn = [...document.querySelectorAll('button')].find(b => b.textContent.trim().toLowerCase() === 'team/pc');
       if (btn) { btn.click(); await sleep(500); }
-      else await sleep(300);
+      // the game refuses to open the PC while a battle runs: wait for it to end
+      const save = readSave();
+      if (save?.adv?.battle) { state.waiting = 'waiting for the current battle to end…'; await sleep(1000); continue; }
+      state.waiting = null;
+      await sleep(300);
     }
     return slots() > 0;
   }
@@ -967,7 +998,7 @@
   }
 
   async function applyTeam(team) {
-    if (!await gotoTeamScreen()) return { ok: false, error: 'team screen not available' };
+    if (!await gotoTeamScreen()) { state.waiting = null; return { ok: false, error: 'team screen not available' }; }
     if (!readSave()) return { ok: false, error: 'no save' };
     const desired = team.slice(0, 6).map(t => t.mon.uid);
     const slotEls = () => $$('#team-slots .slot');
@@ -989,6 +1020,7 @@
       await clearPcSearch();
       done++;
     }
+    state.waiting = null;
     return { ok: true, done };
   }
 
@@ -1049,7 +1081,7 @@
     data: null, chart: null, chartSource: '', engine: null, learnAll: null,
     events: null, enemies: null, scored: null, team: null,
     preset: 'balanced', errors: [], busy: false, watcher: null, eligible: 0,
-    apiCache: {}, info: {}, legends: null, legBoss: null, legTier: 0, legTeam: null
+    apiCache: {}, info: {}, legends: null, legBoss: null, legTier: 0, legTeam: null, collapsed: false, waiting: null
   };
 
   const TYPE_COLORS = {
@@ -1081,8 +1113,11 @@
     return name || state.data?.moves?.[key]?.name || key;
   }
 
+  /** The game's own type badge (same markup as the rest of the UI). */
+  const typeBadge = t => `<span class="type sm" data-type="${t}" style="--tc:${typeColor(t)};background:var(--tc)">${t}</span>`;
+
   function typeChips(enemies, data) {
-    if (!enemies || !data) return '<span class="muted">no data</span>';
+    if (!enemies || !data) return '<span class="pcopt-mut">no data</span>';
     const counts = {};
     for (const e of enemies) {
       const types = data.species[e.id]?.types || [];
@@ -1091,16 +1126,17 @@
     }
     const entries = Object.entries(counts).sort((a, b) => b[1] - a[1]);
     const total = entries.reduce((a, [, c]) => a + c, 0) || 1;
-    return entries.map(([t, c]) => `<span class="type" style="background:${typeColor(t)}">${t} ${Math.round(c / total * 100)}%</span>`).join('');
+    return entries.map(([t, c]) => `${typeBadge(t)}<span class="pcopt-mut">${Math.round(c / total * 100)}%</span>`).join('');
   }
 
   function renderFails() {
     const fails = state.watcher?.fails || [];
-    if (!fails.length) return '<div class="muted">no wipe recorded yet</div>';
+    if (!fails.length) return '<div class="pcopt-mut">no wipe recorded yet</div>';
     return fails.map(f => {
       const foes = (f.enemies || []).map(e => `${displayName(e.id)} Lv${e.level}`).join(', ');
-      return `<div class="mon"><div><b>${esc(f.name)}</b> <span class="tag">#${f.node} · ${esc(f.kind || '')}${f.lv ? ' · Lv ' + f.lv.join('-') : ''}</div>`
-        + `<div class="muted">${esc(foes)}</div></div><div class="tag">${new Date(f.at).toLocaleTimeString()}</div></div>`;
+      return `<div class="pcopt-mon"><div><b>${esc(f.name)}</b> <span class="pcopt-mut">#${f.node} · ${esc(f.kind || '')}${f.lv ? ' · Lv ' + f.lv.join('-') : ''}`
+        + `${f.firstKo ? ` · 1st KO step ${f.firstKo.node}` : ''}</div><div class="pcopt-mut">${esc(foes)}</div></div>`
+        + `<div class="pcopt-mut">${new Date(f.at).toLocaleTimeString()}</div></div>`;
     }).join('');
   }
 
@@ -1149,28 +1185,26 @@
   }
 
   function renderLegendTeam() {
-    if (!state.legTeam) return '<div class="muted">pick a boss and run the optimizer</div>';
-    if (!state.legTeam.length) return '<div class="muted">no candidate</div>';
+    if (!state.legTeam) return '<div class="pcopt-mut">pick a boss and run the optimizer</div>';
+    if (!state.legTeam.length) return '<div class="pcopt-mut">no candidate</div>';
     return state.legTeam.map((s, i) => {
       const sp = s.species;
-      const types = sp.types.map(t => `<span class="type" style="background:${typeColor(t)}">${t}</span>`).join('');
-      return `<div class="mon"><div>${i + 1}. <b>${esc(displayName(sp.id))}</b> <span class="tag">Lv${s.proj.level}${s.proj.shiny ? ' ✨' : ''}</span>`
-        + `<div class="types" style="margin:2px 0">${types}</div>`
-        + `<span class="muted">${s.hp} HP${s.proj.shiny ? ' · +10% stats' : ''}</span></div></div>`;
+      return `<div class="pcopt-mon"><div>${i + 1}. <b>${esc(displayName(sp.id))}</b> <span class="pcopt-mut">Lv${s.proj.level}${s.proj.shiny ? ' ✨' : ''}</span>`
+        + `<div class="pcopt-row">${sp.types.map(typeBadge).join('')}</div>`
+        + `<div class="pcopt-mut">${s.hp} HP${s.proj.shiny ? ' · +10% stats' : ''}</div></div></div>`;
     }).join('');
   }
 
   function renderTeam() {
-    if (!state.team) return '<div class="muted">run the optimizer to get a team</div>';
-    if (!state.team.length) return '<div class="muted">no candidate</div>';
+    if (!state.team) return '<div class="pcopt-mut">run the optimizer to get a team</div>';
+    if (!state.team.length) return '<div class="pcopt-mut">no candidate</div>';
     return state.team.map((s, i) => {
       const sp = s.species;
-      const types = sp.types.map(t => `<span class="type" style="background:${typeColor(t)}">${t}</span>`).join('');
-      return `<div class="mon"><div>${i + 1}. <b>${esc(displayName(sp.id))}</b> <span class="tag">Lv${s.mon.level}${s.mon.shiny ? ' ✨' : ''}</span>`
-        + `<div class="types" style="margin:2px 0">${types}</div>`
-        + `<span class="muted">${esc(s.bestMoveKey ? displayMove(s.bestMoveKey) : (s.bestMoveName || '—'))} · ${Math.round(s.avgDmg)} dmg · ${Math.round(s.avgRounds)} rounds${s.proj.shiny ? ' · +10% stats' : ''}</span>`
-        + `<div class="muted" data-info="${s.mon.uid}">${state.info[s.mon.uid] || ''}</div></div>`
-        + `<div class="tag"><button data-moves="${s.mon.uid}">moves</button> <button data-api="${s.mon.uid}">api</button><br>${fmt(scoreFor(s, state.preset))}</div></div>`;
+      return `<div class="pcopt-mon"><div>${i + 1}. <b>${esc(displayName(sp.id))}</b> <span class="pcopt-mut">Lv${s.mon.level}${s.mon.shiny ? ' ✨' : ''}</span>`
+        + `<div class="pcopt-row">${sp.types.map(typeBadge).join('')}</div>`
+        + `<div class="pcopt-mut">${esc(s.bestMoveKey ? displayMove(s.bestMoveKey) : (s.bestMoveName || '—'))} · ${Math.round(s.avgDmg)} dmg · ${Math.round(s.avgRounds)} rounds${s.proj.shiny ? ' · +10% stats' : ''}</div>`
+        + `<div class="pcopt-mut" data-info="${s.mon.uid}">${state.info[s.mon.uid] || ''}</div></div>`
+        + `<div class="pcopt-row"><button class="btn small ghost" data-moves="${s.mon.uid}">moves</button><button class="btn small ghost" data-api="${s.mon.uid}">api</button></div></div>`;
     }).join('');
   }
 
@@ -1184,83 +1218,92 @@
     const save = readSave();
     const adv = save?.adv;
     const node = adv?.nodes?.[adv.node];
+    const scroll = p.scrollTop;
 
+    // the panel is built from the game's own classes and CSS variables, so it follows its theme
+    p.className = 'map-region';
+    p.style.setProperty('--c', '#3b6fe0');
     p.innerHTML = `
       <style>
-        #pcopt-panel{position:fixed;right:12px;bottom:12px;z-index:99999;width:340px;max-height:80vh;overflow:auto;
-          background:#14161c;color:#e8ecf1;border:1px solid #333a46;border-radius:10px;font:12px/1.45 system-ui,sans-serif;
-          box-shadow:0 8px 28px #0009}
-        #pcopt-panel h3{margin:0;padding:8px 10px;font-size:12px;letter-spacing:.04em;text-transform:uppercase;
-          background:#1c2029;border-bottom:1px solid #333a46;display:flex;justify-content:space-between;align-items:center}
-        #pcopt-panel section{padding:8px 10px;border-bottom:1px solid #262b35}
-        #pcopt-panel b{color:#ffd23f}
-        #pcopt-panel .row{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
-        #pcopt-panel button{all:unset;cursor:pointer;padding:3px 8px;border-radius:5px;background:#2b313d;border:1px solid #3c4453}
-        #pcopt-panel button.on{background:#3f6fd8;border-color:#5b86e8}
-        #pcopt-panel button:disabled{opacity:.45;cursor:default}
-        #pcopt-panel .muted{color:#8e97a6}
-        #pcopt-panel .types{display:flex;gap:4px;flex-wrap:wrap;margin:4px 0}
-        #pcopt-panel .type{font-size:10px;padding:1px 5px;border-radius:9px;color:#10131a;font-weight:600}
-        #pcopt-panel .mon{display:flex;justify-content:space-between;gap:6px;padding:3px 0;border-bottom:1px solid #232833}
-        #pcopt-panel .mon:last-child{border-bottom:0}
-        #pcopt-panel .log{max-height:130px;overflow:auto;margin-top:6px}
-        #pcopt-panel .err{color:#ff8a8a}
-        #pcopt-panel .tag{font-size:10px;color:#8e97a6;white-space:nowrap}
+        #pcopt-panel{position:fixed;right:10px;bottom:10px;z-index:45;width:344px;max-height:min(76vh,720px);
+          overflow:auto;box-shadow:0 10px 28px #00000073;background:var(--panel);color:var(--text)}
+        #pcopt-panel .map-head{position:sticky;top:0;z-index:2;
+          background:linear-gradient(90deg,color-mix(in srgb,var(--c) 40%,var(--panel)),var(--panel))}
+        #pcopt-panel .map-head h2{font-size:17px}
+        #pcopt-panel section{padding:10px 14px;border-bottom:2px solid var(--line)}
+        #pcopt-panel section:last-child{border-bottom:0}
+        #pcopt-panel .pcopt-row{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+        #pcopt-panel .pcopt-mut{color:var(--muted);font-size:13px;line-height:1.5}
+        #pcopt-panel .pcopt-mon{display:flex;justify-content:space-between;gap:8px;padding:6px 0;border-bottom:1px solid var(--line)}
+        #pcopt-panel .pcopt-mon:last-child{border-bottom:0}
+        #pcopt-panel .pcopt-log{max-height:150px;overflow:auto}
+        #pcopt-panel .pcopt-err{color:var(--red)}
+        #pcopt-panel .btn.small{font-size:13px;padding:5px 10px}
+        #pcopt-panel .seg button{font-size:13px;padding:5px 9px}
+        #pcopt-panel select{font-size:13px;padding:4px 8px;max-width:100%}
+        #pcopt-panel .type.sm{font-size:11px}
+        @media (max-width:640px){#pcopt-panel{width:calc(100vw - 16px);right:8px;bottom:64px}}
       </style>
-      <h3><span>Poke'Catch Optimizer</span><button id="pcopt-toggle">–</button></h3>
+      <div class="map-head"><h2>Team Optimizer</h2>
+        <button class="btn small ghost" id="pcopt-toggle" aria-label="Collapse">–</button></div>
       <div id="pcopt-body"></div>`;
 
     const body = $('#pcopt-body', p);
-    $('#pcopt-toggle', p).onclick = () => {
-      const open = body.style.display !== 'none';
-      body.style.display = open ? 'none' : '';
-      $('#pcopt-toggle', p).textContent = open ? '+' : '–';
+    const toggle = $('#pcopt-toggle', p);
+    toggle.textContent = state.collapsed ? '+' : '–';
+    body.style.display = state.collapsed ? 'none' : '';
+    toggle.onclick = () => {
+      state.collapsed = body.style.display !== 'none';
+      body.style.display = state.collapsed ? 'none' : '';
+      toggle.textContent = state.collapsed ? '+' : '–';
     };
+    p.scrollTop = scroll;
 
     body.innerHTML = `
       <section>
-        <div class="row"><b>Chapter</b> ${adv?.chapter != null ? `#${adv.chapter} ${esc(state.events?.name || '')}` : '<span class="muted">no save</span>'}</div>
-        <div class="muted">step ${adv?.node ?? '-'} / ${(adv?.nodes || []).length} · ${esc(node?.name || '-')} ${node?.lv ? '· Lv ' + node.lv.join('-') : ''}</div>
-        <div class="muted">cap ${state.events?.cap ?? '-'} · type chart: ${esc(state.chartSource || '-')}</div>
-        ${state.eligible ? `<div class="muted">${state.eligible} Pokémon can join this team${save?.link ? ' (region link: ' + esc(save.link.to) + ')' : ''}</div>` : ''}
-        ${state.errors.length ? `<div class="err">${state.errors.map(esc).join('<br>')}</div>` : ''}
+        <div class="pcopt-row"><b>Chapter ${adv?.chapter ?? '-'}</b><span class="pcopt-mut">${esc(state.events?.name || '')}</span></div>
+        <div class="pcopt-mut">step ${adv?.node ?? '-'} / ${(adv?.nodes || []).length} · ${esc(node?.name || '-')}${node?.lv ? ' · Lv ' + node.lv.join('-') : ''}</div>
+        <div class="pcopt-mut">cap ${state.events?.cap ?? '-'} · type chart: ${esc(state.chartSource || '-')}</div>
+        ${state.eligible ? `<div class="pcopt-mut">${state.eligible} Pokémon can join this team${save?.link ? ' (region link: ' + esc(save.link.to) + ')' : ''}</div>` : ''}
+        ${state.waiting ? `<div class="pcopt-mut">${esc(state.waiting)}</div>` : ''}
+        ${state.errors.length ? `<div class="pcopt-err">${state.errors.map(esc).join('<br>')}</div>` : ''}
       </section>
 
       <section>
-        <div class="row"><b>Chapter events</b><span class="tag">${state.enemies ? state.enemies.length + ' foes' : ''}</span></div>
-        ${state.watcher.fails[0] ? `<div class="muted">last wipe: step ${state.watcher.fails[0].node} · ${esc(state.watcher.fails[0].name)} (${esc((state.watcher.fails[0].enemies || []).map(e => displayName(e.id)).join(', '))})</div>` : ''}
-        <div class="types">${typeChips(state.enemies, state.data)}</div>
-        <div class="row">
-          <button id="pcopt-watch">${state.watcher.running ? '● watching' : 'watch for wipes'}</button>
-          <button id="pcopt-clear">clear log</button>
+        <div class="pcopt-row"><b>Chapter events</b><span class="pcopt-mut">${state.enemies ? state.enemies.length + ' foes' : ''}</span></div>
+        ${state.watcher.fails[0] ? `<div class="pcopt-mut">last wipe: step ${state.watcher.fails[0].node} · ${esc(state.watcher.fails[0].name)} (${esc((state.watcher.fails[0].enemies || []).map(e => displayName(e.id)).join(', '))})</div>` : ''}
+        <div class="pcopt-row" style="margin:4px 0">${typeChips(state.enemies, state.data)}</div>
+        <div class="pcopt-row">
+          <button class="btn small ghost" id="pcopt-watch">${state.watcher.running ? '● watching' : 'watch for wipes'}</button>
+          <button class="btn small ghost" id="pcopt-clear">clear log</button>
         </div>
-        <div class="log">${renderFails()}</div>
+        <div class="pcopt-log">${renderFails()}</div>
       </section>
 
       <section>
-        <div class="row"><b>Legendary fight</b><span class="tag">${state.legends ? state.legends.zones.length + ' boss zones' : 'loading…'}</span></div>
-        <div class="row">
+        <div class="pcopt-row"><b>Legendary fight</b><span class="pcopt-mut">${state.legends ? state.legends.zones.length + ' boss zones' : 'loading…'}</span></div>
+        <div class="pcopt-row">
           <select id="pcopt-leg-region">${legendRegionOptions()}</select>
           <select id="pcopt-leg-boss">${legendBossOptions()}</select>
           <select id="pcopt-leg-tier">${legendTierOptions()}</select>
         </div>
-        <div class="muted" id="pcopt-leg-info">${legendInfo()}</div>
-        <div class="row" style="margin-top:6px">
-          <button id="pcopt-leg-run" ${state.busy ? 'disabled' : ''}>optimize for this boss</button>
-          <button id="pcopt-leg-apply" ${state.legTeam && state.legTeam.length && !state.busy ? '' : 'disabled'}>apply to team</button>
+        <div class="pcopt-mut" id="pcopt-leg-info">${legendInfo()}</div>
+        <div class="pcopt-row" style="margin-top:6px">
+          <button class="btn small" id="pcopt-leg-run" ${state.busy ? 'disabled' : ''}>optimize for this boss</button>
+          <button class="btn small ghost" id="pcopt-leg-apply" ${state.legTeam && state.legTeam.length && !state.busy ? '' : 'disabled'}>apply to team</button>
         </div>
         <div id="pcopt-leg-team">${renderLegendTeam()}</div>
       </section>
 
       <section>
-        <div class="row">
+        <div class="seg" id="pcopt-presets">
           <button data-preset="defense" class="${state.preset === 'defense' ? 'on' : ''}">Defense</button>
           <button data-preset="offense" class="${state.preset === 'offense' ? 'on' : ''}">Offense</button>
           <button data-preset="balanced" class="${state.preset === 'balanced' ? 'on' : ''}">Balanced</button>
         </div>
-        <div class="row" style="margin-top:6px">
-          <button id="pcopt-run" ${state.busy ? 'disabled' : ''}>${state.busy ? 'working…' : 'optimize'}</button>
-          <button id="pcopt-apply" ${state.team && state.team.length && !state.busy ? '' : 'disabled'}>apply to team</button>
+        <div class="pcopt-row" style="margin-top:8px">
+          <button class="btn small" id="pcopt-run" ${state.busy ? 'disabled' : ''}>${state.busy ? 'working…' : 'optimize'}</button>
+          <button class="btn small ghost" id="pcopt-apply" ${state.team && state.team.length && !state.busy ? '' : 'disabled'}>apply to team</button>
         </div>
         <div id="pcopt-team">${renderTeam()}</div>
       </section>`;
@@ -1455,6 +1498,7 @@
     state.busy = true; renderPanel();
     const res = await applyTeam(team);
     state.busy = false;
+    state.waiting = null;
     if (!res.ok) state.errors = ['apply failed: ' + res.error];
     renderPanel();
   }
