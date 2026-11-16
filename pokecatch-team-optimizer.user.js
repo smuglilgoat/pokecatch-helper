@@ -1185,21 +1185,22 @@
    * 8. Team editing (drag & drop, the way the game does it)
    * ------------------------------------------------------------------ */
   /** Open the Team/PC screen (resuming the game first, and waiting out a running battle). */
-  async function gotoTeamScreen(tries = 30) {
-    const slots = () => document.querySelectorAll('#team-slots .slot').length;
+  async function gotoTeamScreen(tries = 60) {
+    const ready = () => !!document.querySelector('#screen-team.active') && document.querySelectorAll('#team-slots .slot').length > 0;
     for (let i = 0; i < tries; i++) {
-      if (slots()) return true;
+      if (ready()) { state.waiting = null; return true; }
       const cont = [...document.querySelectorAll('button')].find(b => b.textContent.trim() === 'CONTINUE');
       if (cont) { cont.click(); await sleep(500); continue; }
-      const btn = [...document.querySelectorAll('button')].find(b => b.textContent.trim().toLowerCase() === 'team/pc');
-      if (btn) { btn.click(); await sleep(500); }
-      // the game refuses to open the PC while a battle runs: wait for it to end
+      // the game refuses to switch screens while a battle runs: wait for it to end
       const save = readSave();
       if (save?.adv?.battle) { state.waiting = 'waiting for the current battle to end…'; await sleep(1000); continue; }
-      state.waiting = null;
-      await sleep(300);
+      const nav = document.querySelector('#side [data-screen="team"]');
+      const btn = nav || [...document.querySelectorAll('button')].find(b => b.textContent.trim().toLowerCase() === 'team/pc');
+      if (btn) { btn.click(); await sleep(600); }
+      else await sleep(300);
     }
-    return slots() > 0;
+    state.waiting = null;
+    return ready();
   }
 
   const pcCellFor = uid => document.querySelector(`#pc-grid .pc-cell[data-uid="${uid}"]`);
@@ -1413,7 +1414,8 @@
         await ensureData();
         const { zone, tier } = ctx;
         const save = readSave();
-        const cands = projectCandidates(state.engine, state.data, save, state.events?.cap ?? 100)
+        const zoneLevel = tier ? state.data.cfg.MAX_LEVEL : (zone.level ?? state.data.cfg.MAX_LEVEL);
+        const cands = projectCandidates(state.engine, state.data, save, zoneLevel)
           .map(c => ({ ...c, hpCur: c.hp }));
         const team = pickLegendTeam(cands, zone, tier, state.engine, state.data);
         const o = legendOdds(zone, tier, team, state.engine, state.data, save);
@@ -1431,6 +1433,57 @@
       btn.disabled = false;
     };
     box.querySelector('#pcopt-evt-run').onclick = run;
+  }
+
+  /** One line on what the chapter optimizer is aiming at. */
+  function teamUiInfo() {
+    if (!state.events) return '';
+    const foes = state.enemies ? state.enemies.length + ' foes · ' : '';
+    return `Chapter ${state.events.index} ${state.events.name} · ${state.league ? 'league · ' : ''}${foes}cap ${state.events.cap}`;
+  }
+
+  /** Put my controls in the game's Team/PC header: they optimise for the chapter being run. */
+  async function injectTeamUi() {
+    const head = document.querySelector('#screen-team .team-panel .map-head');
+    if (!head || head.querySelector('#pcopt-team-ui')) return;
+    if (!state.engine) { try { await ensureData(); } catch { return; } }
+    if (!head.isConnected || head.querySelector('#pcopt-team-ui')) return;
+    refreshChapter();
+    const box = document.createElement('div');
+    box.id = 'pcopt-team-ui';
+    box.className = 'pcopt-row';
+    box.style.flexBasis = '100%';
+    box.style.marginTop = '4px';
+    box.innerHTML = `${presetSeg()}
+      <button class="btn small" id="pcopt-team-run">✨ Optimize (mine)</button>
+      <span class="pcopt-mut" id="pcopt-team-info">${esc(teamUiInfo())}</span>`;
+    head.appendChild(box);
+    box.querySelectorAll('[data-preset]').forEach(b => b.onclick = () => {
+      state.preset = b.dataset.preset;
+      box.querySelectorAll('[data-preset]').forEach(x => x.classList.toggle('on', x.dataset.preset === state.preset));
+    });
+    box.querySelector('#pcopt-team-run').onclick = async () => {
+      const btn = box.querySelector('#pcopt-team-run');
+      const info = box.querySelector('#pcopt-team-info');
+      btn.disabled = true;
+      info.textContent = 'working…';
+      const tick = setInterval(() => { if (state.waiting) info.textContent = state.waiting; }, 400);
+      try {
+        await runOptimizer();
+        if (!state.team || !state.team.length) { info.textContent = 'no candidate found'; }
+        else {
+          const res = await applyTeam(state.team);
+          info.textContent = res.ok
+            ? teamUiInfo() + ' · applied ' + (res.done ?? 0) + '/' + state.team.length
+            : 'could not use the team screen: ' + res.error;
+        }
+      } catch (e) {
+        info.textContent = 'error: ' + e.message;
+      }
+      clearInterval(tick);
+      state.waiting = null;
+      btn.disabled = false;
+    };
   }
 
   /* ------------------------------------------------------------------ *
@@ -1934,8 +1987,9 @@
       if (!zone) { state.errors = ['no boss zone']; state.busy = false; renderPanel(); return; }
       const save = readSave();
       if (!save) { state.errors = ['no save found']; state.busy = false; renderPanel(); return; }
-      // a legendary fight starts with a healed team (you heal before going in)
-      const cands = projectCandidates(state.engine, state.data, save, state.events?.cap ?? 100)
+      // the game brings the team to the zone's level (max level for an elite tier) and heals it
+      const zoneLevel = state.legTier ? state.data.cfg.MAX_LEVEL : (zone.level ?? state.data.cfg.MAX_LEVEL);
+      const cands = projectCandidates(state.engine, state.data, save, zoneLevel)
         .map(c => ({ ...c, hpCur: c.hp }));
       state.legTeam = pickLegendTeam(cands, zone, state.legTier, state.engine, state.data);
       state.legOdds = state.legTeam.length
@@ -1969,6 +2023,7 @@
       requestAnimationFrame(() => {
         pending = false;
         if (document.querySelector('#evt-pick-head')) injectPickerUi().catch(() => {});
+        if (document.querySelector('#screen-team .team-panel .map-head')) injectTeamUi().catch(() => {});
       });
     }).observe(document.body, { childList: true, subtree: true });
     state.watcher = new WipeWatcher(rec => {

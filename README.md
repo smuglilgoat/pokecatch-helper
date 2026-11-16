@@ -29,6 +29,7 @@ A Tampermonkey helper for [Poke'Catch](https://pokecatch-online.netlify.app/) th
 | **watch for wipes** | Records every wipe: the chapter and step it happened on, the foes and your team at that moment. It reads the game's own death counter (`adv.deaths`), because the game heals the team the instant it is wiped, so the "all knocked out" state never lasts. |
 | **moves** (per Pokémon) | Opens the game's own *moves panel* for that Pokémon — the authoritative learnset. |
 | **✨ Optimize (mine)** (in the game's picker) | My optimizer, inside the game's own team picker, right next to its Optimize button: it fills the slots and prints the fight's win/run/catch odds. |
+| **✨ Optimize (mine)** (in Team/PC) | The chapter optimizer, inside the game's own Team/PC header: it picks the best six for the chapter you are running right now and puts them in your team. |
 | **api** (per Pokémon) | Fetches the same species from [PokéAPI](https://pokeapi.co/api/v2) and shows its canonical types/learnset next to the game's freer one. |
 
 ### Legendary fight
@@ -65,6 +66,13 @@ The game has its own **Optimize** button in the team picker it opens for a legen
 or the elite league. This helper adds its own row right beside it — **Defense / Offense / Balanced**,
 **✨ Optimize (mine)** and the same win/run/catch line — and its button fills the game's own slots
 with the team it computed, so the two optimizers sit side by side and both write to the game.
+
+The same row also sits in the **Team/PC** header, aimed at the chapter you are currently running
+(it shows the chapter, its foes and the cap), so you can re-optimise without leaving the screen.
+
+A legendary fight is simulated at the level the game brings the team to — the **zone's level**
+(100 for every legend zone), or the max level when you pick an elite tier — with the team at full
+health, which is how a legendary fight always starts.
 
 <figure the picker header: Optimize | Defense Offense Balanced | Optimize (mine) | win 100% · 11 rounds ≈ 30s/run · catch 1.2%/run · ~71 runs ≈ 35.7 min>
 
