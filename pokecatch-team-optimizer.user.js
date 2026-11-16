@@ -156,7 +156,8 @@
         MOVE_BLACKLIST: cfg.MOVE_BLACKLIST, MOVE_RECHARGE: cfg.MOVE_RECHARGE, MOVE_POWER_OVERRIDES: cfg.MOVE_POWER_OVERRIDES,
         MULTI_HIT: cfg.MULTI_HIT, MULTI_HIT_ODDS: cfg.MULTI_HIT_ODDS, MOVE_LEVELS: cfg.MOVE_LEVELS,
         MOVE_FLOOR_FROM: cfg.MOVE_FLOOR_FROM, ACC_CURVE: cfg.ACC_CURVE,
-        TEAM_SIZE: cfg.TEAM_SIZE, MAX_LEVEL: cfg.MAX_LEVEL, LEAGUE_CAP_MARGIN: cfg.LEAGUE_CAP_MARGIN
+        TEAM_SIZE: cfg.TEAM_SIZE, MAX_LEVEL: cfg.MAX_LEVEL, LEAGUE_CAP_MARGIN: cfg.LEAGUE_CAP_MARGIN,
+        LEGEND_ZONE: cfg.LEGEND_ZONE, ELITE: cfg.ELITE, RANK_STAT: cfg.UNDERGROUND?.RANK_STAT ?? 1
       }
     };
   }
@@ -265,6 +266,27 @@
       learnAll[sp.id] = list.filter(l => !dropped.has(l[1])).sort((a, b) => a[0] - b[0]).map(l => [l[0], l[1]]);
     }
     return { learnAll, movePower, moveAcc, PREVO };
+  }
+
+  /* --- the roaming legendaries (legend zones) and their elite versions --- */
+  function parseLegends(src) {
+    const zi = src.indexOf('Pe=[{id:145');
+    if (zi < 0) return null;
+    let zones;
+    try {
+      const lit = literalAt(src, zi + 3);
+      zones = Function('Me', 'i', 'P', 'return (' + lit + ')')(
+        k => ({ cond: { kind: 'door', key: k } }),
+        { kind: 'league', region: 'johto' },
+        { kind: 'league', region: 'johto' });
+    } catch { return null; }
+    let elite = {};
+    const ei = src.indexOf('ELITE_K:');
+    if (ei > 0) {
+      const bi = src.lastIndexOf('b={', ei);
+      if (bi > 0) { try { elite = evalLit(literalAt(src, bi + 2)); } catch { elite = {}; } }
+    }
+    return { zones, elite };
   }
 
   /* ------------------------------------------------------------------ *
@@ -434,7 +456,37 @@
       return Math.max(1, Math.floor(x * stab * eff * gap * 0.925));
     };
 
-    return { typeEff, statsOf, maxHp, bestMove, damage, movePower, moveAcc };
+    /** Damage of one specific move (the boss uses this for its burst / counter moves). */
+    const moveDamage = (att, def, mv) => {
+      const A = statsOf(att), D = statsOf(def);
+      if (!A || !D) return 0;
+      const phys = mv.cat === 'phys';
+      const atkStat = phys ? A.atk * (att.status === 'burn' ? 0.5 : 1) : A.spa;
+      const defStat = phys ? D.def : D.spd;
+      const sp = species[att.id];
+      const stab = sp && sp.types.includes(mv.type) ? 1.5 : 1;
+      const x = (2 * att.level / 5 + 2) * mv.power * atkStat / Math.max(1, defStat) / 50 + 2;
+      const gap = Math.pow(cfg.LEVEL_GAP, att.level - def.level);
+      return x * stab * typeEff(mv.type, def.types) * gap * (mv.acc / 100) * 0.925;
+    };
+
+    /** Strongest move a mon has against a target (the boss picks the best one it knows). */
+    const bestDamage = (att, def) => {
+      let best = 0;
+      for (const [lv, key] of learnAll.learnAll[att.id] || []) {
+        if (lv > att.level) continue;
+        if (cfg.MOVE_BLACKLIST.includes(key)) continue;
+        const mv = moves[key];
+        if (!mv) continue;
+        const power = movePower(key);
+        if (power <= 0) continue;
+        const d = moveDamage(att, def, { key, type: mv.type, cat: mv.cat, power, acc: moveAcc(key) });
+        if (d > best) best = d;
+      }
+      return best;
+    };
+
+    return { typeEff, statsOf, maxHp, bestMove, damage, movePower, moveAcc, moveDamage, bestDamage };
   }
 
   /* ------------------------------------------------------------------ *
@@ -547,6 +599,17 @@
    * 6. Optimizer
    * ------------------------------------------------------------------ */
   const KIND_WEIGHT = { wild: 1, trainer: 4, gym: 8 };
+
+  /** The Pokémon that may join the team, projected at the chapter cap. */
+  function projectCandidates(eng, data, save, level) {
+    const away = awayUids(save);
+    const cands = save.mons.filter(m => !away.has(m.uid) && data.species[m.id] && canJoinTeam(save, m));
+    return cands.map(c => {
+      const sp = data.species[c.id];
+      const proj = { id: c.id, level, shiny: c.shiny, status: c.status, types: sp.types };
+      return { mon: c, proj, species: sp, hp: eng.maxHp(proj) };
+    });
+  }
 
   /** Individual metrics of every candidate against the chapter's foes. */
   function scoreCandidates(eng, data, enemies, candidates, level) {
@@ -674,6 +737,104 @@
   }
 
   /* ------------------------------------------------------------------ *
+   * 6b. Legendary fights (roaming legendaries and their elite versions)
+   * ------------------------------------------------------------------ */
+  /** Build the boss (a legend zone) with the knobs the game uses for that fight. */
+  function legendBoss(zone, tier, team, eng, data) {
+    const cfg = data.cfg;
+    const sp = data.species[zone.id];
+    if (!sp) return null;
+    const level = zone.level || 100;
+    const mon = { id: zone.id, level, types: sp.types };
+    const maxHp = eng.maxHp(mon);
+    // the boss scales with the team (shiny and level count as "power")
+    const aura = team.length
+      ? Math.pow(team.reduce((a, c) => a + (c.proj.shiny ? 1 : Math.max(1, Math.min(c.proj.level, cfg.MAX_LEVEL) / cfg.MAX_LEVEL)), 0) / team.length, cfg.LEGEND_ZONE?.AURA || 1)
+      : 1;
+    const eliteTable = tier ? (state.legends.elite[zone.id]?.[tier] || [1, 1]) : null;
+    const eliteHp = tier ? (cfg.ELITE?.HP?.[tier] ?? 1) : 1;
+    const elitePower = tier ? (cfg.ELITE?.POWER?.[tier] ?? 1) : 1;
+    const hpKnob = (zone.hp ?? cfg.LEGEND_ZONE?.HP ?? 3) * eliteHp * (eliteTable ? eliteTable[0] : 1) * (tier ? 1 : aura);
+    const powerKnob = (zone.power ?? cfg.LEGEND_ZONE?.POWER ?? .5) * elitePower * (eliteTable ? eliteTable[1] : 1) * (tier ? 1 : aura * aura);
+    const hp = Math.floor(maxHp * (1 + (cfg.ENEMY_HP_PER_ALLY ?? .7) * (cfg.TEAM_SIZE - 1)) * hpKnob);
+    const resist = tier ? (cfg.ELITE?.RESIST?.[tier] ?? 1) : 1;
+    const counter = zone.counter ? data.moves[zone.counter] : null;
+    const burst = zone.burst ? data.moves[zone.burst] : null;
+
+    const damageTo = target => {
+      const main = eng.bestDamage(mon, target);
+      const c = counter ? eng.moveDamage(mon, target, { type: counter.type, cat: counter.cat, power: eng.movePower(zone.counter), acc: counter.acc || 100 }) : 0;
+      const b = burst ? eng.moveDamage(mon, target, { type: burst.type, cat: burst.cat, power: eng.movePower(zone.burst), acc: burst.acc || 100 }) : 0;
+      const lz = cfg.LEGEND_ZONE || {};
+      return (main / cfg.TEAM_SIZE + (lz.COUNTER ?? .3) * c + (cfg.TEAM_SIZE / (lz.RAGE ?? 8)) * (lz.BURST ?? 1) * b) * powerKnob;
+    };
+
+    return { zone, mon, types: sp.types, level, maxHp, hp, resist, powerKnob, damageTo, aura };
+  }
+
+  /** One legendary fight: the boss hits the whole team every round. */
+  function simulateLegend(team, boss, eng) {
+    const alive = team.map(c => ({ c, hp: c.hp }));
+    let bossHp = boss.hp, rounds = 0, dealt = 0;
+    while (bossHp > 0 && alive.length && rounds < 400) {
+      let dps = 0;
+      for (const a of alive) {
+        const mv = eng.bestMove(a.c.proj, boss.types);
+        if (!mv) continue;
+        const eff = eng.typeEff(mv.type, boss.types);
+        dps += eng.damage(a.c.proj, boss.mon, mv, eff) * (mv.acc / 100);
+      }
+      dps *= boss.resist;
+      bossHp -= dps;
+      dealt += dps;
+      rounds++;
+      for (const a of alive) a.hp -= boss.damageTo(a.c.proj);
+      for (let i = alive.length - 1; i >= 0; i--) if (alive[i].hp <= 0) alive.splice(i, 1);
+    }
+    const teamHp = team.reduce((a, c) => a + c.hp, 0);
+    const perRound = team.length ? team.reduce((a, c) => a + boss.damageTo(c.proj), 0) / team.length : 0;
+    return {
+      win: bossHp <= 0,
+      roundsKill: rounds,
+      roundsDie: perRound > 0 ? teamHp / perRound : 999,
+      hpLeft: Math.max(0, bossHp),
+      dealt
+    };
+  }
+
+  function evaluateLegendTeam(team, zone, tier, eng, data) {
+    const boss = legendBoss(zone, tier, team, eng, data);
+    if (!boss) return 0;
+    const res = simulateLegend(team, boss, eng);
+    if (state.preset === 'offense') return res.roundsKill;
+    if (state.preset === 'defense') return res.roundsDie;
+    return Math.min(res.roundsKill, res.roundsDie);
+  }
+
+  /** Greedy team builder for one legendary boss. */
+  function pickLegendTeam(cands, zone, tier, eng, data, size = 6) {
+    const pool = cands.slice().sort((a, b) => b.proj.level - a.proj.level).slice(0, 80);
+    const chosen = [];
+    const usedSpecies = new Set();
+    const usedShiny = new Set();
+    while (chosen.length < size) {
+      let best = null, bestScore = -Infinity;
+      for (const cand of pool) {
+        if (chosen.includes(cand)) continue;
+        if (!cand.proj.shiny && usedSpecies.has(cand.species.id)) continue;
+        if (cand.proj.shiny && usedShiny.has(cand.species.id)) continue;
+        const sc = evaluateLegendTeam(chosen.concat([cand]), zone, tier, eng, data);
+        if (sc > bestScore) { bestScore = sc; best = cand; }
+      }
+      if (!best) break;
+      chosen.push(best);
+      usedSpecies.add(best.species.id);
+      if (best.proj.shiny) usedShiny.add(best.species.id);
+    }
+    return chosen;
+  }
+
+  /* ------------------------------------------------------------------ *
    * 7. Wipe watcher: remembers on which step the team falls
    * ------------------------------------------------------------------ */
   class WipeWatcher {
@@ -682,7 +843,9 @@
       this.fails = store.get('fails', []) || [];
       this.running = false;
       this.timer = null;
-      this.lastSig = null;
+      this.wiped = false;        // the team is currently wiped
+      this.lastBattle = null;    // last battle seen (the fight can end before we poll)
+      this.firstKo = null;       // step where the first team member fell
     }
     start() {
       if (this.running) return;
@@ -698,36 +861,51 @@
     poll() {
       const save = readSave();
       if (!save || !save.adv) return;
-      const battle = save.adv.battle;
       const nodeIdx = save.adv.node;
-      if (!battle) { this.lastSig = null; return; }
-      const team = (save.team || []).map(u => monByUid(save, u)).filter(Boolean);
-      if (!team.length) return;
-      const ko = team.filter(m => (m.hp == null ? 1 : m.hp) <= 0).length;
-      const sig = JSON.stringify([battle.kind, nodeIdx, (battle.enemies || []).map(e => e.id + ':' + e.level)]);
-      if (ko === team.length && sig !== this.lastSig) {
-        this.lastSig = sig;
-        const node = (save.adv.nodes || [])[nodeIdx] || {};
-        const rec = {
-          at: Date.now(),
-          chapter: save.adv.chapter,
+      const battle = save.adv.battle;
+      if (battle) {
+        this.lastBattle = {
+          kind: battle.kind,
           node: nodeIdx,
-          name: node.name || '?',
-          kind: node.type || battle.kind,
-          lv: node.lv || null,
-          enemies: (battle.enemies || []).map(e => ({ id: e.id, level: e.level })),
-          team: team.map(m => ({ uid: m.uid, id: m.id, level: m.level }))
+          enemies: (battle.enemies || []).map(e => ({ id: e.id, level: e.level }))
         };
-        this.fails.unshift(rec);
-        this.fails = this.fails.slice(0, 25);
-        store.set('fails', this.fails);
-        this.onChange && this.onChange(rec);
-      } else if (ko < team.length) {
-        this.lastSig = sig;
       }
+      const team = (save.team || []).map(u => monByUid(save, u)).filter(Boolean);
+      if (!team.length) { this.wiped = false; this.firstKo = null; return; }
+      // a mon without hp is at full health, so only hp <= 0 counts as knocked out
+      const ko = team.filter(m => m.hp != null && m.hp <= 0);
+      if (ko.length && !this.firstKo) {
+        this.firstKo = { node: nodeIdx, at: Date.now(), name: (save.adv.nodes || [])[nodeIdx]?.name || '?' };
+      }
+      if (ko.length < team.length) {          // team still standing (or healed)
+        this.wiped = false;
+        if (!ko.length) this.firstKo = null;
+        return;
+      }
+      if (this.wiped) return;                  // already recorded this wipe
+      this.wiped = true;
+      const node = (save.adv.nodes || [])[nodeIdx] || {};
+      const b = this.lastBattle || {};
+      const rec = {
+        at: Date.now(),
+        chapter: save.adv.chapter,
+        node: nodeIdx,
+        name: node.name || '?',
+        kind: node.type || b.kind || '?',
+        lv: node.lv || null,
+        enemies: b.enemies || [],
+        firstKo: this.firstKo,
+        team: team.map(m => ({ uid: m.uid, id: m.id, level: m.level }))
+      };
+      this.fails.unshift(rec);
+      this.fails = this.fails.slice(0, 25);
+      store.set('fails', this.fails);
+      this.onChange && this.onChange(rec);
     }
     clear() {
       this.fails = [];
+      this.wiped = false;
+      this.firstKo = null;
       store.set('fails', []);
       this.onChange && this.onChange(null);
     }
@@ -870,8 +1048,8 @@
   const state = {
     data: null, chart: null, chartSource: '', engine: null, learnAll: null,
     events: null, enemies: null, scored: null, team: null,
-    preset: 'balanced', errors: [], busy: false, watcher: null, watching: false, eligible: 0,
-    apiCache: {}, info: {}
+    preset: 'balanced', errors: [], busy: false, watcher: null, eligible: 0,
+    apiCache: {}, info: {}, legends: null, legBoss: null, legTier: 0, legTeam: null
   };
 
   const TYPE_COLORS = {
@@ -926,6 +1104,62 @@
     }).join('');
   }
 
+  const legendZones = () => (state.legends?.zones || []);
+  const legendRegions = () => [...new Set(legendZones().map(z => z.region))];
+
+  function legendRegionOptions() {
+    const cur = state.legRegion || state.events?.region || legendRegions()[0] || 'kanto';
+    state.legRegion = cur;
+    return legendRegions().map(r => `<option value="${r}" ${r === cur ? 'selected' : ''}>${r}</option>`).join('');
+  }
+
+  function legendZone() {
+    const zones = legendZones().filter(z => z.region === state.legRegion);
+    if (!zones.length) return null;
+    const cur = zones.find(z => String(z.id) === String(state.legBoss)) || zones[0];
+    state.legBoss = String(cur.id);
+    return cur;
+  }
+
+  function legendBossOptions() {
+    const zones = legendZones().filter(z => z.region === state.legRegion);
+    return zones.map(z => `<option value="${z.id}" ${String(z.id) === String(state.legBoss) ? 'selected' : ''}>${esc(displayName(z.id))}${z.title ? ' · ' + esc(z.title) : ''}</option>`).join('');
+  }
+
+  function legendTierOptions() {
+    const zone = legendZone();
+    if (!zone) return '';
+    const tiers = Object.keys(state.legends?.elite?.[zone.id] || {}).map(Number).sort();
+    return `<option value="0" ${state.legTier === 0 ? 'selected' : ''}>normal</option>`
+      + tiers.map(t => `<option value="${t}" ${state.legTier === t ? 'selected' : ''}>elite ${t}</option>`).join('');
+  }
+
+  function legendInfo() {
+    const zone = legendZone();
+    if (!zone || !state.engine) return '';
+    const save = readSave();
+    const cands = save ? projectCandidates(state.engine, state.data, save, state.events?.cap ?? 100) : [];
+    const boss = legendBoss(zone, state.legTier, cands, state.engine, state.data);
+    if (!boss) return '';
+    const dmg = cands.length ? Math.round(cands.reduce((a, c) => a + boss.damageTo(c.proj), 0) / cands.length) : 0;
+    const mv = state.engine.bestMove(boss.mon, cands[0]?.proj.types || boss.types);
+    return `${esc(displayName(zone.id))} · ${boss.types.join('/')} · ${Math.round(boss.hp).toLocaleString('en-US')} HP · ~${dmg} dmg/round`
+      + (zone.burst ? ` · ${esc(displayMove(zone.burst))}` : '')
+      + (state.legTier ? ` · elite ${state.legTier}` : '');
+  }
+
+  function renderLegendTeam() {
+    if (!state.legTeam) return '<div class="muted">pick a boss and run the optimizer</div>';
+    if (!state.legTeam.length) return '<div class="muted">no candidate</div>';
+    return state.legTeam.map((s, i) => {
+      const sp = s.species;
+      const types = sp.types.map(t => `<span class="type" style="background:${typeColor(t)}">${t}</span>`).join('');
+      return `<div class="mon"><div>${i + 1}. <b>${esc(displayName(sp.id))}</b> <span class="tag">Lv${s.proj.level}${s.proj.shiny ? ' ✨' : ''}</span>`
+        + `<div class="types" style="margin:2px 0">${types}</div>`
+        + `<span class="muted">${s.hp} HP${s.proj.shiny ? ' · +10% stats' : ''}</span></div></div>`;
+    }).join('');
+  }
+
   function renderTeam() {
     if (!state.team) return '<div class="muted">run the optimizer to get a team</div>';
     if (!state.team.length) return '<div class="muted">no candidate</div>';
@@ -934,7 +1168,7 @@
       const types = sp.types.map(t => `<span class="type" style="background:${typeColor(t)}">${t}</span>`).join('');
       return `<div class="mon"><div>${i + 1}. <b>${esc(displayName(sp.id))}</b> <span class="tag">Lv${s.mon.level}${s.mon.shiny ? ' ✨' : ''}</span>`
         + `<div class="types" style="margin:2px 0">${types}</div>`
-        + `<span class="muted">${esc(s.bestMoveKey ? displayMove(s.bestMoveKey) : (s.bestMoveName || '—'))} · ${Math.round(s.avgDmg)} dmg · ${Math.round(s.avgRounds)} rounds</span>`
+        + `<span class="muted">${esc(s.bestMoveKey ? displayMove(s.bestMoveKey) : (s.bestMoveName || '—'))} · ${Math.round(s.avgDmg)} dmg · ${Math.round(s.avgRounds)} rounds${s.proj.shiny ? ' · +10% stats' : ''}</span>`
         + `<div class="muted" data-info="${s.mon.uid}">${state.info[s.mon.uid] || ''}</div></div>`
         + `<div class="tag"><button data-moves="${s.mon.uid}">moves</button> <button data-api="${s.mon.uid}">api</button><br>${fmt(scoreFor(s, state.preset))}</div></div>`;
     }).join('');
@@ -997,10 +1231,25 @@
         ${state.watcher.fails[0] ? `<div class="muted">last wipe: step ${state.watcher.fails[0].node} · ${esc(state.watcher.fails[0].name)} (${esc((state.watcher.fails[0].enemies || []).map(e => displayName(e.id)).join(', '))})</div>` : ''}
         <div class="types">${typeChips(state.enemies, state.data)}</div>
         <div class="row">
-          <button id="pcopt-watch">${state.watching ? '● watching' : 'watch for wipes'}</button>
+          <button id="pcopt-watch">${state.watcher.running ? '● watching' : 'watch for wipes'}</button>
           <button id="pcopt-clear">clear log</button>
         </div>
         <div class="log">${renderFails()}</div>
+      </section>
+
+      <section>
+        <div class="row"><b>Legendary fight</b><span class="tag">${state.legends ? state.legends.zones.length + ' boss zones' : 'loading…'}</span></div>
+        <div class="row">
+          <select id="pcopt-leg-region">${legendRegionOptions()}</select>
+          <select id="pcopt-leg-boss">${legendBossOptions()}</select>
+          <select id="pcopt-leg-tier">${legendTierOptions()}</select>
+        </div>
+        <div class="muted" id="pcopt-leg-info">${legendInfo()}</div>
+        <div class="row" style="margin-top:6px">
+          <button id="pcopt-leg-run" ${state.busy ? 'disabled' : ''}>optimize for this boss</button>
+          <button id="pcopt-leg-apply" ${state.legTeam && state.legTeam.length && !state.busy ? '' : 'disabled'}>apply to team</button>
+        </div>
+        <div id="pcopt-leg-team">${renderLegendTeam()}</div>
       </section>
 
       <section>
@@ -1021,6 +1270,23 @@
       if (state.scored) state.team = pickTeam(state.scored, state.enemies, state.engine, state.data, state.preset);
       renderPanel();
     });
+    const regionSel = $('#pcopt-leg-region', body);
+    if (regionSel) regionSel.onchange = () => {
+      state.legRegion = regionSel.value;
+      state.legBoss = null;
+      state.legTier = 0;
+      renderPanel();
+    };
+    const bossSel = $('#pcopt-leg-boss', body);
+    if (bossSel) bossSel.onchange = () => {
+      state.legBoss = bossSel.value;
+      state.legTier = 0;
+      renderPanel();
+    };
+    const tierSel = $('#pcopt-leg-tier', body);
+    if (tierSel) tierSel.onchange = () => { state.legTier = +tierSel.value; renderPanel(); };
+    $('#pcopt-leg-run', body).onclick = () => runLegendOptimizer();
+    $('#pcopt-leg-apply', body).onclick = () => applyTeamFromPanel(state.legTeam);
     body.querySelectorAll('[data-moves]').forEach(b => b.onclick = () => {
       b.textContent = '…';
       showMovesPanel(b.dataset.moves).then(() => { b.textContent = 'moves'; });
@@ -1035,7 +1301,6 @@
     $('#pcopt-apply', body).onclick = () => applyTeamFromPanel();
     $('#pcopt-watch', body).onclick = () => {
       if (state.watcher.running) state.watcher.stop(); else state.watcher.start();
-      state.watching = state.watcher.running;
       renderPanel();
     };
     $('#pcopt-clear', body).onclick = () => { state.watcher.clear(); renderPanel(); };
@@ -1085,6 +1350,16 @@
       }
     }
     state.engine = makeEngine(data, state.chart, state.learnAll);
+    if (!state.legends) {
+      const url2 = bundleUrl();
+      if (url2) {
+        try {
+          const src = await httpGet(url2);
+          state.legends = parseLegends(src);
+          if (!state.legends) state.errors = state.errors.concat(['legend zones not found in the bundle']);
+        } catch (e) { state.errors = state.errors.concat(['legend zones: ' + e.message]); }
+      }
+    }
     refreshChapter();
   }
 
@@ -1156,10 +1431,29 @@
     }
   }
 
-  async function applyTeamFromPanel() {
-    if (!state.team || !state.team.length) return;
+  async function runLegendOptimizer() {
+    state.busy = true; state.errors = []; renderPanel();
+    try {
+      await ensureData();
+      const zone = legendZone();
+      if (!zone) { state.errors = ['no boss zone']; state.busy = false; renderPanel(); return; }
+      const save = readSave();
+      if (!save) { state.errors = ['no save found']; state.busy = false; renderPanel(); return; }
+      const cands = projectCandidates(state.engine, state.data, save, state.events?.cap ?? 100);
+      state.legTeam = pickLegendTeam(cands, zone, state.legTier, state.engine, state.data);
+      if (!state.legTeam.length) state.errors = ['no candidate found in the PC'];
+    } catch (e) {
+      state.errors = ['legend optimizer error: ' + e.message];
+    }
+    state.busy = false;
+    renderPanel();
+  }
+
+  async function applyTeamFromPanel(team) {
+    team = team || state.team;
+    if (!team || !team.length) return;
     state.busy = true; renderPanel();
-    const res = await applyTeam(state.team);
+    const res = await applyTeam(team);
     state.busy = false;
     if (!res.ok) state.errors = ['apply failed: ' + res.error];
     renderPanel();
@@ -1190,6 +1484,8 @@
   window.__pcopt = {
     state, ensureData, runOptimizer, parsePokemonDbChart, buildLearnAll, makeEngine,
     chapterEnemies, chapterInfo, readSave, scoreCandidates, pickTeam, scoreFor,
-    WipeWatcher, applyTeam, bundleUrl, httpGet, canJoinTeam, showMovesPanel, pokeApiSpecies, compareWithPokeApi
+    WipeWatcher, applyTeam, bundleUrl, httpGet, canJoinTeam, showMovesPanel, pokeApiSpecies, compareWithPokeApi,
+    parseLegends, legendBoss, simulateLegend, pickLegendTeam, evaluateLegendTeam, runLegendOptimizer,
+    projectCandidates, refreshChapter
   };
 })();

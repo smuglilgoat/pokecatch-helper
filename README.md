@@ -5,7 +5,8 @@ A Tampermonkey helper for [Poke'Catch](https://pokecatch-online.netlify.app/) th
 1. reads the **events of the current chapter** (wild encounters, story trainers and the gym leader),
 2. **watches the team** and records **on which step the team falls** when it is wiped,
 3. builds an **optimal team of 6** out of your PC with three presets: **Defense**, **Offense** and **Balanced**,
-4. can **apply** that team to the game (it drags the Pokémon into the team slots like a player would).
+4. does the same for the **legendary bosses** (legend zones and their elite versions),
+5. can **apply** that team to the game (it drags the Pokémon into the team slots like a player would).
 
 ## Install
 
@@ -25,6 +26,23 @@ A Tampermonkey helper for [Poke'Catch](https://pokecatch-online.netlify.app/) th
 | **moves** (per Pokémon) | Opens the game's own *moves panel* for that Pokémon — the authoritative learnset. |
 | **api** (per Pokémon) | Fetches the same species from [PokéAPI](https://pokeapi.co/api/v2) and shows its canonical types/learnset next to the game's freer one. |
 
+### Legendary fight
+
+The **Legendary fight** section lists the roaming legendaries (legend zones) of every region with
+their game knobs (HP, damage, burst move) and the five **elite** tiers the game adds on top of them:
+
+| Region | Bosses |
+|---|---|
+| Kanto | Zapdos, Articuno, Moltres, Mewtwo, Mew |
+| Johto | Ho-Oh, Lugia, Celebi |
+| Hoenn | Groudon, Kyogre, Rayquaza (+ Sky Pillar), Regirock/Regice/Registeel, Deoxys (+ forms) |
+| Sinnoh | Dialga, Palkia, Giratina (+ Origin), Heatran, Regigigas, Cresselia, Darkrai, Arceus (+ Sky Forme), Mesprit, Azelf |
+| Unova | Reshiram, Zekrom, Kyurem (+ Black/White), Victini, Cobalion/Terrakion/Virizion, Keldeo, Landorus (+ mirrors), Genesect (+ modules) |
+
+Pick a boss and a tier, then **optimize for this boss**: the boss fights the whole team every round
+(main move + burst + counter, the same way the game does it) and the boss scales with the team
+(shiny and level raise the boss' HP and damage, like the game's aura scaling).
+
 ## Where the data comes from
 
 * **The game itself** — the script parses the bundle the page already loaded
@@ -42,8 +60,11 @@ invalidates the cache automatically.
 
 * The team is evaluated at the **chapter cap** (the maximum level you can reach in the
   chapter), which is what the game will let your Pokémon reach anyway.
+* **Shiny Pokémon get the game's +10 % stat bonus** (all stats and HP), exactly like in game —
+  a shiny is scored with the boosted stats and marked with ✨ in the panel.
 * Only Pokémon that the game currently accepts in the team are considered (region link,
   duplicates, one Pokémon per species).
 * Random trainers (the ones you meet on the routes) have a random team; the script uses the
   wild encounters of the same route for them and the fixed teams (gym leader, story trainers)
   as they are.
+* The weekly **raid** bosses are not modelled yet — only the legend zones.
