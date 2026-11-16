@@ -17,6 +17,8 @@
 
 (() => {
   'use strict';
+  // one instance per page load (a second injection would fight over the same panel)
+  if (window.__pcopt) return;
 
   /* ------------------------------------------------------------------ *
    * 0. Small helpers
@@ -1085,7 +1087,8 @@
     data: null, chart: null, chartSource: '', engine: null, learnAll: null,
     events: null, enemies: null, scored: null, team: null,
     preset: 'balanced', errors: [], busy: false, watcher: null, eligible: 0,
-    apiCache: {}, info: {}, legends: null, legBoss: null, legTier: 0, legTeam: null, collapsed: false, waiting: null
+    apiCache: {}, info: {}, legends: null, legBoss: null, legTier: 0, legTeam: null, collapsed: false, waiting: null,
+    interacting: false, lastSig: null, width: store.get('panelWidth', 344)
   };
 
   const TYPE_COLORS = {
@@ -1199,6 +1202,12 @@
     }).join('');
   }
 
+  /** The Defense / Offense / Balanced switch (same preset for both optimizers). */
+  const presetSeg = () => `<div class="seg" data-presets>
+    <button data-preset="defense" class="${state.preset === 'defense' ? 'on' : ''}">Defense</button>
+    <button data-preset="offense" class="${state.preset === 'offense' ? 'on' : ''}">Offense</button>
+    <button data-preset="balanced" class="${state.preset === 'balanced' ? 'on' : ''}">Balanced</button></div>`;
+
   function renderTeam() {
     if (!state.team) return '<div class="pcopt-mut">run the optimizer to get a team</div>';
     if (!state.team.length) return '<div class="pcopt-mut">no candidate</div>';
@@ -1213,13 +1222,35 @@
     }).join('');
   }
 
-  function renderPanel() {
+  /** Only rebuild the panel when something actually changed (the game ticks every second). */
+  function panelSignature() {
+    const adv = readSave()?.adv;
+    const sig = {
+      ch: adv?.chapter, node: adv?.node, step: adv?.nodes?.[adv.node]?.name,
+      foes: state.enemies?.length, elig: state.eligible, preset: state.preset,
+      team: (state.team || []).map(t => t.mon.uid + ':' + t.hpCur).join(','),
+      leg: (state.legTeam || []).map(t => t.mon.uid).join(','),
+      boss: state.legBoss, region: state.legRegion, tier: state.legTier,
+      fails: state.watcher?.fails.length, busy: state.busy,
+      errors: state.errors.join('|'), waiting: state.waiting,
+      info: Object.keys(state.info).map(k => k + ':' + state.info[k]).join(',')
+    };
+    return JSON.stringify(sig);
+  }
+
+  function renderPanel(force = false) {
     let p = document.getElementById('pcopt-panel');
     if (!p) {
       p = document.createElement('div');
       p.id = 'pcopt-panel';
       document.body.appendChild(p);
     }
+    const sig = panelSignature();
+    // do not rebuild while the user is playing with the panel
+    const active = document.activeElement;
+    const busy = state.interacting || (active && p.contains(active) && /^(SELECT|INPUT|TEXTAREA)$/.test(active.tagName));
+    if (!force && (busy || sig === state.lastSig)) return;
+    state.lastSig = sig;
     const save = readSave();
     const adv = save?.adv;
     const node = adv?.nodes?.[adv.node];
@@ -1230,8 +1261,11 @@
     p.style.setProperty('--c', '#3b6fe0');
     p.innerHTML = `
       <style>
-        #pcopt-panel{position:fixed;right:10px;bottom:10px;z-index:45;width:344px;max-height:min(76vh,720px);
+        #pcopt-panel{position:fixed;right:10px;bottom:10px;z-index:45;width:var(--pcopt-w,344px);max-height:min(76vh,720px);
           overflow:auto;box-shadow:0 10px 28px #00000073;background:var(--panel);color:var(--text)}
+        #pcopt-panel .pcopt-resize{position:absolute;top:0;left:0;width:10px;height:100%;cursor:ew-resize;z-index:3}
+        #pcopt-panel .pcopt-resize:after{content:'';position:absolute;top:50%;left:3px;width:4px;height:34px;margin-top:-17px;
+          border-radius:3px;background:var(--line);opacity:.8}
         #pcopt-panel .map-head{position:sticky;top:0;z-index:2;
           background:linear-gradient(90deg,color-mix(in srgb,var(--c) 40%,var(--panel)),var(--panel))}
         #pcopt-panel .map-head h2{font-size:17px}
@@ -1251,10 +1285,36 @@
       </style>
       <div class="map-head"><h2>Team Optimizer</h2>
         <button class="btn small ghost" id="pcopt-toggle" aria-label="Collapse">–</button></div>
-      <div id="pcopt-body"></div>`;
+      <div id="pcopt-body"></div>
+      <div class="pcopt-resize" id="pcopt-resize" title="Drag to widen"></div>`;
 
     const body = $('#pcopt-body', p);
     const toggle = $('#pcopt-toggle', p);
+    p.style.setProperty('--pcopt-w', state.width + 'px');
+    p.onpointerdown = () => { state.interacting = true; };
+    p.onpointerup = p.onpointercancel = () => { state.interacting = false; };
+    // drag the right edge to widen the panel
+    const grip = $('#pcopt-resize', p);
+    if (grip && !grip.dataset.wired) {
+      grip.dataset.wired = '1';
+      grip.addEventListener('pointerdown', ev => {
+        ev.preventDefault();
+        grip.setPointerCapture(ev.pointerId);
+        const move = e => {
+          // the panel is pinned to the right: its left edge follows the pointer
+          const w = clamp(Math.round(innerWidth - 10 - e.clientX), 260, Math.min(900, innerWidth - 20));
+          state.width = w;
+          p.style.setProperty('--pcopt-w', w + 'px');
+        };
+        const up = () => {
+          grip.removeEventListener('pointermove', move);
+          grip.removeEventListener('pointerup', up);
+          store.set('panelWidth', state.width);
+        };
+        grip.addEventListener('pointermove', move);
+        grip.addEventListener('pointerup', up);
+      });
+    }
     toggle.textContent = state.collapsed ? '+' : '–';
     body.style.display = state.collapsed ? 'none' : '';
     toggle.onclick = () => {
@@ -1291,6 +1351,7 @@
           <select id="pcopt-leg-region">${legendRegionOptions()}</select>
           <select id="pcopt-leg-boss">${legendBossOptions()}</select>
           <select id="pcopt-leg-tier">${legendTierOptions()}</select>
+          ${presetSeg()}
         </div>
         <div class="pcopt-mut" id="pcopt-leg-info">${legendInfo()}</div>
         <div class="pcopt-row" style="margin-top:6px">
@@ -1301,12 +1362,8 @@
       </section>
 
       <section>
-        <div class="seg" id="pcopt-presets">
-          <button data-preset="defense" class="${state.preset === 'defense' ? 'on' : ''}">Defense</button>
-          <button data-preset="offense" class="${state.preset === 'offense' ? 'on' : ''}">Offense</button>
-          <button data-preset="balanced" class="${state.preset === 'balanced' ? 'on' : ''}">Balanced</button>
-        </div>
         <div class="pcopt-row" style="margin-top:8px">
+          ${presetSeg()}
           <button class="btn small" id="pcopt-run" ${state.busy ? 'disabled' : ''}>${state.busy ? 'working…' : 'optimize'}</button>
           <button class="btn small ghost" id="pcopt-apply" ${state.team && state.team.length && !state.busy ? '' : 'disabled'}>apply to team</button>
         </div>
@@ -1316,7 +1373,13 @@
     body.querySelectorAll('[data-preset]').forEach(b => b.onclick = () => {
       state.preset = b.dataset.preset;
       if (state.scored) state.team = pickTeam(state.scored, state.enemies, state.engine, state.data, state.preset);
-      renderPanel();
+      const zone = legendZone();
+      if (zone && state.legTeam) {
+        const save = readSave();
+        const cands = save ? projectCandidates(state.engine, state.data, save, state.events?.cap ?? 100) : [];
+        state.legTeam = pickLegendTeam(cands, zone, state.legTier, state.engine, state.data);
+      }
+      renderPanel(true);
     });
     const regionSel = $('#pcopt-leg-region', body);
     if (regionSel) regionSel.onchange = () => {

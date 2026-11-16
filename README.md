@@ -15,12 +15,15 @@ A Tampermonkey helper for [Poke'Catch](https://pokecatch-online.netlify.app/) th
 3. Open <https://pokecatch-online.netlify.app/> and log in to your account. A small
    **Team Optimizer** panel appears in the bottom-right corner. It is built from the game's own
    CSS (same buttons, badges, colours and light/dark theme), so it looks like part of the UI.
+   Drag its left edge to widen it (the width is remembered), and use the `–` button to fold it.
+   The panel only redraws when something actually changed, so it never flickers while the game
+   plays in the background.
 
 ## Using it
 
 | Panel button | What it does |
 |---|---|
-| **Defense / Offense / Balanced** | Chooses the scoring preset: incoming damage, outgoing damage, or both. |
+| **Defense / Offense / Balanced** | Chooses the scoring preset: incoming damage, outgoing damage, or both. The switch sits next to the optimize button, and next to the boss choice for legendary fights — one click, one preset. |
 | **optimize** | Reads the chapter events + your PC and computes the best team of 6. |
 | **apply to team** | Puts the recommended team into the game (drag & drop on the real UI). |
 | **watch for wipes** | Records every wipe: the step it happened on, the first step where a member fell, the foes and your team at that moment. The watcher resets itself as soon as the team is back up, so the next wipe is recorded too. |
