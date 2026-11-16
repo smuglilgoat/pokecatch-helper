@@ -26,7 +26,7 @@ A Tampermonkey helper for [Poke'Catch](https://pokecatch-online.netlify.app/) th
 | **Defense / Offense / Balanced** | Chooses the scoring preset: incoming damage, outgoing damage, or both. The switch sits next to the optimize button, and next to the boss choice for legendary fights — one click, one preset. |
 | **optimize** | Reads the chapter events + your PC and computes the best team of 6. |
 | **apply to team** | Puts the recommended team into the game (drag & drop on the real UI). |
-| **watch for wipes** | Records every wipe: the step it happened on, the first step where a member fell, the foes and your team at that moment. The watcher resets itself as soon as the team is back up, so the next wipe is recorded too. |
+| **watch for wipes** | Records every wipe: the chapter and step it happened on, the foes and your team at that moment. It reads the game's own death counter (`adv.deaths`), because the game heals the team the instant it is wiped, so the "all knocked out" state never lasts. |
 | **moves** (per Pokémon) | Opens the game's own *moves panel* for that Pokémon — the authoritative learnset. |
 | **api** (per Pokémon) | Fetches the same species from [PokéAPI](https://pokeapi.co/api/v2) and shows its canonical types/learnset next to the game's freer one. |
 
@@ -59,6 +59,20 @@ This helper keeps the same type logic but adds what the game leaves out: the rea
 (STAB, accuracy curve, crits, level gap, multi-hit, burn), the foe's own best move and damage
 multipliers, the chapter's actual encounters, the legendary zone knobs and elite tiers, the
 team-eligibility rules, and the fact that your team keeps its HP between fights.
+
+### League chapters (the five Elite Four paths)
+
+A league chapter is not one fight: it is the **four Elite Four members plus the champion**, each
+its own mini path (a heal, the trainers on the way, then the member). The game therefore:
+
+* **rewinds the whole league to the first member** after a wipe — so the first member is the real
+  gate, whatever member you died to;
+* **raises the level cap** for the league as you clear members (the cap is the next gym you still
+  owe: `ace + 3` for an Elite Four chapter, `ace + 5` for the champion);
+* **heals the team** between members (every member's path starts with a heal node).
+
+The optimizer follows that: in a league it plans against **all five members** at once, each one
+evaluated with the team at the level it will have reached by then, at full health.
 
 ### Scoring
 
@@ -99,4 +113,7 @@ invalidates the cache automatically.
 * Random trainers (the ones you meet on the routes) have a random team; the script uses the
   wild encounters of the same route for them and the fixed teams (gym leader, story trainers)
   as they are.
+* The chapter's foes are read from the nodes the game itself built (`adv.nodes`), so trainer
+  teams, levels and gym multipliers are the real ones; the static chapter data is only the
+  fallback (and the source for the other members of a league).
 * The weekly **raid** bosses are not modelled yet — only the legend zones.

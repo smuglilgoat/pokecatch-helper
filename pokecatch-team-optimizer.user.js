@@ -136,6 +136,8 @@
     const cfg = evalLit(literalAfter(src, 'a.CONFIG='));
     const chLit = literalAfter(src, 'CHAPTERS:[').replace(/a\.UNOWN\.ids/g, JSON.stringify(UNOWN_IDS));
     const chapters = evalLit(chLit);
+    let leagueTeams = {};
+    try { leagueTeams = evalLit(literalAfter(src, 'a.LEAGUE_TEAMS=')); } catch { leagueTeams = {}; }
 
     const species = {};
     for (const s of dex) species[s.id] = { id: s.id, name: s.name, types: s.types, stats: s.stats, learn: s.learn };
@@ -149,6 +151,7 @@
       enc,
       chapters,
       regions,
+      leagueTeams,
       cfg: {
         LEVEL_GAP: cfg.LEVEL_GAP, CRIT_MULT: cfg.CRIT_MULT, CRIT_CHANCE: cfg.CRIT_CHANCE,
         ENEMY_DAMAGE: cfg.ENEMY_DAMAGE, GYM_DAMAGE: cfg.GYM_DAMAGE, GYM_HP_MULT: cfg.GYM_HP_MULT,
@@ -160,6 +163,7 @@
         MOVE_FLOOR_FROM: cfg.MOVE_FLOOR_FROM, ACC_CURVE: cfg.ACC_CURVE,
         TEAM_SIZE: cfg.TEAM_SIZE, MAX_LEVEL: cfg.MAX_LEVEL, LEAGUE_CAP_MARGIN: cfg.LEAGUE_CAP_MARGIN,
         LEAGUE_DONE_CAP: cfg.LEAGUE_DONE_CAP, LEVEL_CAP_MARGIN: cfg.LEVEL_CAP_MARGIN,
+        LEAGUE_BELOW: cfg.LEAGUE_TRAINERS?.below || [6, 5, 4, 3],
         LEGEND_ZONE: cfg.LEGEND_ZONE, ELITE: cfg.ELITE, RANK_STAT: cfg.UNDERGROUND?.RANK_STAT ?? 1
       }
     };
@@ -577,8 +581,109 @@
     };
   }
 
+  /** The league of a region: the four Elite Four members plus the champion. */
+  function leagueChapters(data, chapterIndex) {
+    const c = data.chapters[chapterIndex];
+    if (!c?.league) return [];
+    const region = regionOf(data, chapterIndex);
+    if (!region) return [];
+    return chaptersOf(data, region.key).filter(i => data.chapters[i].league);
+  }
+
+  /** The foes of one league member: the trainers on the way plus the member itself. */
+  function leagueEnemies(data, ch) {
+    const cfg = data.cfg;
+    const c = data.chapters[ch];
+    const gym = c.steps.find(st => st.kind === 'gym');
+    const teamLevel = capOf(data, ch);      // the level the team reaches by then
+    const out = [];
+    const region = regionOf(data, ch);
+    const sets = data.leagueTeams?.[`${region?.key}:${gym?.leader}`] || [];
+    sets.forEach((set, i) => {
+      const level = (aceOf(data, ch) ?? 0) - (cfg.LEAGUE_BELOW[i] ?? 0);
+      for (const id of set.team || []) {
+        out.push({ id, level, weight: 2, kind: 'trainer', source: set.name || gym?.leader || '?', hpMult: 1, damageMult: cfg.ENEMY_DAMAGE.trainer ?? 1, teamLevel, chapter: ch });
+      }
+    });
+    if (gym?.team) {
+      const maxLv = Math.max(...gym.team.map(t => t[1]));
+      const q = gym.ace ?? aceOf(data, ch);
+      const hpMult = cfg.GYM_HP_MULT * (gym.power || 1) * Math.pow(cfg.TEAM_SIZE / Math.max(1, gym.team.length), cfg.GYM_TEAM_EXP);
+      for (const [id, lv] of gym.team) {
+        out.push({
+          id, level: q ? Math.round(lv * q / maxLv) : lv, weight: 3, kind: 'gym',
+          source: gym.leader || gym.name, power: gym.power || 1, hpMult,
+          damageMult: cfg.GYM_DAMAGE * (gym.power || 1), teamLevel, chapter: ch
+        });
+      }
+    }
+    return out;
+  }
+
   /** Wild / trainer / gym foes of a chapter, with the levels the game uses. */
-  function chapterEnemies(data, info) {
+  function chapterEnemies(data, info, nodes) {
+    const league = leagueChapters(data, info.index);
+    if (league.length) {
+      // the whole league: a wipe rewinds to the first member, so every one of them counts
+      return league.flatMap(ch => leagueEnemies(data, ch));
+    }
+    if (nodes && nodes.length) return enemiesFromNodes(data, info, nodes);
+    return enemiesFromChapter(data, info);
+  }
+
+  /** The foes of the nodes the game actually built (the live chapter). */
+  function enemiesFromNodes(data, info, nodes) {
+    const cfg = data.cfg;
+    const out = [];
+    for (const node of nodes) {
+      if (node.type === 'gym' && node.gym?.team) {
+        const gym = node.gym;
+        const maxLv = Math.max(...gym.team.map(t => t[1]));
+        const q = gym.ace ?? info.ace;
+        const hpMult = cfg.GYM_HP_MULT * (gym.power || 1) * Math.pow(cfg.TEAM_SIZE / Math.max(1, gym.team.length), cfg.GYM_TEAM_EXP);
+        for (const [id, lv] of gym.team) {
+          out.push({
+            id, level: q ? Math.round(lv * q / maxLv) : lv, weight: 3, kind: 'gym',
+            source: gym.leader || gym.name, power: gym.power || 1, hpMult,
+            damageMult: cfg.GYM_DAMAGE * (gym.power || 1)
+          });
+        }
+      } else if (node.type === 'trainer' && node.team) {
+        for (const [id, lv] of node.team) {
+          out.push({ id, level: lv, weight: 2, kind: 'trainer', source: node.trainer || node.name, hpMult: 1, damageMult: cfg.ENEMY_DAMAGE.trainer ?? 1 });
+        }
+      } else if (node.type === 'wild' && node.areas) {
+        const pool = new Map();
+        for (const area of node.areas) {
+          for (const e of data.enc[area] || []) {
+            const [id, min, max, pct, method] = e;
+            if (pct >= 100) continue;
+            const how = String(method || '');
+            if (!/walk|surf|rod|static|headbutt|rock-smash/.test(how)) continue;
+            let w = pct;
+            if (/rod/.test(how)) w *= 0.15;
+            else if (/surf/.test(how)) w *= 0.5;
+            else if (/headbutt|rock-smash/.test(how)) w *= 0.25;
+            const cur = pool.get(id) || { id, w: 0 };
+            cur.w += w;
+            pool.set(id, cur);
+          }
+        }
+        const band = node.lv;
+        for (const p of pool.values()) {
+          out.push({
+            id: p.id, level: band ? Math.round((band[0] + band[1]) / 2) : 0,
+            weight: Math.max(0.2, p.w / 10), kind: 'wild', source: node.name,
+            hpMult: 1, damageMult: cfg.ENEMY_DAMAGE.wild ?? 1
+          });
+        }
+      }
+    }
+    return out;
+  }
+
+  /** The foes of a chapter, rebuilt from its static data (fallback). */
+  function enemiesFromChapter(data, info) {
     const enemies = [];   // {id, level, weight, kind, source}
     const steps = info.steps;
     const cfg = data.cfg;
@@ -646,16 +751,17 @@
     const cands = save.mons.filter(m => !away.has(m.uid) && data.species[m.id] && canJoinTeam(save, m));
     return cands.map(c => {
       const sp = data.species[c.id];
-      const proj = { id: c.id, level, shiny: c.shiny, status: c.status, types: sp.types };
+      const base = { id: c.id, shiny: c.shiny, status: c.status, types: sp.types };
+      const proj = { ...base, level };
       const hp = eng.maxHp(proj);
       // the team keeps its HP between fights: use what is left, like the game does
       const hpCur = c.hp != null ? Math.min(c.hp, hp) : hp;
-      return { mon: c, proj, species: sp, hp, hpCur };
+      return { mon: c, base, proj, species: sp, hp, hpCur };
     });
   }
 
   /** Individual metrics of every candidate against the chapter's foes. */
-  function scoreCandidates(eng, data, enemies, candidates, level) {
+  function scoreCandidates(eng, data, enemies, candidates, level, fullHp = false) {
     const enemyList = enemies.map(e => {
       const types = data.species[e.id]?.types || [];
       const proj = { id: e.id, level: e.level, types };
@@ -670,18 +776,20 @@
     for (const cand of candidates) {
       const sp = data.species[cand.id];
       if (!sp) continue;
-      const proj = { id: cand.id, level, shiny: cand.shiny, status: cand.status, types: sp.types };
-      const hp = eng.maxHp(proj);
+      const base = cand.base || { id: cand.id, shiny: cand.shiny, status: cand.status, types: sp.types };
       let dmgSum = 0, surviveSum = 0, wSum = 0, bestDmg = 0, bestMoveName = '', bestMoveKey = '', bestEff = 1;
       for (const e of enemyList) {
+        // in a league the team levels up and is healed between the members
+        const proj = { ...base, level: e.teamLevel ?? level };
+        const hp = fullHp ? eng.maxHp(proj) : Math.min(cand.hpCur != null ? cand.hpCur : eng.maxHp(proj), eng.maxHp(proj));
         const mv = eng.bestMove(proj, e.types);
         if (!mv) continue;
         const eff = eng.typeEff(mv.type, e.types);
         const dmg = eng.damage(proj, e.proj, mv, eff) * (mv.acc / 100);
-        const emv = eng.bestMove(e.proj, sp.types);
+        const emv = eng.bestMove(e.proj, proj.types);
         let incoming = 0;
         if (emv) {
-          const eeff = eng.typeEff(emv.type, sp.types);
+          const eeff = eng.typeEff(emv.type, proj.types);
           const mult = e.kind === 'gym'
             ? data.cfg.GYM_DAMAGE * (e.power || 1)
             : (data.cfg.ENEMY_DAMAGE[e.kind] ?? 1) * (e.power || 1);
@@ -695,7 +803,7 @@
       }
       if (!wSum) continue;
       out.push({
-        mon: cand, proj, species: sp, hp,
+        mon: cand.mon || cand, base, proj: { ...base, level }, species: sp, hp: cand.hp,
         dmg: dmgSum, survive: surviveSum,
         avgDmg: dmgSum / wSum, avgRounds: surviveSum / wSum,
         bestDmg, bestMoveName, bestMoveKey, bestEff
@@ -711,21 +819,24 @@
   }
 
   /** One full fight: our team (in order) against one foe, the way the game chains them. */
-  function simulate(team, enemy, eng) {
+  function simulate(team, enemy, eng, fullHp = false) {
     const ehp = enemy.hp * enemy.hpMult;
     let remaining = ehp, dealt = 0, rounds = 0, teamHp = 0, incoming = 0;
     for (const c of team) {
-      const mv = eng.bestMove(c.proj, enemy.types);
+      const base = c.base || c.proj;
+      const proj = enemy.teamLevel != null ? { ...base, level: enemy.teamLevel } : c.proj;
+      const maxHp = eng.maxHp(proj);
+      const hpLeft = fullHp ? maxHp : Math.min(c.hpCur != null ? c.hpCur : maxHp, maxHp);
+      const mv = eng.bestMove(proj, enemy.types);
       if (!mv) continue;
       const eff = eng.typeEff(mv.type, enemy.types);
-      const dmg = eng.damage(c.proj, enemy.proj, mv, eff) * (mv.acc / 100);
-      const emv = eng.bestMove(enemy.proj, c.proj.types);
+      const dmg = eng.damage(proj, enemy.proj, mv, eff) * (mv.acc / 100);
+      const emv = eng.bestMove(enemy.proj, proj.types);
       let inc = 0;
       if (emv) {
-        const eeff = eng.typeEff(emv.type, c.proj.types);
-        inc = eng.damage(enemy.proj, c.proj, emv, eeff) * (emv.acc / 100) * enemy.damageMult;
+        const eeff = eng.typeEff(emv.type, proj.types);
+        inc = eng.damage(enemy.proj, proj, emv, eeff) * (emv.acc / 100) * enemy.damageMult;
       }
-      const hpLeft = c.hpCur != null ? c.hpCur : c.hp;
       teamHp += hpLeft;
       incoming += inc;
       const alive = inc > 0 ? hpLeft / inc : 99;
@@ -908,19 +1019,18 @@
       this.fails = store.get('fails', []) || [];
       this.running = false;
       this.timer = null;
-      this.wiped = false;        // the team is currently wiped
       this.lastBattle = null;    // last battle seen (the fight can end before we poll)
       this.firstKo = null;       // step where the first team member fell
+      this.lastDeaths = null;    // the game's own death counter (adv.deaths)
+      this.prevState = null;     // chapter/step before the last change
     }
     start() {
       if (this.running) return;
       this.running = true;
       this.timer = setInterval(() => this.poll(), 700);
-      // if the team is already wiped, do not report it as a new failure
-      const save = readSave();
-      const team = save ? (save.team || []).map(u => monByUid(save, u)).filter(Boolean) : [];
-      this.wiped = team.length > 0 && team.every(m => m.hp != null && m.hp <= 0);
       this.firstKo = null;
+      this.lastDeaths = null;
+      this.prevState = null;
       this.poll();
     }
     stop() {
@@ -931,8 +1041,9 @@
     poll() {
       const save = readSave();
       if (!save || !save.adv) return;
-      const nodeIdx = save.adv.node;
-      const battle = save.adv.battle;
+      const adv = save.adv;
+      const nodeIdx = adv.node;
+      const battle = adv.battle;
       if (battle) {
         this.lastBattle = {
           kind: battle.kind,
@@ -940,34 +1051,47 @@
           enemies: (battle.enemies || []).map(e => ({ id: e.id, level: e.level }))
         };
       }
-      const team = (save.team || []).map(u => monByUid(save, u)).filter(Boolean);
-      if (!team.length) { this.wiped = false; this.firstKo = null; return; }
-      // a mon without hp is at full health, so only hp <= 0 counts as knocked out
+      const team = (adv.team || save.team || []).map(u => monByUid(save, u)).filter(Boolean);
       const ko = team.filter(m => m.hp != null && m.hp <= 0);
       if (ko.length && !this.firstKo) {
-        this.firstKo = { node: nodeIdx, at: Date.now(), name: (save.adv.nodes || [])[nodeIdx]?.name || '?' };
+        this.firstKo = { node: nodeIdx, at: Date.now(), name: (adv.nodes || [])[nodeIdx]?.name || '?' };
       }
-      if (ko.length < team.length) {          // team still standing (or healed)
-        this.wiped = false;
-        if (!ko.length) this.firstKo = null;
+      if (!ko.length) this.firstKo = null;
+
+      // The game heals the team the instant it is wiped, so the "all knocked out" state
+      // never lasts. The reliable signal is the game's own death counter (adv.deaths).
+      const deaths = adv.deaths || {};
+      const prev = this.lastDeaths;
+      this.lastDeaths = { ...deaths };
+      let died = null, diedCount = 0;
+      if (prev) {
+        for (const [ch, n] of Object.entries(deaths)) {
+          const d = n - (prev[ch] || 0);
+          if (d > 0) { died = Number(ch); diedCount = d; }
+        }
+      }
+      const state = { chapter: adv.chapter, node: nodeIdx, name: (adv.nodes || [])[nodeIdx]?.name || '?' };
+      if (!died) {
+        this.prevState = state;
         return;
       }
-      if (this.wiped) return;                  // already recorded this wipe
-      this.wiped = true;
-      const node = (save.adv.nodes || [])[nodeIdx] || {};
+      // a league wipe rewinds the chapter, so report the step we were on before it
+      const before = this.prevState && this.prevState.chapter === died ? this.prevState : state;
+      const node = (adv.nodes || [])[before.node] || {};
       const b = this.lastBattle || {};
       const rec = {
         at: Date.now(),
-        chapter: save.adv.chapter,
-        node: nodeIdx,
-        name: node.name || '?',
+        chapter: died,
+        node: before.node,
+        name: node.name || before.name || '?',
         kind: node.type || b.kind || '?',
         lv: node.lv || null,
         enemies: b.enemies || [],
         firstKo: this.firstKo,
         team: team.map(m => ({ uid: m.uid, id: m.id, level: m.level }))
       };
-      this.fails.unshift(rec);
+      // more than one wipe can slip through between two polls (background tab)
+      for (let i = 0; i < Math.min(diedCount, 5); i++) this.fails.unshift(i === 0 ? rec : { ...rec, at: rec.at - i * 1000 });
       this.fails = this.fails.slice(0, 25);
       store.set('fails', this.fails);
       this.firstKo = null;
@@ -1126,7 +1250,7 @@
     events: null, enemies: null, scored: null, team: null,
     preset: 'balanced', errors: [], busy: false, watcher: null, eligible: 0,
     apiCache: {}, info: {}, legends: null, legBoss: null, legTier: 0, legTeam: null, collapsed: false, waiting: null,
-    interacting: false, lastSig: null, width: store.get('panelWidth', 344)
+    interacting: false, lastSig: null, width: store.get('panelWidth', 344), league: false, leagueInfo: null
   };
 
   const TYPE_COLORS = {
@@ -1369,6 +1493,7 @@
         <div class="pcopt-row"><b>Chapter ${adv?.chapter ?? '-'}</b><span class="pcopt-mut">${esc(state.events?.name || '')}</span></div>
         <div class="pcopt-mut">step ${adv?.node ?? '-'} / ${(adv?.nodes || []).length} · ${esc(node?.name || '-')}${node?.lv ? ' · Lv ' + node.lv.join('-') : ''}</div>
         <div class="pcopt-mut">level cap ${state.events?.cap ?? '-'} · type chart: ${esc(state.chartSource || '-')}</div>
+        ${state.leagueInfo ? `<div class="pcopt-mut">${esc(state.leagueInfo)}</div>` : ''}
         ${state.eligible ? `<div class="pcopt-mut">${state.eligible} Pokémon can join this team${save?.link ? ' (region link: ' + esc(save.link.to) + ')' : ''}</div>` : ''}
         ${state.waiting ? `<div class="pcopt-mut">${esc(state.waiting)}</div>` : ''}
         ${state.errors.length ? `<div class="pcopt-err">${state.errors.map(esc).join('<br>')}</div>` : ''}
@@ -1412,7 +1537,7 @@
 
     body.querySelectorAll('[data-preset]').forEach(b => b.onclick = () => {
       state.preset = b.dataset.preset;
-      if (state.scored) state.team = pickTeam(state.scored, state.enemies, state.engine, state.data, state.preset);
+      if (state.scored) state.team = pickTeam(state.scored, state.enemies, state.engine, state.data, state.preset, 6, state.league);
       const zone = legendZone();
       if (zone && state.legTeam) {
         const save = readSave();
@@ -1464,12 +1589,13 @@
     if (state.engine) return;
     const url = bundleUrl();
     if (!url) { state.errors = ['game bundle not loaded yet']; return; }
-    let data = store.get('bundle:' + url, null);
+    const cacheKey = 'bundle:v3:' + url;
+    let data = store.get(cacheKey, null);
     if (!data) {
       state.busy = true; renderPanel();
       try {
         data = await parseBundle(url);
-        store.set('bundle:' + url, data);
+        store.set(cacheKey, data);
       } catch (e) {
         state.errors = ['bundle parse failed: ' + e.message];
         state.busy = false; renderPanel();
@@ -1521,7 +1647,12 @@
     const info = chapterInfo(state.data, save.adv.chapter, save.adv);
     if (!info) return;
     state.events = info;
-    state.enemies = chapterEnemies(state.data, info).map(e => {
+    const league = leagueChapters(state.data, info.index);
+    state.league = league.length > 0;
+    state.leagueInfo = league.length
+      ? `League: ${league.map(i => (state.data.chapters[i].steps.find(st => st.kind === 'gym')?.leader) || '?').join(' → ')} · a wipe rewinds to the first`
+      : null;
+    state.enemies = chapterEnemies(state.data, info, save.adv.nodes).map(e => {
       const types = state.data.species[e.id]?.types || [];
       const proj = { id: e.id, level: e.level, types };
       return { ...e, proj, types, hp: state.engine ? state.engine.maxHp(proj) : 0 };
@@ -1540,17 +1671,22 @@
       const info = chapterInfo(state.data, save.adv.chapter, save.adv);
       if (!info) { state.errors = ['chapter not found']; state.busy = false; renderPanel(); return; }
       state.events = info;
-      state.enemies = chapterEnemies(state.data, info);
+      const league = leagueChapters(state.data, info.index);
+      state.league = league.length > 0;
+      state.leagueInfo = league.length
+        ? `League: ${league.map(i => (state.data.chapters[i].steps.find(st => st.kind === 'gym')?.leader) || '?').join(' → ')} · a wipe rewinds to the first`
+        : null;
+      state.enemies = chapterEnemies(state.data, info, save.adv.nodes);
       const away = awayUids(save);
       const candidates = save.mons.filter(m => !away.has(m.uid) && state.data.species[m.id] && canJoinTeam(save, m));
       state.eligible = candidates.length;
-      state.scored = scoreCandidates(state.engine, state.data, state.enemies, candidates, info.cap);
+      state.scored = scoreCandidates(state.engine, state.data, state.enemies, candidates, info.cap, state.league);
       state.enemies = state.enemies.map(e => {
         const types = state.data.species[e.id]?.types || [];
         const proj = { id: e.id, level: e.level, types };
         return { ...e, proj, types, hp: state.engine.maxHp(proj) };
       });
-      state.team = pickTeam(state.scored, state.enemies, state.engine, state.data, state.preset);
+      state.team = pickTeam(state.scored, state.enemies, state.engine, state.data, state.preset, 6, state.league);
       if (!state.team.length) state.errors = ['no candidate found in the PC'];
     } catch (e) {
       state.errors = ['optimizer error: ' + e.message];
