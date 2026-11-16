@@ -1,11 +1,13 @@
 // ==UserScript==
 // @name         Poke'Catch Team Optimizer
 // @namespace    pokecatch-helper
-// @version      1.0.0
+// @version      1.1.0
 // @description  Reads the current chapter events, watches for team wipes (and where they happen), then builds an optimal team of 6 from the PC with Defense / Offense / Balanced presets.
 // @author       GrumpyOwl
 // @match        https://pokecatch-online.netlify.app/*
 // @match        https://pokecatch-online.pages.dev/*
+// @updateURL    https://raw.githubusercontent.com/smuglilgoat/pokecatch-helper/main/pokecatch-team-optimizer.user.js
+// @downloadURL  https://raw.githubusercontent.com/smuglilgoat/pokecatch-helper/main/pokecatch-team-optimizer.user.js
 // @grant        GM_getValue
 // @grant        GM_setValue
 // @grant        GM_xmlhttpRequest
@@ -66,6 +68,24 @@
   const httpGetJson = url => httpGet(url).then(t => JSON.parse(t));
 
   /* ------------------------------------------------------------------ *
+   * 0b. Console log: every action goes through here, prefixed [pcopt],
+   *     so a game update that breaks something is visible in the console
+   *     (and in window.__pcopt.logs) instead of failing silently.
+   * ------------------------------------------------------------------ */
+  const LOG_MAX = 400;
+  const logs = [];
+  function log(level, action, detail) {
+    const entry = { at: new Date().toISOString(), level, action, detail };
+    logs.push(entry);
+    if (logs.length > LOG_MAX) logs.shift();
+    const line = '[pcopt] ' + action;
+    const fn = level === 'error' ? console.error : level === 'warn' ? console.warn
+      : level === 'debug' ? console.debug : console.log;
+    if (detail === undefined) fn(line); else fn(line, detail);
+  }
+  const logError = (action, e) => log('error', action, (e && e.message) || String(e));
+
+  /* ------------------------------------------------------------------ *
    * 1. Game data: parsed from the bundle the page itself loaded
    * ------------------------------------------------------------------ */
   const UNOWN_IDS = [201, ...Array.from({ length: 28 }, (_, i) => 20101 + i)];
@@ -118,6 +138,53 @@
 
   const evalLit = (lit, stub = {}) => Function('a', 'return (' + lit + ')')(stub);
 
+  /**
+   * Evaluate a data literal that reads minified variables of the bundle scope
+   * (game helpers, cond constants). Unknown identifiers become door conditions.
+   * Table names are rebuilt by the minifier on every game update, so the parser
+   * never depends on them: it only looks at the shape of the data.
+   */
+  const JS_GLOBALS = new Set(['Infinity', 'NaN', 'undefined', 'Math', 'JSON', 'Object', 'Array',
+    'String', 'Number', 'Boolean', 'Date', 'Symbol', 'parseInt', 'parseFloat', 'isNaN',
+    'isFinite', 'RegExp', 'Map', 'Set', 'BigInt', 'Promise', 'Error', 'console']);
+  function evalSandbox(lit, defaults = {}) {
+    const scope = new Proxy(defaults, {
+      has: (t, k) => typeof k === 'string' && !JS_GLOBALS.has(k) && !(k in t),
+      get: (t, k) => {
+        if (k === Symbol.unscopables) return undefined;
+        if (k in t) return t[k];
+        return (...args) => ({ cond: { kind: 'door', key: String(args[0] ?? k) } });
+      }
+    });
+    return new Function('__scope', 'with (__scope) { return (' + lit + '); }')(scope);
+  }
+
+  /** Every `name = <literal>` in the bundle (minified names are reused in several scopes). */
+  function defLiterals(src, name, open) {
+    const out = [];
+    const re = new RegExp('(^|[^\\w$.])' + name + '\\s*=', 'g');
+    let m;
+    while ((m = re.exec(src))) {
+      let at = m.index + m[0].length;
+      while (/\s/.test(src[at])) at++;
+      if (src[at] !== open) continue;
+      try { out.push(literalAt(src, at)); } catch { /* not a plain literal */ }
+    }
+    return out;
+  }
+
+  /** The value the game publishes under `a.<module>` (public names survive minification). */
+  function moduleNames(src, module) {
+    const at = src.indexOf('a.' + module + '={');
+    if (at < 0) return null;
+    try {
+      const table = literalAt(src, src.indexOf('{', at));
+      const names = {};
+      for (const m of table.matchAll(/([A-Za-z_$][\w$]*):([A-Za-z_$][\w$]*)/g)) names[m[1]] = m[2];
+      return names;
+    } catch { return null; }
+  }
+
   function bundleUrl() {
     const src = $$('script[src]').map(s => s.src).find(u => /\/bundle\/app\.[0-9a-f]+\.js$/.test(u));
     return src || null;
@@ -125,23 +192,69 @@
 
   /** Extract the game's static tables from its own bundle. */
   async function parseBundle(url) {
+    const t0 = Date.now();
+    log('info', 'bundle: fetching', url);
     const src = await httpGet(url);
-    const dex = evalLit(literalAfter(src, 'a.POKEDEX='));
-    const moves = evalLit(literalAfter(src, 'a.MOVES='));
-    const chart = evalLit(literalAfter(src, 'a.TYPE_CHART='));
-    const evo = evalLit(literalAfter(src, 'a.EVOLUTIONS='));
-    const enc = evalLit(literalAfter(src, 'a.ENCOUNTERS='));
+    log('debug', 'bundle: fetched', { bytes: src.length, ms: Date.now() - t0 });
+
+    const table = (label, required, fn) => {
+      try {
+        const v = fn();
+        if (v == null) throw new Error('not found');
+        log('debug', 'bundle: table ok', { label, size: Array.isArray(v) ? v.length : Object.keys(v).length });
+        return v;
+      } catch (e) {
+        log('error', 'bundle: table failed', { label, error: e.message });
+        if (required) throw new Error('game update changed the bundle: ' + label + ' — ' + e.message);
+        return null;
+      }
+    };
+    const read = (marker, defaults) => () => {
+      const lit = literalAfter(src, marker);
+      try { return evalLit(lit, defaults); } catch { return evalSandbox(lit, defaults); }
+    };
+
+    const dex = table('POKEDEX', true, read('a.POKEDEX='));
+    const moves = table('MOVES', true, read('a.MOVES='));
+    const chart = table('TYPE_CHART', true, read('a.TYPE_CHART='));
+    const evo = table('EVOLUTIONS', true, read('a.EVOLUTIONS='));
+    const enc = table('ENCOUNTERS', true, read('a.ENCOUNTERS='));
     for (const lit of literalsAfter(src, 'Object.assign(a.ENCOUNTERS,')) Object.assign(enc, evalLit(lit));
-    const regions = evalLit(literalAt(src, src.indexOf('REGIONS:[{key:') + 8));
-    const cfg = evalLit(literalAfter(src, 'a.CONFIG='));
-    const chLit = literalAfter(src, 'CHAPTERS:[').replace(/a\.UNOWN\.ids/g, JSON.stringify(UNOWN_IDS));
-    const chapters = evalLit(chLit);
-    let leagueTeams = {};
-    try { leagueTeams = evalLit(literalAfter(src, 'a.LEAGUE_TEAMS=')); } catch { leagueTeams = {}; }
+    const regions = table('REGIONS', true, () => {
+      const at = src.indexOf('REGIONS:[{key:');
+      if (at < 0) throw new Error('marker not found');
+      return evalSandbox(literalAt(src, at + 8));
+    });
+    const cfg = table('CONFIG', true, read('a.CONFIG='));
+    const chapters = table('CHAPTERS', true, () => {
+      const lit = literalAfter(src, 'CHAPTERS:[').replace(/a\.UNOWN\.ids/g, JSON.stringify(UNOWN_IDS));
+      try { return evalLit(lit); } catch { return evalSandbox(lit); }
+    });
+    const leagueTeams = table('LEAGUE_TEAMS', false, read('a.LEAGUE_TEAMS=')) || {};
+    // legend zones live in the same bundle: reading them here means one fetch, not two
+    let legends = null;
+    try { legends = parseLegends(src); } catch (e) { logError('bundle: legends', e); }
+
+    // a half-read table would poison the cache and every result: refuse it
+    const checks = [
+      ['POKEDEX', dex.length > 500],
+      ['MOVES', Object.keys(moves).length > 100],
+      ['EVOLUTIONS', Object.keys(evo).length > 50],
+      ['ENCOUNTERS', Object.keys(enc).length > 20],
+      ['REGIONS', regions.length > 1],
+      ['CHAPTERS', chapters.length > 10],
+      ['CONFIG', cfg && cfg.MAX_LEVEL > 0],
+    ];
+    const bad = checks.filter(([, ok]) => !ok).map(([label]) => label);
+    if (bad.length) throw new Error('game update changed the bundle: implausible ' + bad.join(', '));
 
     const species = {};
     for (const s of dex) species[s.id] = { id: s.id, name: s.name, types: s.types, stats: s.stats, learn: s.learn, captureRate: s.captureRate, legendary: s.legendary, mythical: s.mythical };
 
+    log('info', 'bundle: parsed', {
+      url: url.split('/').pop(), dex: dex.length, moves: Object.keys(moves).length,
+      chapters: chapters.length, regions: regions.length, ms: Date.now() - t0,
+    });
     return {
       version: url,
       species,
@@ -152,15 +265,18 @@
       chapters,
       regions,
       leagueTeams,
+      legends,
       cfg: {
         LEVEL_GAP: cfg.LEVEL_GAP, CRIT_MULT: cfg.CRIT_MULT, CRIT_CHANCE: cfg.CRIT_CHANCE,
         ENEMY_DAMAGE: cfg.ENEMY_DAMAGE, GYM_DAMAGE: cfg.GYM_DAMAGE, GYM_HP_MULT: cfg.GYM_HP_MULT,
         GYM_TEAM_EXP: cfg.GYM_TEAM_EXP, ENEMY_HP_PER_ALLY: cfg.ENEMY_HP_PER_ALLY,
         HP_LEVEL_SCALE: cfg.HP_LEVEL_SCALE, HP_LEVEL_MAX: cfg.HP_LEVEL_MAX, HP_BOOST: cfg.HP_BOOST,
         SHINY_STAT_BONUS: cfg.SHINY_STAT_BONUS, TYPE_EFF_MAX: cfg.TYPE_EFF_MAX, TYPE_EFF_MIN: cfg.TYPE_EFF_MIN,
-        MOVE_BLACKLIST: cfg.MOVE_BLACKLIST, MOVE_RECHARGE: cfg.MOVE_RECHARGE, MOVE_POWER_OVERRIDES: cfg.MOVE_POWER_OVERRIDES,
-        MULTI_HIT: cfg.MULTI_HIT, MULTI_HIT_ODDS: cfg.MULTI_HIT_ODDS, MOVE_LEVELS: cfg.MOVE_LEVELS,
-        MOVE_FLOOR_FROM: cfg.MOVE_FLOOR_FROM, ACC_CURVE: cfg.ACC_CURVE,
+        MOVE_BLACKLIST: cfg.MOVE_BLACKLIST || [], MOVE_RECHARGE: cfg.MOVE_RECHARGE || [],
+        MOVE_POWER_OVERRIDES: cfg.MOVE_POWER_OVERRIDES || {},
+        MULTI_HIT: cfg.MULTI_HIT || {}, MULTI_HIT_ODDS: cfg.MULTI_HIT_ODDS || [],
+        MOVE_LEVELS: cfg.MOVE_LEVELS || [], MOVE_FLOOR_FROM: cfg.MOVE_FLOOR_FROM ?? 100,
+        ACC_CURVE: cfg.ACC_CURVE || [40, 150, 80],
         TEAM_SIZE: cfg.TEAM_SIZE, MAX_LEVEL: cfg.MAX_LEVEL, LEAGUE_CAP_MARGIN: cfg.LEAGUE_CAP_MARGIN,
         LEAGUE_DONE_CAP: cfg.LEAGUE_DONE_CAP, LEVEL_CAP_MARGIN: cfg.LEVEL_CAP_MARGIN,
         LEAGUE_BELOW: cfg.LEAGUE_TRAINERS?.below || [6, 5, 4, 3],
@@ -280,23 +396,56 @@
   }
 
   /* --- the roaming legendaries (legend zones) and their elite versions --- */
+  /**
+   * The game renames every minified variable on each update (Pe→Me, b→A…),
+   * so the zone list is located by its data and the elite table through the
+   * public LegendZones export, never by a minified name.
+   */
   function parseLegends(src) {
-    const zi = src.indexOf('Pe=[{id:145');
-    if (zi < 0) return null;
-    let zones;
-    try {
-      const lit = literalAt(src, zi + 3);
-      zones = Function('Me', 'i', 'P', 'return (' + lit + ')')(
-        k => ({ cond: { kind: 'door', key: k } }),
-        { kind: 'league', region: 'johto' },
-        { kind: 'league', region: 'johto' });
-    } catch { return null; }
-    let elite = {};
+    const looksLikeZones = v => Array.isArray(v) && v.length > 5 && v.every(z => z && typeof z.id === 'number' && z.region);
+    const names = moduleNames(src, 'LegendZones');
+    let zones = null, via = '';
+
+    // the zones array starts with Zapdos (the only `[{id:145,...` literal)
+    const at = src.indexOf('=[{id:145');
+    if (at >= 0) {
+      try {
+        const v = evalSandbox(literalAt(src, at + 1));
+        if (looksLikeZones(v)) { zones = v; via = 'data'; }
+      } catch (e) { log('debug', 'legends: zone literal skipped', e.message); }
+    }
+    // the public export: a.LegendZones = { ZONES: <minified name>, … }
+    if (!zones && names?.ZONES) {
+      for (const lit of defLiterals(src, names.ZONES, '[')) {
+        try {
+          const v = evalSandbox(lit);
+          if (looksLikeZones(v)) { zones = v; via = 'ZONES export'; break; }
+        } catch (e) { log('debug', 'legends: ZONES candidate skipped', e.message); }
+      }
+    }
+    if (!zones) {
+      log('error', 'legends: zone list not found in the bundle');
+      return null;
+    }
+
+    // the elite multipliers: { zoneId: { tier: [hp, power] } }
+    const candidates = [];
+    if (names?.ELITE_K) candidates.push(...defLiterals(src, names.ELITE_K, '{'));
     const ei = src.indexOf('ELITE_K:');
     if (ei > 0) {
+      const name = (src.slice(ei, ei + 80).match(/ELITE_K:\s*([A-Za-z_$][\w$]*)/) || [])[1];
+      if (name) candidates.push(...defLiterals(src, name, '{'));
       const bi = src.lastIndexOf('b={', ei);
-      if (bi > 0) { try { elite = evalLit(literalAt(src, bi + 2)); } catch { elite = {}; } }
+      if (bi > 0) { try { candidates.push(literalAt(src, bi + 2)); } catch { /* old layout */ } }
     }
+    let elite = {};
+    for (const lit of candidates) {
+      try {
+        const v = evalSandbox(lit);
+        if (v && typeof v === 'object' && !Array.isArray(v) && Object.keys(v).length > 3) { elite = v; break; }
+      } catch (e) { log('debug', 'legends: elite candidate skipped', e.message); }
+    }
+    log('info', 'legends: parsed', { zones: zones.length, elite: Object.keys(elite).length, via });
     return { zones, elite };
   }
 
@@ -920,7 +1069,11 @@
     const aura = team.length
       ? Math.pow(team.reduce((a, c) => a + (c.proj.shiny ? 1 : Math.max(1, Math.min(c.proj.level, cfg.MAX_LEVEL) / cfg.MAX_LEVEL)), 0) / team.length, cfg.LEGEND_ZONE?.AURA || 1)
       : 1;
-    const eliteTable = tier ? (state.legends.elite[zone.id]?.[tier] || [1, 1]) : null;
+    // the game's eliteKnobs: a per-zone override wins over the shared ELITE_K table
+    const inline = tier ? (zone.elite?.[zone.id]?.[tier] || zone.elite?.[tier]) : null;
+    const eliteTable = tier ? (inline
+      ? [inline.hp ?? 1, inline.power ?? 1]
+      : (state.legends?.elite?.[zone.id]?.[tier] || [1, 1])) : null;
     const eliteHp = tier ? (cfg.ELITE?.HP?.[tier] ?? 1) : 1;
     const elitePower = tier ? (cfg.ELITE?.POWER?.[tier] ?? 1) : 1;
     const hpKnob = (zone.hp ?? cfg.LEGEND_ZONE?.HP ?? 3) * eliteHp * (eliteTable ? eliteTable[0] : 1) * (tier ? 1 : aura);
@@ -1097,21 +1250,27 @@
       this.lastBattle = null;    // last battle seen (the fight can end before we poll)
       this.firstKo = null;       // step where the first team member fell
       this.lastDeaths = null;    // the game's own death counter (adv.deaths)
+      this.lastTries = null;     // league/elite attempt counters (adv.league.tries, adv.zone.tries)
       this.prevState = null;     // chapter/step before the last change
     }
     start() {
       if (this.running) return;
       this.running = true;
-      this.timer = setInterval(() => this.poll(), 700);
+      this.timer = setInterval(() => {
+        try { this.poll(); } catch (e) { logError('watcher: poll', e); }
+      }, 700);
       this.firstKo = null;
       this.lastDeaths = null;
+      this.lastTries = null;
       this.prevState = null;
-      this.poll();
+      log('info', 'watcher: started');
+      try { this.poll(); } catch (e) { logError('watcher: poll', e); }
     }
     stop() {
       this.running = false;
       if (this.timer) clearInterval(this.timer);
       this.timer = null;
+      log('info', 'watcher: stopped');
     }
     poll() {
       const save = readSave();
@@ -1134,15 +1293,34 @@
       if (!ko.length) this.firstKo = null;
 
       // The game heals the team the instant it is wiped, so the "all knocked out" state
-      // never lasts. The reliable signal is the game's own death counter (adv.deaths).
+      // never lasts. The game now counts a wipe differently per mode (bundle 2026-11):
+      //   adventure/league chapter: adv.deaths[chapter]++
+      //   league run:               adv.league.tries++
+      //   elite legend zone:        adv.zone.tries++
       const deaths = adv.deaths || {};
       const prev = this.lastDeaths;
       this.lastDeaths = { ...deaths };
-      let died = null, diedCount = 0;
+      let died = null, diedCount = 0, why = 'chapter';
       if (prev) {
         for (const [ch, n] of Object.entries(deaths)) {
           const d = n - (prev[ch] || 0);
           if (d > 0) { died = Number(ch); diedCount = d; }
+        }
+      }
+      const tries = {
+        league: adv.league ? { reg: adv.league.reg, tier: adv.league.tier, n: adv.league.tries || 0 } : null,
+        zone: adv.zone?.elite && adv.zone.id != null
+          ? { id: adv.zone.id, tier: adv.zone.elite, n: adv.zone.tries || 0 } : null,
+      };
+      const prevTries = this.lastTries;
+      this.lastTries = tries;
+      if (!died && prevTries) {
+        const L = tries.league, pL = prevTries.league;
+        const Z = tries.zone, pZ = prevTries.zone;
+        if (L && pL && L.reg === pL.reg && L.tier === pL.tier && L.n > pL.n) {
+          died = adv.chapter; diedCount = L.n - pL.n; why = 'league';
+        } else if (Z && pZ && Z.id === pZ.id && Z.tier === pZ.tier && Z.n > pZ.n) {
+          died = adv.chapter; diedCount = Z.n - pZ.n; why = 'elite zone';
         }
       }
       const state = { chapter: adv.chapter, node: nodeIdx, name: (adv.nodes || [])[nodeIdx]?.name || '?' };
@@ -1150,16 +1328,17 @@
         this.prevState = state;
         return;
       }
-      // a league wipe rewinds the chapter, so report the step we were on before it
-      const before = this.prevState && this.prevState.chapter === died ? this.prevState : state;
+      // report the step the team fell on (the last poll before the wipe)
+      const before = this.prevState || state;
       const node = (adv.nodes || [])[before.node] || {};
       const b = this.lastBattle || {};
       const rec = {
         at: Date.now(),
-        chapter: died,
+        chapter: before.chapter,
         node: before.node,
         name: node.name || before.name || '?',
         kind: node.type || b.kind || '?',
+        why,
         lv: node.lv || null,
         enemies: b.enemies || [],
         firstKo: this.firstKo,
@@ -1169,6 +1348,10 @@
       for (let i = 0; i < Math.min(diedCount, 5); i++) this.fails.unshift(i === 0 ? rec : { ...rec, at: rec.at - i * 1000 });
       this.fails = this.fails.slice(0, 25);
       store.set('fails', this.fails);
+      log('warn', 'watcher: team wipe', {
+        why, chapter: rec.chapter, step: rec.name, kind: rec.kind, count: diedCount,
+        enemies: rec.enemies.slice(0, 3),
+      });
       this.firstKo = null;
       this.onChange && this.onChange(rec);
     }
@@ -1177,6 +1360,7 @@
       this.wiped = false;
       this.firstKo = null;
       store.set('fails', []);
+      log('info', 'watcher: wipes cleared');
       this.onChange && this.onChange(null);
     }
   }
@@ -1187,10 +1371,11 @@
   /** Open the Team/PC screen (resuming the game first, and waiting out a running battle). */
   async function gotoTeamScreen(tries = 60) {
     const ready = () => !!document.querySelector('#screen-team.active') && document.querySelectorAll('#team-slots .slot').length > 0;
+    log('debug', 'team screen: opening');
     for (let i = 0; i < tries; i++) {
       if (ready()) { state.waiting = null; return true; }
       const cont = [...document.querySelectorAll('button')].find(b => b.textContent.trim() === 'CONTINUE');
-      if (cont) { cont.click(); await sleep(500); continue; }
+      if (cont) { log('debug', 'team screen: resuming the game'); cont.click(); await sleep(500); continue; }
       // the game refuses to switch screens while a battle runs: wait for it to end
       const save = readSave();
       if (save?.adv?.battle) { state.waiting = 'waiting for the current battle to end…'; await sleep(1000); continue; }
@@ -1200,7 +1385,9 @@
       else await sleep(300);
     }
     state.waiting = null;
-    return ready();
+    const ok = ready();
+    log(ok ? 'debug' : 'warn', 'team screen: ' + (ok ? 'open' : 'not reachable'));
+    return ok;
   }
 
   const pcCellFor = uid => document.querySelector(`#pc-grid .pc-cell[data-uid="${uid}"]`);
@@ -1242,30 +1429,32 @@
   }
 
   async function applyTeam(team) {
+    log('info', 'apply: start', { mons: team.length });
     if (!await gotoTeamScreen()) { state.waiting = null; return { ok: false, error: 'team screen not available' }; }
     if (!readSave()) return { ok: false, error: 'no save' };
     const desired = team.slice(0, 6).map(t => t.mon.uid);
     const slotEls = () => $$('#team-slots .slot');
     if (slotEls().length < 6) return { ok: false, error: 'team slots not found' };
-    let done = 0;
+    let done = 0, same = 0;
     for (let i = 0; i < desired.length; i++) {
       const uid = desired[i];
       const cur = readSave();
       const teamUids = (cur.team || []).slice();
-      if (teamUids[i] === uid) continue;          // already in the right slot
+      if (teamUids[i] === uid) { same++; continue; }   // already in the right slot
       const from = teamUids.indexOf(uid);
       const slots = slotEls();
       if (!slots[i]) continue;
       // already in the team -> swap the two slots, otherwise pull it from the PC
       const cell = from >= 0 ? slots[from] : await findPcCell(uid, cur);
-      if (!cell) { await clearPcSearch(); continue; }
+      if (!cell) { log('warn', 'apply: mon not found in the PC', { slot: i, uid }); await clearPcSearch(); continue; }
       dragToSlot(cell, slots[i]);
       await sleep(700);
       await clearPcSearch();
       done++;
     }
     state.waiting = null;
-    return { ok: true, done };
+    log('info', 'apply: done', { placed: done, already: same, of: desired.length });
+    return { ok: true, done, same };
   }
 
   /* ------------------------------------------------------------------ *
@@ -1364,7 +1553,12 @@
     let done = 0;
     for (let i = 0; i < Math.min(team.length, slots.length); i++) {
       const uid = team[i].mon.uid;
-      let cell = document.querySelector(`#evt-pc .pc-cell[data-uid="${uid}"]`);
+      const slot = $$('#evt-team .slot')[i];
+      if (!slot) break;
+      if (slot.dataset.uid === uid) { done++; continue; }        // already in that slot
+      // already in the team -> drag its slot; otherwise pull it from the PC
+      let cell = $$('#evt-team .slot').find(s => s.dataset.uid === uid)
+        || document.querySelector(`#evt-pc .pc-cell[data-uid="${uid}"]`);
       if (!cell && input) {
         const mon = monByUid(readSave(), uid);
         input.value = mon ? displayName(mon.id) : '';
@@ -1373,8 +1567,6 @@
         cell = document.querySelector(`#evt-pc .pc-cell[data-uid="${uid}"]`);
       }
       if (!cell) continue;
-      const slot = $$('#evt-team .slot')[i];
-      if (!slot) break;
       dragToSlot(cell, slot);
       await sleep(600);
       done++;
@@ -1401,15 +1593,18 @@
       <button class="btn small" id="pcopt-evt-run">✨ Optimize (mine)</button>
       <span class="pcopt-mut" id="pcopt-evt-info">${esc(saved)}</span>`;
     head.appendChild(box);
+    log('info', 'picker ui: injected', { boss: displayName(ctx.zone.id), tier: ctx.tier });
     box.querySelectorAll('[data-preset]').forEach(b => b.onclick = () => {
       state.preset = b.dataset.preset;
       box.querySelectorAll('[data-preset]').forEach(x => x.classList.toggle('on', x.dataset.preset === state.preset));
+      log('info', 'picker ui: preset', state.preset);
     });
     const run = async () => {
       const btn = box.querySelector('#pcopt-evt-run');
       const info = box.querySelector('#pcopt-evt-info');
       btn.disabled = true;
       info.textContent = 'working…';
+      log('info', 'picker ui: optimize clicked', { boss: displayName(ctx.zone.id), tier: ctx.tier });
       try {
         await ensureData();
         const { zone, tier } = ctx;
@@ -1421,13 +1616,15 @@
         const o = legendOdds(zone, tier, team, state.engine, state.data, save);
         state.evtOdds = { key: 'zone:' + zone.id + ':' + tier, text: oddsText(o) };
         info.textContent = state.evtOdds.text;
-        await applyToEventPicker(team);
+        const placed = await applyToEventPicker(team);
+        log('info', 'picker ui: team applied', { placed, of: team.length, odds: state.evtOdds.text });
         // the game re-renders the head when the team changes: put my line back
         setTimeout(() => {
           const again = document.querySelector('#pcopt-evt-info');
           if (again && !again.textContent) again.textContent = state.evtOdds.text;
         }, 900);
       } catch (e) {
+        logError('picker ui: optimize failed', e);
         info.textContent = 'error: ' + e.message;
       }
       btn.disabled = false;
@@ -1458,15 +1655,18 @@
       <button class="btn small" id="pcopt-team-run">✨ Optimize (mine)</button>
       <span class="pcopt-mut" id="pcopt-team-info">${esc(teamUiInfo())}</span>`;
     head.appendChild(box);
+    log('info', 'team ui: injected', { info: teamUiInfo() });
     box.querySelectorAll('[data-preset]').forEach(b => b.onclick = () => {
       state.preset = b.dataset.preset;
       box.querySelectorAll('[data-preset]').forEach(x => x.classList.toggle('on', x.dataset.preset === state.preset));
+      log('info', 'team ui: preset', state.preset);
     });
     box.querySelector('#pcopt-team-run').onclick = async () => {
       const btn = box.querySelector('#pcopt-team-run');
       const info = box.querySelector('#pcopt-team-info');
       btn.disabled = true;
       info.textContent = 'working…';
+      log('info', 'team ui: optimize clicked', { chapter: state.events?.index });
       const tick = setInterval(() => { if (state.waiting) info.textContent = state.waiting; }, 400);
       try {
         await runOptimizer();
@@ -1474,10 +1674,12 @@
         else {
           const res = await applyTeam(state.team);
           info.textContent = res.ok
-            ? teamUiInfo() + ' · applied ' + (res.done ?? 0) + '/' + state.team.length
+            ? teamUiInfo() + (res.done ? ` · applied ${res.done}/${state.team.length}` : ' · team already in place')
             : 'could not use the team screen: ' + res.error;
+          log('info', 'team ui: result', { ok: res.ok, done: res.done, same: res.same });
         }
       } catch (e) {
+        logError('team ui: optimize failed', e);
         info.textContent = 'error: ' + e.message;
       }
       clearInterval(tick);
@@ -1494,7 +1696,7 @@
     events: null, enemies: null, scored: null, team: null,
     preset: 'balanced', errors: [], busy: false, watcher: null, eligible: 0,
     apiCache: {}, info: {}, legends: null, legBoss: null, legTier: 0, legTeam: null, collapsed: false, waiting: null,
-    evtOdds: null,
+    evtOdds: null, loading: null,
     interacting: false, lastSig: null, width: store.get('panelWidth', 344), league: false, leagueInfo: null, legOdds: null
   };
 
@@ -1548,7 +1750,7 @@
     if (!fails.length) return '<div class="pcopt-mut">no wipe recorded yet</div>';
     return fails.map(f => {
       const foes = (f.enemies || []).map(e => `${displayName(e.id)} Lv${e.level}`).join(', ');
-      return `<div class="pcopt-mon"><div><b>${esc(f.name)}</b> <span class="pcopt-mut">#${f.node} · ${esc(f.kind || '')}${f.lv ? ' · Lv ' + f.lv.join('-') : ''}`
+      return `<div class="pcopt-mon"><div><b>${esc(f.name)}</b> <span class="pcopt-mut">#${f.node} · ${esc(f.kind || '')}${f.why && f.why !== 'chapter' ? ' · ' + esc(f.why) : ''}${f.lv ? ' · Lv ' + f.lv.join('-') : ''}`
         + `${f.firstKo ? ` · 1st KO step ${f.firstKo.node}` : ''}</div><div class="pcopt-mut">${esc(foes)}</div></div>`
         + `<div class="pcopt-mut">${new Date(f.at).toLocaleTimeString()}</div></div>`;
     }).join('');
@@ -1657,12 +1859,14 @@
       odds: state.legOdds ? [state.legOdds.winChance, state.legOdds.rounds, state.legOdds.attempts, state.legOdds.totalMs].join('|') : '',
       fails: state.watcher?.fails.length, busy: state.busy,
       errors: state.errors.join('|'), waiting: state.waiting,
+      data: state.data ? Object.keys(state.data.species).length : 0,
+      legends: state.legends?.zones.length ?? 0,
       info: Object.keys(state.info).map(k => k + ':' + state.info[k]).join(',')
     };
     return JSON.stringify(sig);
   }
 
-  function renderPanel(force = false) {
+  function renderPanelInner(force = false) {
     let p = document.getElementById('pcopt-panel');
     if (!p) {
       p = document.createElement('div');
@@ -1675,6 +1879,7 @@
     const busy = state.interacting || (active && p.contains(active) && /^(SELECT|INPUT|TEXTAREA)$/.test(active.tagName));
     if (!force && (busy || sig === state.lastSig)) return;
     state.lastSig = sig;
+    log('debug', 'panel: render', JSON.parse(sig));
     const save = readSave();
     const adv = save?.adv;
     const node = adv?.nodes?.[adv.node];
@@ -1753,6 +1958,8 @@
         <div class="pcopt-row"><b>Chapter ${adv?.chapter ?? '-'}</b><span class="pcopt-mut">${esc(state.events?.name || '')}</span></div>
         <div class="pcopt-mut">step ${adv?.node ?? '-'} / ${(adv?.nodes || []).length} · ${esc(node?.name || '-')}${node?.lv ? ' · Lv ' + node.lv.join('-') : ''}</div>
         <div class="pcopt-mut">level cap ${state.events?.cap ?? '-'} · type chart: ${esc(state.chartSource || '-')}</div>
+        <div class="pcopt-mut">data: ${state.data ? Object.keys(state.data.species).length + ' species · ' + (state.legends?.zones.length ?? 0) + ' legend zones' : 'not loaded'}
+          · bundle ${esc((bundleUrl() || '').split('/').pop() || '-')}</div>
         ${state.leagueInfo ? `<div class="pcopt-mut">${esc(state.leagueInfo)}</div>` : ''}
         ${state.eligible ? `<div class="pcopt-mut">${state.eligible} Pokémon can join this team${save?.link ? ' (region link: ' + esc(save.link.to) + ')' : ''}</div>` : ''}
         ${state.waiting ? `<div class="pcopt-mut">${esc(state.waiting)}</div>` : ''}
@@ -1843,62 +2050,90 @@
     $('#pcopt-clear', body).onclick = () => { state.watcher.clear(); renderPanel(); };
   }
 
+  /** The panel must never take the script down: a render error is logged, the rest keeps running. */
+  function renderPanel(force = false) {
+    try { renderPanelInner(force); } catch (e) { logError('panel: render failed', e); }
+  }
+
   /* ------------------------------------------------------------------ *
    * 10. Boot + actions
    * ------------------------------------------------------------------ */
+  const dataLooksValid = d => !!d && d.species && Object.keys(d.species).length > 100
+    && d.moves && Object.keys(d.moves).length > 50
+    && Array.isArray(d.chapters) && d.chapters.length > 10;
+
   async function ensureData() {
     if (state.engine) return;
-    const url = bundleUrl();
-    if (!url) { state.errors = ['game bundle not loaded yet']; return; }
-    const cacheKey = 'bundle:v4:' + url;
-    let data = store.get(cacheKey, null);
-    if (!data) {
-      state.busy = true; renderPanel();
-      try {
-        data = await parseBundle(url);
-        store.set(cacheKey, data);
-      } catch (e) {
-        state.errors = ['bundle parse failed: ' + e.message];
-        state.busy = false; renderPanel();
-        return;
+    if (state.loading) return state.loading;      // one fetch, however many callers
+    state.loading = (async () => {
+      const url = bundleUrl();
+      if (!url) { state.errors = ['game bundle not loaded yet']; log('warn', 'data: the game bundle is not on the page yet'); return; }
+      const cacheKey = 'bundle:v5:' + url;
+      let data = store.get(cacheKey, null);
+      if (data && !dataLooksValid(data)) {
+        log('warn', 'data: the cached tables are invalid, parsing the bundle again');
+        data = null;
+      } else if (data) {
+        log('info', 'data: cache hit', url.split('/').pop());
       }
-      state.busy = false;
-    }
-    state.data = data;
-    state.learnAll = buildLearnAll(data);
-    state.errors = state.errors.filter(e => !e.startsWith('bundle'));
-
-    if (!state.chart) {
-      const cachedChart = store.get('chart', null);
-      if (cachedChart) { state.chart = cachedChart.chart; state.chartSource = cachedChart.source; }
-      else {
+      if (!data) {
+        state.busy = true; renderPanel();
         try {
-          state.chart = parsePokemonDbChart(await httpGet('https://pokemondb.net/type'));
-          state.chartSource = 'pokemondb.net';
-        } catch (e1) {
-          try {
-            state.chart = await chartFromPokeApi();
-            state.chartSource = 'pokeapi.co';
-          } catch (e2) {
-            state.chart = data.chart;
-            state.chartSource = 'game';
-          }
+          data = await parseBundle(url);
+          store.set(cacheKey, data);
+          log('info', 'data: tables cached', url.split('/').pop());
+        } catch (e) {
+          logError('data: bundle parse failed', e);
+          state.errors = ['bundle parse failed: ' + e.message];
+          return;
+        } finally {
+          state.busy = false;
         }
-        store.set('chart', { chart: state.chart, source: state.chartSource });
       }
-    }
-    state.engine = makeEngine(data, state.chart, state.learnAll);
-    if (!state.legends) {
-      const url2 = bundleUrl();
-      if (url2) {
-        try {
-          const src = await httpGet(url2);
-          state.legends = parseLegends(src);
-          if (!state.legends) state.errors = state.errors.concat(['legend zones not found in the bundle']);
-        } catch (e) { state.errors = state.errors.concat(['legend zones: ' + e.message]); }
+      state.data = data;
+      try {
+        state.learnAll = buildLearnAll(data);
+      } catch (e) {
+        logError('data: learnsets', e);
+        state.learnAll = null;
+        state.errors = state.errors.concat(['learnset error: ' + e.message]);
       }
-    }
-    refreshChapter();
+      state.errors = state.errors.filter(e => !e.startsWith('bundle'));
+      if (data.legends) state.legends = data.legends;
+      else if (!state.legends) state.errors = state.errors.concat(['legend zones not found in the bundle']);
+
+      if (!state.chart) {
+        const cachedChart = store.get('chart', null);
+        if (cachedChart) {
+          state.chart = cachedChart.chart; state.chartSource = cachedChart.source;
+          log('info', 'data: type chart from cache', state.chartSource);
+        } else {
+          try {
+            state.chart = parsePokemonDbChart(await httpGet('https://pokemondb.net/type'));
+            state.chartSource = 'pokemondb.net';
+          } catch (e1) {
+            log('warn', 'data: pokemondb type chart failed, trying PokeAPI', e1.message);
+            try {
+              state.chart = await chartFromPokeApi();
+              state.chartSource = 'pokeapi.co';
+            } catch (e2) {
+              log('warn', 'data: PokeAPI type chart failed, using the game chart', e2.message);
+              state.chart = data.chart;
+              state.chartSource = 'game';
+            }
+          }
+          store.set('chart', { chart: state.chart, source: state.chartSource });
+          log('info', 'data: type chart loaded', state.chartSource);
+        }
+      }
+      state.engine = makeEngine(data, state.chart, state.learnAll);
+      log('info', 'data: engine ready', {
+        species: Object.keys(data.species).length, legends: data.legends?.zones?.length ?? 0,
+        chart: state.chartSource,
+      });
+      refreshChapter();
+    })();
+    try { await state.loading; } finally { state.loading = null; }
   }
 
   /** Read the current chapter events (foes, types, cap) without running the full optimizer. */
@@ -1924,6 +2159,7 @@
 
   async function runOptimizer() {
     state.busy = true; state.errors = []; renderPanel();
+    log('info', 'optimizer: start', { preset: state.preset });
     try {
       await ensureData();
       if (!state.data) { state.busy = false; renderPanel(); return; }
@@ -1949,7 +2185,13 @@
       });
       state.team = pickTeam(state.scored, state.enemies, state.engine, state.data, state.preset, 6, state.league);
       if (!state.team.length) state.errors = ['no candidate found in the PC'];
+      log('info', 'optimizer: done', {
+        chapter: info.index, name: info.name, cap: info.cap, foes: state.enemies.length,
+        eligible: state.eligible, league: state.league,
+        team: state.team.map(t => displayName(t.species.id)),
+      });
     } catch (e) {
+      logError('optimizer: failed', e);
       state.errors = ['optimizer error: ' + e.message];
     }
     state.busy = false;
@@ -1981,6 +2223,7 @@
 
   async function runLegendOptimizer() {
     state.busy = true; state.errors = []; renderPanel();
+    log('info', 'legend optimizer: start', { region: state.legRegion, boss: state.legBoss, tier: state.legTier });
     try {
       await ensureData();
       const zone = legendZone();
@@ -1996,7 +2239,13 @@
         ? legendOdds(zone, state.legTier, state.legTeam, state.engine, state.data, save)
         : null;
       if (!state.legTeam.length) state.errors = ['no candidate found in the PC'];
+      log('info', 'legend optimizer: done', {
+        boss: displayName(zone.id), tier: state.legTier, level: zoneLevel,
+        team: state.legTeam.map(t => displayName(t.species.id)),
+        odds: state.legOdds && { win: state.legOdds.winChance, rounds: state.legOdds.rounds, catch: state.legOdds.pCatch },
+      });
     } catch (e) {
+      logError('legend optimizer: failed', e);
       state.errors = ['legend optimizer error: ' + e.message];
     }
     state.busy = false;
@@ -2007,14 +2256,16 @@
     team = team || state.team;
     if (!team || !team.length) return;
     state.busy = true; renderPanel();
+    log('info', 'panel: apply team', { mons: team.length });
     const res = await applyTeam(team);
     state.busy = false;
     state.waiting = null;
-    if (!res.ok) state.errors = ['apply failed: ' + res.error];
+    if (!res.ok) { log('error', 'panel: apply failed', res.error); state.errors = ['apply failed: ' + res.error]; }
     renderPanel();
   }
 
   function boot() {
+    log('info', 'boot', { version: '1.1.0', bundle: bundleUrl()?.split('/').pop() || null });
     // the game's own team picker (legend zones, raids, elite league): put my controls beside its Optimize button
     let pending = false;
     new MutationObserver(() => {
@@ -2022,8 +2273,10 @@
       pending = true;
       requestAnimationFrame(() => {
         pending = false;
-        if (document.querySelector('#evt-pick-head')) injectPickerUi().catch(() => {});
-        if (document.querySelector('#screen-team .team-panel .map-head')) injectTeamUi().catch(() => {});
+        try {
+          if (document.querySelector('#evt-pick-head')) injectPickerUi().catch(e => logError('picker ui: inject', e));
+          if (document.querySelector('#screen-team .team-panel .map-head')) injectTeamUi().catch(e => logError('team ui: inject', e));
+        } catch (e) { logError('ui: observer', e); }
       });
     }).observe(document.body, { childList: true, subtree: true });
     state.watcher = new WipeWatcher(rec => {
@@ -2034,17 +2287,24 @@
       }
     });
     renderPanel();
-    ensureData().then(() => renderPanel());
+    ensureData().then(() => {
+      renderPanel();
+      log('info', 'boot: ready', {
+        species: state.data ? Object.keys(state.data.species).length : 0,
+        legends: state.legends?.zones?.length ?? 0,
+        errors: state.errors,
+      });
+    }).catch(e => logError('boot: data', e));
     // the game keeps playing in the background: keep the panel in sync
     setInterval(() => {
       if (state.busy) return;
-      refreshChapter();
-      renderPanel();
+      try { refreshChapter(); renderPanel(); } catch (e) { logError('panel: refresh', e); }
     }, 5000);
   }
 
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
-  else boot();
+  const start = () => { try { boot(); } catch (e) { logError('boot', e); } };
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start);
+  else start();
 
   // exposed for tests / manual checks
   window.__pcopt = {
@@ -2052,7 +2312,7 @@
     chapterEnemies, chapterInfo, readSave, scoreCandidates, pickTeam, scoreFor,
     WipeWatcher, applyTeam, bundleUrl, httpGet, canJoinTeam, showMovesPanel, pokeApiSpecies, compareWithPokeApi,
     parseLegends, legendBoss, simulateLegend, pickLegendTeam, evaluateLegendTeam, runLegendOptimizer,
-    legendFightOnce, legendOdds,
+    legendFightOnce, legendOdds, logs,
     projectCandidates, refreshChapter
   };
 })();

@@ -26,7 +26,7 @@ A Tampermonkey helper for [Poke'Catch](https://pokecatch-online.netlify.app/) th
 | **Defense / Offense / Balanced** | Chooses the scoring preset: incoming damage, outgoing damage, or both. The switch sits next to the optimize button, and next to the boss choice for legendary fights — one click, one preset. |
 | **optimize** | Reads the chapter events + your PC and computes the best team of 6. |
 | **apply to team** | Puts the recommended team into the game (drag & drop on the real UI). |
-| **watch for wipes** | Records every wipe: the chapter and step it happened on, the foes and your team at that moment. It reads the game's own death counter (`adv.deaths`), because the game heals the team the instant it is wiped, so the "all knocked out" state never lasts. |
+| **watch for wipes** | Records every wipe: the chapter and step it happened on, the foes and your team at that moment. The game heals the team the instant it is wiped, so the "all knocked out" state never lasts; the watcher reads the game's own counters instead — `adv.deaths[chapter]` for a normal chapter, `adv.league.tries` for a league run, `adv.zone.tries` for an elite legend zone (the 2026-11 update stopped counting league and elite wipes in `deaths`). |
 | **moves** (per Pokémon) | Opens the game's own *moves panel* for that Pokémon — the authoritative learnset. |
 | **✨ Optimize (mine)** (in the game's picker) | My optimizer, inside the game's own team picker, right next to its Optimize button: it fills the slots and prints the fight's win/run/catch odds. |
 | **✨ Optimize (mine)** (in Team/PC) | The chapter optimizer, inside the game's own Team/PC header: it picks the best six for the chapter you are running right now and puts them in your team. |
@@ -125,7 +125,26 @@ Elite tiers add the game's per-species `[HP, damage]` multipliers and make the b
   fallback source for the type chart.
 
 Everything is cached in the userscript storage, keyed by the bundle hash, so a game update
-invalidates the cache automatically.
+invalidates the cache automatically. The cached tables are validated on load (species, moves,
+chapters): an implausible or half-read table is thrown away and parsed again instead of being
+used.
+
+## When the game updates
+
+The game rewrites its bundle on every release, including the minified names the script reads.
+The parser therefore never trusts a minified name: it locates each table by its public marker
+(`a.POKEDEX=`, `a.CONFIG=`…) or by the shape of its data, and reads the legend zones through the
+game's public `a.LegendZones` export. Each table is parsed on its own; a table the update broke
+is reported by name in the panel (`bundle parse failed: game update changed the bundle: MOVES — …`)
+while everything else keeps working.
+
+Every action is logged to the browser console with a `[pcopt]` prefix — bundle fetch and parse
+(with table sizes), cache hits, type-chart source, optimizer runs and their team, each applied
+slot, picker/Team-PC injections, legendary runs and their odds, wipes and their mode, and every
+error with its message. The last 400 entries are also available as `window.__pcopt.logs`.
+
+The script declares an `@updateURL` pointing at the GitHub raw file, so Tampermonkey can pick up
+fixes automatically (`@version` is bumped on each release).
 
 ## Notes / limits
 
