@@ -1556,12 +1556,7 @@
 
   /** Victory chance, run time and the odds to catch the boss. */
   function legendOddsLine() {
-    if (!state.legOdds) return '';
-    const o = state.legOdds;
-    return `win ${Math.round(o.winChance * 100)}% · ${o.rounds} rounds ≈ ${fmtTime(o.runMs)}/run`
-      + ` · catch ${(o.pCatch * 100).toFixed(1)}%/run`
-      + ` · ~${o.attempts < 10 ? o.attempts.toFixed(1) : Math.round(o.attempts)} runs ≈ ${fmtTime(o.totalMs)}`
-      + (o.attempts > (state.data?.cfg?.RAID_PITY ?? 150) * 0.9 ? ' (pity)' : '');
+    return oddsText(state.legOdds);
   }
 
   function renderLegendTeam() {
