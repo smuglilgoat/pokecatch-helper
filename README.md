@@ -44,6 +44,19 @@ Pick a boss and a tier, then **optimize for this boss**: the boss fights the who
 (main move + burst + counter, the same way the game does it) and the boss scales with the team
 (shiny and level raise the boss' HP and damage, like the game's aura scaling).
 
+### How this compares to the game's own optimizer
+
+Poke'Catch has an optimizer of its own, but it works on a different axis: the **auto-switch**
+(option *Switch auto*, on by default) re-orders the Pokémon you already have by a **type-matchup
+score** — `strong +3 / weak −3 / immune −5 / exposed −2 / resists +2` — against the enemy in front
+of you. It never changes *which* Pokémon are in the team, and it looks at types only: no stats, no
+levels, no damage numbers.
+
+This helper keeps the same type logic but adds what the game leaves out: the real damage formula
+(STAB, accuracy curve, crits, level gap, multi-hit, burn), the foe's own best move and damage
+multipliers, the chapter's actual encounters, the legendary zone knobs and elite tiers, the
+team-eligibility rules, and the fact that your team keeps its HP between fights.
+
 ### Scoring
 
 * **Defense** – how many rounds the team survives against the chapter's foes.

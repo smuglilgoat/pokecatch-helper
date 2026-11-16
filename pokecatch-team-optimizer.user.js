@@ -607,7 +607,10 @@
     return cands.map(c => {
       const sp = data.species[c.id];
       const proj = { id: c.id, level, shiny: c.shiny, status: c.status, types: sp.types };
-      return { mon: c, proj, species: sp, hp: eng.maxHp(proj) };
+      const hp = eng.maxHp(proj);
+      // the team keeps its HP between fights: use what is left, like the game does
+      const hpCur = c.hp != null ? Math.min(c.hp, hp) : hp;
+      return { mon: c, proj, species: sp, hp, hpCur };
     });
   }
 
@@ -682,9 +685,10 @@
         const eeff = eng.typeEff(emv.type, c.proj.types);
         inc = eng.damage(enemy.proj, c.proj, emv, eeff) * (emv.acc / 100) * enemy.damageMult;
       }
-      teamHp += c.hp;
+      const hpLeft = c.hpCur != null ? c.hpCur : c.hp;
+      teamHp += hpLeft;
       incoming += inc;
-      const alive = inc > 0 ? c.hp / inc : 99;
+      const alive = inc > 0 ? hpLeft / inc : 99;
       const toKill = dmg > 0 ? remaining / dmg : 99;
       const r = Math.min(alive, toKill);
       dealt += r * dmg;
@@ -784,7 +788,7 @@
 
   /** One legendary fight: the boss hits the whole team every round. */
   function simulateLegend(team, boss, eng) {
-    const alive = team.map(c => ({ c, hp: c.hp }));
+    const alive = team.map(c => ({ c, hp: c.hpCur != null ? c.hpCur : c.hp }));
     let bossHp = boss.hp, rounds = 0, dealt = 0;
     while (bossHp > 0 && alive.length && rounds < 400) {
       let dps = 0;
@@ -801,7 +805,7 @@
       for (const a of alive) a.hp -= boss.damageTo(a.c.proj);
       for (let i = alive.length - 1; i >= 0; i--) if (alive[i].hp <= 0) alive.splice(i, 1);
     }
-    const teamHp = team.reduce((a, c) => a + c.hp, 0);
+    const teamHp = team.reduce((a, c) => a + (c.hpCur != null ? c.hpCur : c.hp), 0);
     const perRound = team.length ? team.reduce((a, c) => a + boss.damageTo(c.proj), 0) / team.length : 0;
     return {
       win: bossHp <= 0,
@@ -1203,6 +1207,7 @@
       return `<div class="pcopt-mon"><div>${i + 1}. <b>${esc(displayName(sp.id))}</b> <span class="pcopt-mut">Lv${s.mon.level}${s.mon.shiny ? ' ✨' : ''}</span>`
         + `<div class="pcopt-row">${sp.types.map(typeBadge).join('')}</div>`
         + `<div class="pcopt-mut">${esc(s.bestMoveKey ? displayMove(s.bestMoveKey) : (s.bestMoveName || '—'))} · ${Math.round(s.avgDmg)} dmg · ${Math.round(s.avgRounds)} rounds${s.proj.shiny ? ' · +10% stats' : ''}</div>`
+        + (s.hpCur != null && s.hpCur < s.hp ? `<div class="pcopt-mut">HP ${s.hpCur}/${s.hp}</div>` : '')
         + `<div class="pcopt-mut" data-info="${s.mon.uid}">${state.info[s.mon.uid] || ''}</div></div>`
         + `<div class="pcopt-row"><button class="btn small ghost" data-moves="${s.mon.uid}">moves</button><button class="btn small ghost" data-api="${s.mon.uid}">api</button></div></div>`;
     }).join('');
