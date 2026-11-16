@@ -28,6 +28,7 @@ A Tampermonkey helper for [Poke'Catch](https://pokecatch-online.netlify.app/) th
 | **apply to team** | Puts the recommended team into the game (drag & drop on the real UI). |
 | **watch for wipes** | Records every wipe: the chapter and step it happened on, the foes and your team at that moment. It reads the game's own death counter (`adv.deaths`), because the game heals the team the instant it is wiped, so the "all knocked out" state never lasts. |
 | **moves** (per Pokémon) | Opens the game's own *moves panel* for that Pokémon — the authoritative learnset. |
+| **✨ Optimize (mine)** (in the game's picker) | My optimizer, inside the game's own team picker, right next to its Optimize button: it fills the slots and prints the fight's win/run/catch odds. |
 | **api** (per Pokémon) | Fetches the same species from [PokéAPI](https://pokeapi.co/api/v2) and shows its canonical types/learnset next to the game's freer one. |
 
 ### Legendary fight
@@ -46,6 +47,26 @@ their game knobs (HP, damage, burst move) and the five **elite** tiers the game 
 Pick a boss and a tier, then **optimize for this boss**: the boss fights the whole team every round
 (main move + burst + counter, the same way the game does it) and the boss scales with the team
 (shiny and level raise the boss' HP and damage, like the game's aura scaling).
+
+Under the boss the line tells you what the fight costs:
+
+* **win %** — the victory chance, from 200 simulated fights with the game's rolls (0.85–1 damage
+  variance, 1/24 crits, misses);
+* **rounds ≈ time/run** — the length of one attempt (a round is ~2.5 s at the game's fast speed,
+  scaled by your speed setting);
+* **catch %/run** — the capture chance of one successful attempt, using the game's own formula
+  (`captureRate × 0.6 / 255`, or the legendary rate `3/255`, times your capture-berry buff);
+* **~N runs ≈ total time** — the expected attempts and wall-clock time to catch it, capped by the
+  raid pity (150 tries).
+
+### Inside the game: beside its own "Optimize" button
+
+The game has its own **Optimize** button in the team picker it opens for a legendary zone, a raid
+or the elite league. This helper adds its own row right beside it — **Defense / Offense / Balanced**,
+**✨ Optimize (mine)** and the same win/run/catch line — and its button fills the game's own slots
+with the team it computed, so the two optimizers sit side by side and both write to the game.
+
+<figure the picker header: Optimize | Defense Offense Balanced | Optimize (mine) | win 100% · 11 rounds ≈ 30s/run · catch 1.2%/run · ~71 runs ≈ 35.7 min>
 
 ### How this compares to the game's own optimizer
 

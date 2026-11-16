@@ -140,7 +140,7 @@
     try { leagueTeams = evalLit(literalAfter(src, 'a.LEAGUE_TEAMS=')); } catch { leagueTeams = {}; }
 
     const species = {};
-    for (const s of dex) species[s.id] = { id: s.id, name: s.name, types: s.types, stats: s.stats, learn: s.learn };
+    for (const s of dex) species[s.id] = { id: s.id, name: s.name, types: s.types, stats: s.stats, learn: s.learn, captureRate: s.captureRate, legendary: s.legendary, mythical: s.mythical };
 
     return {
       version: url,
@@ -164,7 +164,11 @@
         TEAM_SIZE: cfg.TEAM_SIZE, MAX_LEVEL: cfg.MAX_LEVEL, LEAGUE_CAP_MARGIN: cfg.LEAGUE_CAP_MARGIN,
         LEAGUE_DONE_CAP: cfg.LEAGUE_DONE_CAP, LEVEL_CAP_MARGIN: cfg.LEVEL_CAP_MARGIN,
         LEAGUE_BELOW: cfg.LEAGUE_TRAINERS?.below || [6, 5, 4, 3],
-        LEGEND_ZONE: cfg.LEGEND_ZONE, ELITE: cfg.ELITE, RANK_STAT: cfg.UNDERGROUND?.RANK_STAT ?? 1
+        LEGEND_ZONE: cfg.LEGEND_ZONE, ELITE: cfg.ELITE, RANK_STAT: cfg.UNDERGROUND?.RANK_STAT ?? 1,
+        CAPTURE_BONUS: cfg.CAPTURE_BONUS, CAPTURE_MAX: cfg.CAPTURE_MAX,
+        LEGENDARY_CAPTURE_RATE: cfg.LEGENDARY_CAPTURE_RATE,
+        RAID_PITY: cfg.RAID?.PITY ?? 150, RAID_CATCH: cfg.RAID?.CATCH ?? null,
+        BUFF_BERRIES: cfg.BUFF_BERRIES, OFFLINE_MAX_LEVELS: cfg.OFFLINE_MAX_LEVELS
       }
     };
   }
@@ -937,6 +941,77 @@
     return { zone, mon, types: sp.types, level, maxHp, hp, resist, powerKnob, damageTo, aura };
   }
 
+  /** One legendary fight with the game's rolls (used for the win chance). */
+  function legendFightOnce(team, boss, eng) {
+    const alive = team.map(c => ({ c, hp: c.hpCur != null ? c.hpCur : c.hp }));
+    let bossHp = boss.hp, rounds = 0;
+    while (bossHp > 0 && alive.length && rounds < 400) {
+      let dps = 0;
+      for (const a of alive) {
+        const mv = eng.bestMove(a.c.proj, boss.types);
+        if (!mv) continue;
+        if (Math.random() * 100 > mv.acc) continue;                    // miss
+        const eff = eng.typeEff(mv.type, boss.types);
+        let d = eng.damage(a.c.proj, boss.mon, mv, eff) / 0.925;        // undo the average roll
+        d *= 0.85 + Math.random() * 0.15;                               // damage roll
+        if (Math.random() < 1 / 24) d *= 1.5;                           // crit
+        dps += d;
+      }
+      dps *= boss.resist;
+      bossHp -= dps;
+      rounds++;
+      for (const a of alive) {
+        const hit = boss.damageTo(a.c.proj) / 0.925;
+        a.hp -= hit * (0.85 + Math.random() * 0.15);
+      }
+      for (let i = alive.length - 1; i >= 0; i--) if (alive[i].hp <= 0) alive.splice(i, 1);
+    }
+    return { win: bossHp <= 0, rounds };
+  }
+
+  /** Seconds of one fight: the game runs a round in ~2.5 s at its fast speed (measured). */
+  const SEC_PER_ROUND = 2.5;
+  const CAPTURE_SEC = 2.5;
+
+  /** Victory chance, run time and the expected attempts / total time to catch the boss. */
+  function legendOdds(zone, tier, team, eng, data, save, runs = 200) {
+    const boss = legendBoss(zone, tier, team, eng, data);
+    if (!boss || !team.length) return null;
+    let wins = 0, roundsSum = 0;
+    for (let i = 0; i < runs; i++) {
+      const r = legendFightOnce(team, boss, eng);
+      if (r.win) { wins++; roundsSum += r.rounds; }
+    }
+    const winChance = wins / runs;
+    const rounds = wins ? roundsSum / wins : 0;
+
+    const cfg = data.cfg;
+    const sp = data.species[zone.id];
+    const buffEntry = save?.buffs?.capture;
+    const buff = buffEntry && buffEntry.until > Date.now()
+      ? (cfg.BUFF_BERRIES?.[buffEntry.key]?.mult ?? 1) : 1;
+    const rate = sp
+      ? ((sp.legendary || sp.mythical) ? (cfg.LEGENDARY_CAPTURE_RATE ?? 3) : (sp.captureRate ?? 45) * (cfg.CAPTURE_BONUS ?? .6)) / 255
+      : 0;
+    const pCatch = Math.min((cfg.CAPTURE_MAX ?? .6) * buff, rate * buff);
+
+    const speed = save?.adv?.speed ?? 1;
+    const secPerRound = SEC_PER_ROUND * (4 / Math.max(1, speed));
+    const runMs = (rounds * secPerRound + CAPTURE_SEC) * 1000;
+    const q = winChance * pCatch;
+    const pity = cfg.RAID_PITY ?? 150;
+    // expected attempts, capped by the raid pity
+    let expected = 0;
+    if (q > 0) {
+      for (let i = 0; i < pity; i++) expected += Math.pow(1 - q, i);
+    } else expected = pity;
+    const fails = q > 0 ? Math.pow(1 - q, pity) : 1;
+    return {
+      winChance, rounds: Math.round(rounds), pCatch, attempts: expected,
+      runMs, totalMs: expected * runMs, guaranteed: fails, speed
+    };
+  }
+
   /** One legendary fight: the boss hits the whole team every round. */
   function simulateLegend(team, boss, eng) {
     const alive = team.map(c => ({ c, hp: c.hpCur != null ? c.hpCur : c.hp }));
@@ -1243,6 +1318,122 @@
   }
 
   /* ------------------------------------------------------------------ *
+   * 8c. Inside the game: my controls next to its own "Optimize" button
+   * ------------------------------------------------------------------ */
+  function speciesIdByName(name) {
+    const lang = i18n();
+    for (const [k, v] of Object.entries(lang?.pokemon || {})) {
+      if ((Array.isArray(v) ? v[0] : v) === name) return +k;
+    }
+    for (const [k, sp] of Object.entries(state.data?.species || {})) {
+      if (sp.name === name) return +k;
+    }
+    return null;
+  }
+
+  /** What the game's team picker is open for (the boss and the elite tier, from its header). */
+  function pickerContext() {
+    const head = document.querySelector('#evt-pick-head h2');
+    if (!head || !state.legends || !state.data) return null;
+    const txt = head.textContent.replace(/\s+/g, ' ').trim();
+    const m = txt.match(/\b(?:contre|vs\.?)\s+(.+)$/i);
+    if (!m) return null;
+    const id = speciesIdByName(m[1].trim());
+    if (id == null) return null;
+    const zone = state.legends.zones.find(z => z.id === id);
+    if (!zone) return null;
+    const tier = +(((txt.match(/lite\s*(\d)/i) || [])[1]) || 0);
+    return { zone, tier };
+  }
+
+  function oddsText(o) {
+    if (!o) return '';
+    if (o.winChance < 0.02) return `win ~0% · cannot win with this team yet`;
+    return `win ${Math.max(1, Math.round(o.winChance * 100))}% · ${o.rounds} rounds ≈ ${fmtTime(o.runMs)}/run`
+      + ` · catch ${(o.pCatch * 100).toFixed(1)}%/run`
+      + ` · ~${o.attempts < 10 ? o.attempts.toFixed(1) : Math.round(o.attempts)} runs ≈ ${fmtTime(o.totalMs)}`
+      + (o.attempts > (state.data?.cfg?.RAID_PITY ?? 150) * 0.9 ? ' (pity)' : '');
+  }
+
+  /** Drag a PC cell of the game's picker into one of its team slots. */
+  async function applyToEventPicker(team) {
+    const slots = $$('#evt-team .slot');
+    if (!slots.length) return 0;
+    const input = document.querySelector('#evt-search');
+    let done = 0;
+    for (let i = 0; i < Math.min(team.length, slots.length); i++) {
+      const uid = team[i].mon.uid;
+      let cell = document.querySelector(`#evt-pc .pc-cell[data-uid="${uid}"]`);
+      if (!cell && input) {
+        const mon = monByUid(readSave(), uid);
+        input.value = mon ? displayName(mon.id) : '';
+        input.dispatchEvent(new Event('input', { bubbles: true }));
+        await sleep(450);
+        cell = document.querySelector(`#evt-pc .pc-cell[data-uid="${uid}"]`);
+      }
+      if (!cell) continue;
+      const slot = $$('#evt-team .slot')[i];
+      if (!slot) break;
+      dragToSlot(cell, slot);
+      await sleep(600);
+      done++;
+    }
+    if (input && input.value) { input.value = ''; input.dispatchEvent(new Event('input', { bubbles: true })); }
+    return done;
+  }
+
+  /** Add my controls beside the game's own "Optimize" button, inside its team picker. */
+  async function injectPickerUi() {
+    const head = document.querySelector('#evt-pick-head');
+    if (!head || head.querySelector('#pcopt-evt')) return;
+    if (!state.engine) { try { await ensureData(); } catch { return; } }
+    if (!head.isConnected || head.querySelector('#pcopt-evt')) return;
+    const ctx = pickerContext();
+    if (!ctx) return;
+    const box = document.createElement('div');
+    box.id = 'pcopt-evt';
+    box.className = 'pcopt-row';
+    box.style.marginLeft = '8px';
+    const ctxKey = 'zone:' + ctx.zone.id + ':' + ctx.tier;
+    const saved = state.evtOdds && state.evtOdds.key === ctxKey ? state.evtOdds.text : '';
+    box.innerHTML = `${presetSeg()}
+      <button class="btn small" id="pcopt-evt-run">✨ Optimize (mine)</button>
+      <span class="pcopt-mut" id="pcopt-evt-info">${esc(saved)}</span>`;
+    head.appendChild(box);
+    box.querySelectorAll('[data-preset]').forEach(b => b.onclick = () => {
+      state.preset = b.dataset.preset;
+      box.querySelectorAll('[data-preset]').forEach(x => x.classList.toggle('on', x.dataset.preset === state.preset));
+    });
+    const run = async () => {
+      const btn = box.querySelector('#pcopt-evt-run');
+      const info = box.querySelector('#pcopt-evt-info');
+      btn.disabled = true;
+      info.textContent = 'working…';
+      try {
+        await ensureData();
+        const { zone, tier } = ctx;
+        const save = readSave();
+        const cands = projectCandidates(state.engine, state.data, save, state.events?.cap ?? 100)
+          .map(c => ({ ...c, hpCur: c.hp }));
+        const team = pickLegendTeam(cands, zone, tier, state.engine, state.data);
+        const o = legendOdds(zone, tier, team, state.engine, state.data, save);
+        state.evtOdds = { key: 'zone:' + zone.id + ':' + tier, text: oddsText(o) };
+        info.textContent = state.evtOdds.text;
+        await applyToEventPicker(team);
+        // the game re-renders the head when the team changes: put my line back
+        setTimeout(() => {
+          const again = document.querySelector('#pcopt-evt-info');
+          if (again && !again.textContent) again.textContent = state.evtOdds.text;
+        }, 900);
+      } catch (e) {
+        info.textContent = 'error: ' + e.message;
+      }
+      btn.disabled = false;
+    };
+    box.querySelector('#pcopt-evt-run').onclick = run;
+  }
+
+  /* ------------------------------------------------------------------ *
    * 9. UI
    * ------------------------------------------------------------------ */
   const state = {
@@ -1250,7 +1441,8 @@
     events: null, enemies: null, scored: null, team: null,
     preset: 'balanced', errors: [], busy: false, watcher: null, eligible: 0,
     apiCache: {}, info: {}, legends: null, legBoss: null, legTier: 0, legTeam: null, collapsed: false, waiting: null,
-    interacting: false, lastSig: null, width: store.get('panelWidth', 344), league: false, leagueInfo: null
+    evtOdds: null,
+    interacting: false, lastSig: null, width: store.get('panelWidth', 344), league: false, leagueInfo: null, legOdds: null
   };
 
   const TYPE_COLORS = {
@@ -1353,6 +1545,25 @@
       + (state.legTier ? ` · elite ${state.legTier}` : '');
   }
 
+  const fmtTime = ms => {
+    if (!isFinite(ms) || ms <= 0) return '—';
+    const s = Math.round(ms / 1000);
+    if (s < 90) return s + 's';
+    const m = s / 60;
+    if (m < 90) return (Math.round(m * 10) / 10) + ' min';
+    return (Math.round(m / 60 * 10) / 10) + ' h';
+  };
+
+  /** Victory chance, run time and the odds to catch the boss. */
+  function legendOddsLine() {
+    if (!state.legOdds) return '';
+    const o = state.legOdds;
+    return `win ${Math.round(o.winChance * 100)}% · ${o.rounds} rounds ≈ ${fmtTime(o.runMs)}/run`
+      + ` · catch ${(o.pCatch * 100).toFixed(1)}%/run`
+      + ` · ~${o.attempts < 10 ? o.attempts.toFixed(1) : Math.round(o.attempts)} runs ≈ ${fmtTime(o.totalMs)}`
+      + (o.attempts > (state.data?.cfg?.RAID_PITY ?? 150) * 0.9 ? ' (pity)' : '');
+  }
+
   function renderLegendTeam() {
     if (!state.legTeam) return '<div class="pcopt-mut">pick a boss and run the optimizer</div>';
     if (!state.legTeam.length) return '<div class="pcopt-mut">no candidate</div>';
@@ -1395,6 +1606,7 @@
       team: (state.team || []).map(t => t.mon.uid + ':' + t.hpCur).join(','),
       leg: (state.legTeam || []).map(t => t.mon.uid).join(','),
       boss: state.legBoss, region: state.legRegion, tier: state.legTier,
+      odds: state.legOdds ? [state.legOdds.winChance, state.legOdds.rounds, state.legOdds.attempts, state.legOdds.totalMs].join('|') : '',
       fails: state.watcher?.fails.length, busy: state.busy,
       errors: state.errors.join('|'), waiting: state.waiting,
       info: Object.keys(state.info).map(k => k + ':' + state.info[k]).join(',')
@@ -1519,6 +1731,7 @@
           ${presetSeg()}
         </div>
         <div class="pcopt-mut" id="pcopt-leg-info">${legendInfo()}</div>
+        <div class="pcopt-mut" id="pcopt-leg-odds">${legendOddsLine()}</div>
         <div class="pcopt-row" style="margin-top:6px">
           <button class="btn small" id="pcopt-leg-run" ${state.busy ? 'disabled' : ''}>optimize for this boss</button>
           <button class="btn small ghost" id="pcopt-leg-apply" ${state.legTeam && state.legTeam.length && !state.busy ? '' : 'disabled'}>apply to team</button>
@@ -1589,7 +1802,7 @@
     if (state.engine) return;
     const url = bundleUrl();
     if (!url) { state.errors = ['game bundle not loaded yet']; return; }
-    const cacheKey = 'bundle:v3:' + url;
+    const cacheKey = 'bundle:v4:' + url;
     let data = store.get(cacheKey, null);
     if (!data) {
       state.busy = true; renderPanel();
@@ -1726,8 +1939,13 @@
       if (!zone) { state.errors = ['no boss zone']; state.busy = false; renderPanel(); return; }
       const save = readSave();
       if (!save) { state.errors = ['no save found']; state.busy = false; renderPanel(); return; }
-      const cands = projectCandidates(state.engine, state.data, save, state.events?.cap ?? 100);
+      // a legendary fight starts with a healed team (you heal before going in)
+      const cands = projectCandidates(state.engine, state.data, save, state.events?.cap ?? 100)
+        .map(c => ({ ...c, hpCur: c.hp }));
       state.legTeam = pickLegendTeam(cands, zone, state.legTier, state.engine, state.data);
+      state.legOdds = state.legTeam.length
+        ? legendOdds(zone, state.legTier, state.legTeam, state.engine, state.data, save)
+        : null;
       if (!state.legTeam.length) state.errors = ['no candidate found in the PC'];
     } catch (e) {
       state.errors = ['legend optimizer error: ' + e.message];
@@ -1748,6 +1966,16 @@
   }
 
   function boot() {
+    // the game's own team picker (legend zones, raids, elite league): put my controls beside its Optimize button
+    let pending = false;
+    new MutationObserver(() => {
+      if (pending) return;
+      pending = true;
+      requestAnimationFrame(() => {
+        pending = false;
+        if (document.querySelector('#evt-pick-head')) injectPickerUi().catch(() => {});
+      });
+    }).observe(document.body, { childList: true, subtree: true });
     state.watcher = new WipeWatcher(rec => {
       renderPanel();
       if (rec) {
@@ -1774,6 +2002,7 @@
     chapterEnemies, chapterInfo, readSave, scoreCandidates, pickTeam, scoreFor,
     WipeWatcher, applyTeam, bundleUrl, httpGet, canJoinTeam, showMovesPanel, pokeApiSpecies, compareWithPokeApi,
     parseLegends, legendBoss, simulateLegend, pickLegendTeam, evaluateLegendTeam, runLegendOptimizer,
+    legendFightOnce, legendOdds,
     projectCandidates, refreshChapter
   };
 })();
