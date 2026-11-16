@@ -86,8 +86,12 @@ invalidates the cache automatically.
 
 ## Notes / limits
 
-* The team is evaluated at the **chapter cap** (the maximum level you can reach in the
-  chapter), which is what the game will let your Pokémon reach anyway.
+* The team is evaluated at the **level cap** — the level the game lets your Pokémon reach right
+  now (it stops their XP until you beat the next badge; the mon card then says *"Plafond Nv. 83"*).
+  The cap is the game's own formula: the next gym you still owe, its *ace* level plus the league
+  margin (so the Elite Four chapters give `ace + 3`). The panel shows it as *level cap* and writes
+  every recommendation as `Lv74 → 83` (now → cap), because the team you will actually field is
+  the one at the cap.
 * **Shiny Pokémon get the game's +10 % stat bonus** (all stats and HP), exactly like in game —
   a shiny is scored with the boosted stats and marked with ✨ in the panel.
 * Only Pokémon that the game currently accepts in the team are considered (region link,

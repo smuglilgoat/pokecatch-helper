@@ -159,6 +159,7 @@
         MULTI_HIT: cfg.MULTI_HIT, MULTI_HIT_ODDS: cfg.MULTI_HIT_ODDS, MOVE_LEVELS: cfg.MOVE_LEVELS,
         MOVE_FLOOR_FROM: cfg.MOVE_FLOOR_FROM, ACC_CURVE: cfg.ACC_CURVE,
         TEAM_SIZE: cfg.TEAM_SIZE, MAX_LEVEL: cfg.MAX_LEVEL, LEAGUE_CAP_MARGIN: cfg.LEAGUE_CAP_MARGIN,
+        LEAGUE_DONE_CAP: cfg.LEAGUE_DONE_CAP, LEVEL_CAP_MARGIN: cfg.LEVEL_CAP_MARGIN,
         LEGEND_ZONE: cfg.LEGEND_ZONE, ELITE: cfg.ELITE, RANK_STAT: cfg.UNDERGROUND?.RANK_STAT ?? 1
       }
     };
@@ -528,14 +529,51 @@
     return [se, Math.max(se + 1, ya)];
   }
 
-  function chapterInfo(data, chapterIndex) {
+  /** The level cap of a chapter (the game's capOf). */
+  function capOf(data, ch) {
+    const c = data.chapters[ch];
+    if (!c) return data.cfg.MAX_LEVEL;
+    const margin = c.capMargin != null ? c.capMargin : (c.league ? (data.cfg.LEAGUE_CAP_MARGIN ?? 3) : 0);
+    let q = (aceOf(data, ch) ?? 0) + margin;
+    if (c.league && !c.steps.some(st => st.champion)) {
+      const region = regionOf(data, ch);
+      const league = chaptersOf(data, region.key).filter(i => data.chapters[i].league);
+      if (league.length) q = Math.min(q, Math.max(...league.map(i => aceOf(data, i) ?? 0)));
+    }
+    return q;
+  }
+
+  /** The next gym of a region the player still has to beat (the game's nextGymOf). */
+  function nextGymOf(data, regionKey, adv) {
+    const unlocked = adv?.unlocked || 0;
+    const badges = adv?.badges || [];
+    return chaptersOf(data, regionKey).find(i =>
+      i >= unlocked &&
+      data.chapters[i].steps.some(st => st.kind === 'gym') &&
+      !data.chapters[i].steps.some(st => st.champion && badges.includes(st.badge))
+    ) ?? null;
+  }
+
+  /** The level the player may reach right now (the game's levelCap). */
+  function levelCap(data, adv) {
+    const max = data.cfg.MAX_LEVEL;
+    let m = 0;
+    const open = new Set(['kanto', ...(adv?.travel?.to || [])]);
+    for (const region of data.regions) {
+      if (!region || !region.ace || !region.key || !open.has(region.key)) continue;
+      const next = nextGymOf(data, region.key, adv);
+      if (next != null) return Math.min(max, capOf(data, next));
+      for (const ch of chaptersOf(data, region.key)) if (aceOf(data, ch) != null) m = Math.max(m, capOf(data, ch));
+    }
+    return Math.min(max, m ? Math.max(m, data.cfg.LEAGUE_DONE_CAP ?? 100) : max);
+  }
+
+  function chapterInfo(data, chapterIndex, adv) {
     const ch = data.chapters[chapterIndex];
     if (!ch) return null;
-    const ace = aceOf(data, chapterIndex);
-    const margin = ch.capMargin != null ? ch.capMargin : (ch.league ? (data.cfg.LEAGUE_CAP_MARGIN ?? 3) : 0);
     return {
-      index: chapterIndex, name: ch.name, region: ch.reg || 'kanto', ace, steps: ch.steps,
-      cap: ace != null ? Math.min(data.cfg.MAX_LEVEL, ace + margin) : data.cfg.MAX_LEVEL
+      index: chapterIndex, name: ch.name, region: ch.reg || 'kanto', ace: aceOf(data, chapterIndex), steps: ch.steps,
+      cap: levelCap(data, adv)
     };
   }
 
@@ -1196,7 +1234,8 @@
     if (!state.legTeam.length) return '<div class="pcopt-mut">no candidate</div>';
     return state.legTeam.map((s, i) => {
       const sp = s.species;
-      return `<div class="pcopt-mon"><div>${i + 1}. <b>${esc(displayName(sp.id))}</b> <span class="pcopt-mut">Lv${s.proj.level}${s.proj.shiny ? ' ✨' : ''}</span>`
+      const lv = s.mon.level < s.proj.level ? `Lv${s.mon.level} → ${s.proj.level}` : `Lv${s.mon.level}`;
+      return `<div class="pcopt-mon"><div>${i + 1}. <b>${esc(displayName(sp.id))}</b> <span class="pcopt-mut">${lv}${s.proj.shiny ? ' ✨' : ''}</span>`
         + `<div class="pcopt-row">${sp.types.map(typeBadge).join('')}</div>`
         + `<div class="pcopt-mut">${s.hp} HP${s.proj.shiny ? ' · +10% stats' : ''}</div></div></div>`;
     }).join('');
@@ -1213,7 +1252,8 @@
     if (!state.team.length) return '<div class="pcopt-mut">no candidate</div>';
     return state.team.map((s, i) => {
       const sp = s.species;
-      return `<div class="pcopt-mon"><div>${i + 1}. <b>${esc(displayName(sp.id))}</b> <span class="pcopt-mut">Lv${s.mon.level}${s.mon.shiny ? ' ✨' : ''}</span>`
+      const lv = s.mon.level < s.proj.level ? `Lv${s.mon.level} → ${s.proj.level}` : `Lv${s.mon.level}`;
+      return `<div class="pcopt-mon"><div>${i + 1}. <b>${esc(displayName(sp.id))}</b> <span class="pcopt-mut">${lv}${s.mon.shiny ? ' ✨' : ''}</span>`
         + `<div class="pcopt-row">${sp.types.map(typeBadge).join('')}</div>`
         + `<div class="pcopt-mut">${esc(s.bestMoveKey ? displayMove(s.bestMoveKey) : (s.bestMoveName || '—'))} · ${Math.round(s.avgDmg)} dmg · ${Math.round(s.avgRounds)} rounds${s.proj.shiny ? ' · +10% stats' : ''}</div>`
         + (s.hpCur != null && s.hpCur < s.hp ? `<div class="pcopt-mut">HP ${s.hpCur}/${s.hp}</div>` : '')
@@ -1328,7 +1368,7 @@
       <section>
         <div class="pcopt-row"><b>Chapter ${adv?.chapter ?? '-'}</b><span class="pcopt-mut">${esc(state.events?.name || '')}</span></div>
         <div class="pcopt-mut">step ${adv?.node ?? '-'} / ${(adv?.nodes || []).length} · ${esc(node?.name || '-')}${node?.lv ? ' · Lv ' + node.lv.join('-') : ''}</div>
-        <div class="pcopt-mut">cap ${state.events?.cap ?? '-'} · type chart: ${esc(state.chartSource || '-')}</div>
+        <div class="pcopt-mut">level cap ${state.events?.cap ?? '-'} · type chart: ${esc(state.chartSource || '-')}</div>
         ${state.eligible ? `<div class="pcopt-mut">${state.eligible} Pokémon can join this team${save?.link ? ' (region link: ' + esc(save.link.to) + ')' : ''}</div>` : ''}
         ${state.waiting ? `<div class="pcopt-mut">${esc(state.waiting)}</div>` : ''}
         ${state.errors.length ? `<div class="pcopt-err">${state.errors.map(esc).join('<br>')}</div>` : ''}
@@ -1478,7 +1518,7 @@
   function refreshChapter() {
     const save = readSave();
     if (!save || !save.adv || !state.data) return;
-    const info = chapterInfo(state.data, save.adv.chapter);
+    const info = chapterInfo(state.data, save.adv.chapter, save.adv);
     if (!info) return;
     state.events = info;
     state.enemies = chapterEnemies(state.data, info).map(e => {
@@ -1497,7 +1537,7 @@
       if (!state.data) { state.busy = false; renderPanel(); return; }
       const save = readSave();
       if (!save) { state.errors = ['no save found']; state.busy = false; renderPanel(); return; }
-      const info = chapterInfo(state.data, save.adv.chapter);
+      const info = chapterInfo(state.data, save.adv.chapter, save.adv);
       if (!info) { state.errors = ['chapter not found']; state.busy = false; renderPanel(); return; }
       state.events = info;
       state.enemies = chapterEnemies(state.data, info);
