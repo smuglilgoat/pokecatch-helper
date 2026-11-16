@@ -1,0 +1,1195 @@
+// ==UserScript==
+// @name         Poke'Catch Team Optimizer
+// @namespace    pokecatch-helper
+// @version      1.0.0
+// @description  Reads the current chapter events, watches for team wipes (and where they happen), then builds an optimal team of 6 from the PC with Defense / Offense / Balanced presets.
+// @author       GrumpyOwl
+// @match        https://pokecatch-online.netlify.app/*
+// @match        https://pokecatch-online.pages.dev/*
+// @grant        GM_getValue
+// @grant        GM_setValue
+// @grant        GM_xmlhttpRequest
+// @connect      pokemondb.net
+// @connect      pokeapi.co
+// @connect      pokecatch-online.pages.dev
+// @run-at       document-idle
+// ==/UserScript==
+
+(() => {
+  'use strict';
+
+  /* ------------------------------------------------------------------ *
+   * 0. Small helpers
+   * ------------------------------------------------------------------ */
+  const SAVE_KEY = 'gachamon-save-v1';
+  const $ = (sel, root = document) => root.querySelector(sel);
+  const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
+  const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+  const sleep = ms => new Promise(r => setTimeout(r, ms));
+  const fmt = n => (Math.round(n * 10) / 10).toLocaleString('en-US');
+
+  const store = {
+    get(key, dflt) {
+      try {
+        if (typeof GM_getValue === 'function') return GM_getValue(key, dflt);
+        const raw = localStorage.getItem('pcopt:' + key);
+        return raw == null ? dflt : JSON.parse(raw);
+      } catch { return dflt; }
+    },
+    set(key, val) {
+      try {
+        if (typeof GM_setValue === 'function') return GM_setValue(key, val);
+        localStorage.setItem('pcopt:' + key, JSON.stringify(val));
+      } catch { /* quota: keep the cached copy in memory only */ }
+    },
+  };
+
+  // Cross-origin GET (pokemondb does not send CORS headers).
+  function httpGet(url) {
+    if (typeof GM_xmlhttpRequest === 'function') {
+      return new Promise((resolve, reject) => {
+        GM_xmlhttpRequest({
+          method: 'GET', url, timeout: 20000,
+          onload: r => (r.status >= 200 && r.status < 300) ? resolve(r.responseText) : reject(new Error('HTTP ' + r.status)),
+          onerror: () => reject(new Error('network error')),
+          ontimeout: () => reject(new Error('timeout'))
+        });
+      });
+    }
+    return fetch(url, { credentials: 'omit' }).then(r => {
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      return r.text();
+    });
+  }
+  const httpGetJson = url => httpGet(url).then(t => JSON.parse(t));
+
+  /* ------------------------------------------------------------------ *
+   * 1. Game data: parsed from the bundle the page itself loaded
+   * ------------------------------------------------------------------ */
+  const UNOWN_IDS = [201, ...Array.from({ length: 28 }, (_, i) => 20101 + i)];
+
+  function literalAt(src, start) {
+    const open = src[start], close = open === '[' ? ']' : '}';
+    let depth = 0, str = null, esc = false;
+    for (let j = start; j < src.length; j++) {
+      const c = src[j];
+      if (str) {
+        if (esc) esc = false;
+        else if (c === '\\') esc = true;
+        else if (c === str) str = null;
+        continue;
+      }
+      if (c === '"' || c === "'" || c === '`') { str = c; continue; }
+      if (c === open) depth++;
+      else if (c === close) { depth--; if (depth === 0) return src.slice(start, j + 1); }
+    }
+    throw new Error('unbalanced literal');
+  }
+
+  function literalAfter(src, marker, from = 0) {
+    const i = src.indexOf(marker, from);
+    if (i < 0) throw new Error('marker not found: ' + marker);
+    let start = -1;
+    if (marker.endsWith('[') || marker.endsWith('{')) start = i + marker.length - 1;
+    else for (let j = i + marker.length; j < src.length; j++) {
+      if (src[j] === '[' || src[j] === '{') { start = j; break; }
+    }
+    if (start < 0) throw new Error('no literal after ' + marker);
+    return literalAt(src, start);
+  }
+
+  /** Every literal that follows a marker (the game extends some tables with Object.assign). */
+  function literalsAfter(src, marker) {
+    const out = [];
+    let from = 0, at;
+    while ((at = src.indexOf(marker, from)) >= 0) {
+      from = at + marker.length;
+      let start = -1;
+      for (let j = from; j < src.length; j++) {
+        if (src[j] === '[' || src[j] === '{') { start = j; break; }
+      }
+      if (start < 0) break;
+      out.push(literalAt(src, start));
+    }
+    return out;
+  }
+
+  const evalLit = (lit, stub = {}) => Function('a', 'return (' + lit + ')')(stub);
+
+  function bundleUrl() {
+    const src = $$('script[src]').map(s => s.src).find(u => /\/bundle\/app\.[0-9a-f]+\.js$/.test(u));
+    return src || null;
+  }
+
+  /** Extract the game's static tables from its own bundle. */
+  async function parseBundle(url) {
+    const src = await httpGet(url);
+    const dex = evalLit(literalAfter(src, 'a.POKEDEX='));
+    const moves = evalLit(literalAfter(src, 'a.MOVES='));
+    const chart = evalLit(literalAfter(src, 'a.TYPE_CHART='));
+    const evo = evalLit(literalAfter(src, 'a.EVOLUTIONS='));
+    const enc = evalLit(literalAfter(src, 'a.ENCOUNTERS='));
+    for (const lit of literalsAfter(src, 'Object.assign(a.ENCOUNTERS,')) Object.assign(enc, evalLit(lit));
+    const regions = evalLit(literalAt(src, src.indexOf('REGIONS:[{key:') + 8));
+    const cfg = evalLit(literalAfter(src, 'a.CONFIG='));
+    const chLit = literalAfter(src, 'CHAPTERS:[').replace(/a\.UNOWN\.ids/g, JSON.stringify(UNOWN_IDS));
+    const chapters = evalLit(chLit);
+
+    const species = {};
+    for (const s of dex) species[s.id] = { id: s.id, name: s.name, types: s.types, stats: s.stats, learn: s.learn };
+
+    return {
+      version: url,
+      species,
+      moves,
+      chart,
+      evo,
+      enc,
+      chapters,
+      regions,
+      cfg: {
+        LEVEL_GAP: cfg.LEVEL_GAP, CRIT_MULT: cfg.CRIT_MULT, CRIT_CHANCE: cfg.CRIT_CHANCE,
+        ENEMY_DAMAGE: cfg.ENEMY_DAMAGE, GYM_DAMAGE: cfg.GYM_DAMAGE, GYM_HP_MULT: cfg.GYM_HP_MULT,
+        GYM_TEAM_EXP: cfg.GYM_TEAM_EXP, ENEMY_HP_PER_ALLY: cfg.ENEMY_HP_PER_ALLY,
+        HP_LEVEL_SCALE: cfg.HP_LEVEL_SCALE, HP_LEVEL_MAX: cfg.HP_LEVEL_MAX, HP_BOOST: cfg.HP_BOOST,
+        SHINY_STAT_BONUS: cfg.SHINY_STAT_BONUS, TYPE_EFF_MAX: cfg.TYPE_EFF_MAX, TYPE_EFF_MIN: cfg.TYPE_EFF_MIN,
+        MOVE_BLACKLIST: cfg.MOVE_BLACKLIST, MOVE_RECHARGE: cfg.MOVE_RECHARGE, MOVE_POWER_OVERRIDES: cfg.MOVE_POWER_OVERRIDES,
+        MULTI_HIT: cfg.MULTI_HIT, MULTI_HIT_ODDS: cfg.MULTI_HIT_ODDS, MOVE_LEVELS: cfg.MOVE_LEVELS,
+        MOVE_FLOOR_FROM: cfg.MOVE_FLOOR_FROM, ACC_CURVE: cfg.ACC_CURVE,
+        TEAM_SIZE: cfg.TEAM_SIZE, MAX_LEVEL: cfg.MAX_LEVEL, LEAGUE_CAP_MARGIN: cfg.LEAGUE_CAP_MARGIN
+      }
+    };
+  }
+
+  /* --- learnAll: the exact list the game's "moves panel" shows ------- */
+  function buildLearnAll(data) {
+    const { species, moves, evo, cfg } = data;
+    const byId = species;
+
+    const movePower = key => {
+      if (cfg.MOVE_POWER_OVERRIDES[key] != null) return cfg.MOVE_POWER_OVERRIDES[key];
+      const n = moves[key]?.power || 0;
+      const o = cfg.MULTI_HIT[key];
+      if (o == null) return n;
+      if (Array.isArray(o)) return o.reduce((a, b) => a + b, 0);
+      if (o === '2-5') return n * cfg.MULTI_HIT_ODDS.reduce((a, l, f) => a + l * (f + 2), 0);
+      return n * o;
+    };
+    const moveAcc = key => {
+      const n = movePower(key);
+      if (n <= 0) return moves[key]?.acc || 100;
+      const [o, r, l] = cfg.ACC_CURVE;
+      return 100 - (100 - l) * Math.min(1, Math.max(0, (n - o) / (r - o)));
+    };
+
+    // Family links that are not evolutions (Porygon line).
+    const Q = { 137: [233], 233: [474] };
+    const evolutions = JSON.parse(JSON.stringify(evo));
+    for (const [t, list] of Object.entries(Q)) {
+      const rest = (evolutions[t] || []).filter(e => !list.includes(e.to));
+      if (rest.length) evolutions[t] = rest; else delete evolutions[t];
+    }
+    const PREVO = {};
+    for (const [t, list] of Object.entries(evolutions))
+      for (const e of list) PREVO[e.to] ??= { from: +t, ...e };
+    for (const [t, list] of Object.entries(Q))
+      for (const e of list) PREVO[e] ??= { from: +t, family: true };
+
+    const evoLevel = id => {
+      const p = PREVO[id];
+      if (!p) return 0;
+      return p.level > 1 ? p.level : Math.max(20, evoLevel(p.from) + 10);
+    };
+    const isRealMove = key => movePower(key) > 0 && cfg.MOVE_POWER_OVERRIDES[key] == null && !cfg.MOVE_BLACKLIST.includes(key);
+    const rootSpecies = id => (PREVO[id] && byId[PREVO[id].from]) ? rootSpecies(PREVO[id].from) : id;
+    // Infinity does not survive the JSON cache: rebuild the level table.
+    const moveLevels = (cfg.MOVE_LEVELS || []).map(([o, l]) => [o == null ? Infinity : o, l]);
+    const levelFloor = key => {
+      const n = movePower(key);
+      if (n < cfg.MOVE_FLOOR_FROM) return 0;
+      const hit = moveLevels.find(([o]) => n <= o);
+      return hit ? hit[1] : moveLevels[moveLevels.length - 1][1];
+    };
+
+    // Which root species learn each move (used to drop redundant entries).
+    const learners = {};
+    for (const sp of Object.values(byId))
+      for (const [, key] of sp.learn) (learners[key] ??= new Set()).add(rootSpecies(sp.id));
+
+    const learnAll = {};
+    for (const sp of Object.values(byId)) {
+      const weight = key => movePower(key) * (moves[key].cat === 'phys' ? sp.stats.atk : sp.stats.spa);
+      const list = sp.learn.map(l => [l[0], l[1], sp.id]);
+      const seen = new Set(sp.learn.map(l => l[1]));
+      for (let id = sp.id, p; (p = PREVO[id]) && byId[p.from]; id = p.from)
+        for (const l of byId[p.from].learn)
+          if (!seen.has(l[1])) { seen.add(l[1]); list.push([l[0], l[1], p.from]); }
+
+      for (let i = list.length - 1; i >= 0; i--)
+        if (cfg.MOVE_RECHARGE.includes(list[i][1])) list.splice(i, 1);
+      for (const l of list) if (l[0] > 0) l[0] = Math.max(l[0], levelFloor(l[1]));
+
+      // Per-type compression: keep the strongest move of each type, re-balancing levels.
+      const byType = {}, dropped = new Set();
+      for (const l of list) if (isRealMove(l[1])) (byType[moves[l[1]].type] ??= []).push(l);
+      for (const group of Object.values(byType)) {
+        const kept = [];
+        let best = 0;
+        for (const l of group.filter(x => x[0] > 0).sort((a, b) => a[0] - b[0] || weight(a[1]) - weight(b[1]))) {
+          if (weight(l[1]) > best) { best = weight(l[1]); kept.push(l); }
+          else if (learners[l[1]].size > 1) dropped.add(l[1]);
+          else {
+            const at = kept.findIndex(k => weight(k[1]) > weight(l[1]));
+            const pair = [...kept.slice(at), l];
+            const levels = pair.map(k => k[0]).sort((a, b) => a - b);
+            const ids = [...pair].sort((a, b) => weight(a[1]) - weight(b[1])).map(k => [k[1], k[2]]);
+            pair.forEach((k, i) => { k[0] = levels[i]; [k[1], k[2]] = ids[i]; });
+            kept.push(l);
+          }
+        }
+        for (const l of group.filter(x => x[0] === 0).sort((a, b) => weight(a[1]) - weight(b[1]))) {
+          const w = weight(l[1]);
+          const at = kept.findIndex(k => weight(k[1]) > w);
+          const prev = kept[(at < 0 ? kept.length : at) - 1];
+          const next = at < 0 ? null : kept[at];
+          l[0] = prev && next ? Math.round((prev[0] + next[0]) / 2)
+            : prev ? Math.min(100, prev[0] + 5)
+            : next ? Math.max(1, next[0] - 5)
+            : evoLevel(l[2]);
+          kept.splice(at < 0 ? kept.length : at, 0, l);
+        }
+      }
+      for (const l of list) if (l[0] === 0) l[0] = evoLevel(l[2]);
+      for (const l of list) l[0] = Math.max(l[0], levelFloor(l[1]));
+
+      learnAll[sp.id] = list.filter(l => !dropped.has(l[1])).sort((a, b) => a[0] - b[0]).map(l => [l[0], l[1]]);
+    }
+    return { learnAll, movePower, moveAcc, PREVO };
+  }
+
+  /* ------------------------------------------------------------------ *
+   * 2. Type chart (pokemondb.net/type, with PokeAPI + game fallbacks)
+   * ------------------------------------------------------------------ */
+  function parsePokemonDbChart(html) {
+    const at = html.indexOf('<table class="type-table">');
+    if (at < 0) throw new Error('type table not found');
+    const table = html.slice(at, html.indexOf('</table>', at));
+    const chart = {};
+    const rows = table.match(/<tr[^>]*>[\s\S]*?<\/tr>/g) || [];
+    for (const row of rows) {
+      const cells = row.match(/<t[hd]([^>]*)>([\s\S]*?)<\/t[hd]>/g) || [];
+      if (!cells.length) continue;
+      const head = cells[0].match(/class="type-icon type-([a-z]+) type-cell"/);
+      if (!head) continue;
+      const line = {};
+      for (const cell of cells.slice(1)) {
+        const fx = cell.match(/type-fx-(\d+)/);
+        const title = cell.match(/title="([^"]+)"/);
+        if (!fx || !title) continue;
+        const parts = title[1].split(' &#8594; ');
+        if (parts.length !== 2) continue;
+        const def = parts[1].split(' = ')[0].trim().toLowerCase();
+        line[def] = { 100: 1, 200: 2, 50: 0.5, 0: 0 }[fx[1]];
+      }
+      chart[head[1]] = line;
+    }
+    if (Object.keys(chart).length < 18) throw new Error('incomplete type chart');
+    return chart;
+  }
+
+  async function chartFromPokeApi() {
+    const types = ['normal', 'fire', 'water', 'electric', 'grass', 'ice', 'fighting', 'poison', 'ground',
+      'flying', 'psychic', 'bug', 'rock', 'ghost', 'dragon', 'dark', 'steel', 'fairy'];
+    const chart = {};
+    for (const t of types) {
+      const j = await httpGetJson('https://pokeapi.co/api/v2/type/' + t);
+      const r = j.damage_relations, line = {};
+      for (const d of types) line[d] = 1;
+      for (const d of r.no_damage_to) line[d.name] = 0;
+      for (const d of r.half_damage_to) line[d.name] = 0.5;
+      for (const d of r.double_damage_to) line[d.name] = 2;
+      chart[t] = line;
+    }
+    return chart;
+  }
+
+  /* ------------------------------------------------------------------ *
+   * 3. Save access
+   * ------------------------------------------------------------------ */
+  let lastRaw = null, lastSave = null;
+
+  function readSave() {
+    let raw;
+    try { raw = localStorage.getItem(SAVE_KEY); } catch { return null; }
+    if (!raw) return null;
+    if (raw === lastRaw) return lastSave;
+    let save;
+    try { save = JSON.parse(raw); } catch { return null; }
+    if (!save) return null;
+    // packed export format: mons live in mz.m
+    if (!Array.isArray(save.mons) && save.mz && Array.isArray(save.mz.m)) {
+      save.mons = save.mz.m.map(m => {
+        const mon = { uid: m[0], id: m[1], level: m[2], xp: m[3] };
+        if (m[7]) Object.assign(mon, m[7]);
+        return mon;
+      });
+    }
+    if (!Array.isArray(save.mons)) save.mons = [];
+    lastRaw = raw;
+    lastSave = save;
+    return save;
+  }
+
+  const monByUid = (save, uid) => save.mons.find(m => m.uid === uid) || null;
+
+  /** Pokémon that are not in the PC (pension, underground, market, trades, other region). */
+  function awayUids(save) {
+    const out = new Set();
+    for (const p of save.pension?.mons || []) if (p.mon) out.add(p.mon.uid);
+    for (const slot of save.under?.slots || []) for (const m of slot.mons || []) out.add(m.uid);
+    for (const m of save.mktOut || []) if (m) out.add(m.uid);
+    if (save.tradeOut?.mon) out.add(save.tradeOut.mon.uid);
+    if (save.tradeIn?.mon) out.add(save.tradeIn.mon.uid);
+    if (save.link?.stash?.team) for (const u of save.link.stash.team) out.add(u);
+    return out;
+  }
+
+  /** Region rule: while a region link is active, only some regions may join the team. */
+  function canJoinTeam(save, mon) {
+    const link = save.link;
+    if (!link) return true;
+    const reg = mon.reg || 'kanto';
+    return link.side === 'from' ? reg !== link.to : reg === link.to;
+  }
+
+  /* ------------------------------------------------------------------ *
+   * 4. Battle math (same formulas as the game)
+   * ------------------------------------------------------------------ */
+  function makeEngine(data, chart, learnAll) {
+    const { species, moves, cfg } = data;
+    const { movePower, moveAcc } = learnAll;
+
+    const typeEff = (atkType, defTypes) => {
+      let m = 1;
+      for (const t of defTypes) m *= chart[atkType]?.[t] ?? 1;
+      return clamp(m, cfg.TYPE_EFF_MIN, cfg.TYPE_EFF_MAX);
+    };
+
+    const statsOf = mon => {
+      const sp = species[mon.id];
+      if (!sp) return null;
+      const lv = mon.level, b = sp.stats;
+      const r = (mon.shiny ? 1 + cfg.SHINY_STAT_BONUS : 1) * (mon.statMult || 1);
+      const f = k => Math.floor((Math.floor(2 * b[k] * lv / 100) + 5) * r);
+      return {
+        hp: Math.floor((Math.floor(2 * b.hp * lv / 100) + lv + 10) * r),
+        atk: f('atk'), def: f('def'), spa: f('spa'), spd: f('spd'), spe: f('spe')
+      };
+    };
+    const maxHp = mon => {
+      const s = statsOf(mon);
+      if (!s) return 0;
+      const scale = Math.min(cfg.HP_LEVEL_MAX, 1 + cfg.HP_LEVEL_SCALE * mon.level / 100);
+      return Math.floor(s.hp * scale * cfg.HP_BOOST * (mon.hpMult || 1));
+    };
+
+    const moveCache = new Map();
+
+    /** Best move a mon can use against a target (the game picks it automatically). */
+    const bestMove = (mon, defTypes) => {
+      const key = mon.id + '|' + mon.level + '|' + (mon.shiny ? 1 : 0) + '|' + (mon.status || '') + '|' + defTypes.join(',');
+      if (moveCache.has(key)) return moveCache.get(key);
+      const sp = species[mon.id];
+      if (!sp) return null;
+      const st = statsOf(mon);
+      let best = null, bestVal = -1;
+      for (const [lv, key] of learnAll.learnAll[mon.id] || []) {
+        if (lv > mon.level) continue;
+        if (cfg.MOVE_BLACKLIST.includes(key)) continue;
+        const mv = moves[key];
+        if (!mv) continue;
+        const power = movePower(key);
+        if (power <= 0) continue;
+        const phys = mv.cat === 'phys';
+        const atkStat = phys ? st.atk * (mon.status === 'burn' ? 0.5 : 1) : st.spa;
+        const eff = typeEff(mv.type, defTypes);
+        const val = power * (moveAcc(key) / 100) * (sp.types.includes(mv.type) ? 1.5 : 1) * eff * atkStat;
+        if (val > bestVal) { bestVal = val; best = { key, name: mv.name, type: mv.type, cat: mv.cat, power, acc: moveAcc(key) }; }
+      }
+      moveCache.set(key, best);
+      return best;
+    };
+
+    /** Expected damage (average roll 0.925), game formula. */
+    const damage = (att, def, mv, eff) => {
+      const A = statsOf(att), D = statsOf(def);
+      if (!A || !D) return 0;
+      const phys = mv.cat === 'phys';
+      const atkStat = phys ? A.atk * (att.status === 'burn' ? 0.5 : 1) : A.spa;
+      const defStat = phys ? D.def : D.spd;
+      const sp = species[att.id];
+      const stab = sp && sp.types.includes(mv.type) ? 1.5 : 1;
+      const x = (2 * att.level / 5 + 2) * mv.power * atkStat / Math.max(1, defStat) / 50 + 2;
+      const gap = Math.pow(cfg.LEVEL_GAP, att.level - def.level);
+      return Math.max(1, Math.floor(x * stab * eff * gap * 0.925));
+    };
+
+    return { typeEff, statsOf, maxHp, bestMove, damage, movePower, moveAcc };
+  }
+
+  /* ------------------------------------------------------------------ *
+   * 5. Chapter events
+   * ------------------------------------------------------------------ */
+  const regionOf = (data, ch) => data.regions.find(r => r.key === (data.chapters[ch]?.reg || 'kanto')) || null;
+  const chaptersOf = (data, key) => data.chapters.map((c, i) => i).filter(i => (data.chapters[i].reg || 'kanto') === key);
+
+  /** Level the region's champion is expected to have in this chapter (game formula). */
+  function aceOf(data, ch) {
+    const c = data.chapters[ch];
+    if (!c) return null;
+    const region = regionOf(data, ch);
+    if (!region || !region.ace) return null;
+    if (c.ace != null) return c.ace;
+    const before = chaptersOf(data, region.key).filter(i => i < ch && data.chapters[i].ace == null).length;
+    return region.ace[0] + region.ace[1] * before + (c.aceUp || 0);
+  }
+
+  function bandOf(data, ch) {
+    const c = data.chapters[ch];
+    if (c.lv) return c.lv;
+    const h = aceOf(data, ch);
+    if (h == null) return null;
+    const region = regionOf(data, ch);
+    const first = chaptersOf(data, region.key)[0];
+    const m = ch > first ? aceOf(data, ch - 1) : null;
+    return [m ?? (region.base || 0) + 2, h - 1];
+  }
+
+  /** Level range of the n-th route of a chapter (game formula). */
+  function routeBand(data, ch, index, count) {
+    const q = bandOf(data, ch);
+    if (!q) return null;
+    const [H, Sa] = q, z = (Sa - H) / count;
+    const se = Math.round(H + z * index), ya = Math.round(H + z * (index + 1));
+    return [se, Math.max(se + 1, ya)];
+  }
+
+  function chapterInfo(data, chapterIndex) {
+    const ch = data.chapters[chapterIndex];
+    if (!ch) return null;
+    const ace = aceOf(data, chapterIndex);
+    const margin = ch.capMargin != null ? ch.capMargin : (ch.league ? (data.cfg.LEAGUE_CAP_MARGIN ?? 3) : 0);
+    return {
+      index: chapterIndex, name: ch.name, region: ch.reg || 'kanto', ace, steps: ch.steps,
+      cap: ace != null ? Math.min(data.cfg.MAX_LEVEL, ace + margin) : data.cfg.MAX_LEVEL
+    };
+  }
+
+  /** Wild / trainer / gym foes of a chapter, with the levels the game uses. */
+  function chapterEnemies(data, info) {
+    const enemies = [];   // {id, level, weight, kind, source}
+    const steps = info.steps;
+    const cfg = data.cfg;
+
+    for (const step of steps.filter(s => s.kind === 'gym' && s.team)) {
+      const team = step.team;
+      const maxLv = Math.max(...team.map(t => t[1]));
+      const q = step.ace ?? info.ace;
+      const hpMult = cfg.GYM_HP_MULT * (step.power || 1) * Math.pow(cfg.TEAM_SIZE / Math.max(1, team.length), cfg.GYM_TEAM_EXP);
+      for (const [id, lv] of team.map(t => [t[0], q ? Math.round(t[1] * q / maxLv) : t[1]]))
+        enemies.push({
+          id, level: lv, weight: 3, kind: 'gym', source: step.name, power: step.power || 1,
+          hpMult, damageMult: cfg.GYM_DAMAGE * (step.power || 1), teamSize: team.length
+        });
+    }
+    for (const step of steps.filter(s => s.kind === 'trainer' && s.team)) {
+      const team = step.team;
+      const maxLv = Math.max(...team.map(t => t[1]));
+      const q = info.ace;
+      for (const [id, lv] of (step.scale ? team.map(t => [t[0], Math.round(t[1] * q / maxLv)]) : team))
+        enemies.push({
+          id, level: lv, weight: 2, kind: 'trainer', source: step.trainer || step.name,
+          hpMult: 1, damageMult: cfg.ENEMY_DAMAGE.trainer ?? 1
+        });
+    }
+    const routes = steps.filter(s => s.kind === 'route');
+    routes.forEach((step, index) => {
+      if (!step.wild) return;
+      const band = step.lv || routeBand(data, info.index, index, routes.length);
+      const pool = new Map();
+      for (const area of step.areas || []) {
+        for (const e of data.enc[area] || []) {
+          const [id, min, max, pct, method] = e;
+          if (pct >= 100) continue;
+          const how = String(method || '');
+          if (!/walk|surf|rod|static|headbutt|rock-smash/.test(how)) continue;
+          let w = pct;
+          if (/rod/.test(how)) w *= 0.15;
+          else if (/surf/.test(how)) w *= 0.5;
+          else if (/headbutt|rock-smash/.test(how)) w *= 0.25;
+          const cur = pool.get(id) || { id, w: 0 };
+          cur.w += w;
+          pool.set(id, cur);
+        }
+      }
+      for (const p of pool.values()) {
+        const level = band ? Math.round((band[0] + band[1]) / 2) : 0;
+        enemies.push({
+          id: p.id, level, weight: Math.max(0.2, p.w / 10), kind: 'wild', source: step.name,
+          hpMult: 1, damageMult: cfg.ENEMY_DAMAGE.wild ?? 1
+        });
+      }
+    });
+    return enemies;
+  }
+
+  /* ------------------------------------------------------------------ *
+   * 6. Optimizer
+   * ------------------------------------------------------------------ */
+  const KIND_WEIGHT = { wild: 1, trainer: 4, gym: 8 };
+
+  /** Individual metrics of every candidate against the chapter's foes. */
+  function scoreCandidates(eng, data, enemies, candidates, level) {
+    const enemyList = enemies.map(e => {
+      const types = data.species[e.id]?.types || [];
+      const proj = { id: e.id, level: e.level, types };
+      return {
+        ...e, proj, types,
+        hp: eng.maxHp(proj),
+        weight: (KIND_WEIGHT[e.kind] || 1) * (e.weight || 1)
+      };
+    });
+
+    const out = [];
+    for (const cand of candidates) {
+      const sp = data.species[cand.id];
+      if (!sp) continue;
+      const proj = { id: cand.id, level, shiny: cand.shiny, status: cand.status, types: sp.types };
+      const hp = eng.maxHp(proj);
+      let dmgSum = 0, surviveSum = 0, wSum = 0, bestDmg = 0, bestMoveName = '', bestMoveKey = '', bestEff = 1;
+      for (const e of enemyList) {
+        const mv = eng.bestMove(proj, e.types);
+        if (!mv) continue;
+        const eff = eng.typeEff(mv.type, e.types);
+        const dmg = eng.damage(proj, e.proj, mv, eff) * (mv.acc / 100);
+        const emv = eng.bestMove(e.proj, sp.types);
+        let incoming = 0;
+        if (emv) {
+          const eeff = eng.typeEff(emv.type, sp.types);
+          const mult = e.kind === 'gym'
+            ? data.cfg.GYM_DAMAGE * (e.power || 1)
+            : (data.cfg.ENEMY_DAMAGE[e.kind] ?? 1) * (e.power || 1);
+          incoming = eng.damage(e.proj, proj, emv, eeff) * (emv.acc / 100) * mult;
+        }
+        const rounds = incoming > 0 ? hp / incoming : 99;
+        dmgSum += dmg * e.weight;
+        surviveSum += rounds * e.weight;
+        wSum += e.weight;
+        if (dmg > bestDmg) { bestDmg = dmg; bestMoveName = mv.name; bestMoveKey = mv.key; bestEff = eff; }
+      }
+      if (!wSum) continue;
+      out.push({
+        mon: cand, proj, species: sp, hp,
+        dmg: dmgSum, survive: surviveSum,
+        avgDmg: dmgSum / wSum, avgRounds: surviveSum / wSum,
+        bestDmg, bestMoveName, bestMoveKey, bestEff
+      });
+    }
+    return out;
+  }
+
+  function scoreFor(s, preset) {
+    if (preset === 'defense') return s.avgRounds;
+    if (preset === 'offense') return s.avgDmg;
+    return Math.sqrt(Math.max(0, s.avgDmg) * Math.max(0.01, s.avgRounds));
+  }
+
+  /** One full fight: our team (in order) against one foe, the way the game chains them. */
+  function simulate(team, enemy, eng) {
+    const ehp = enemy.hp * enemy.hpMult;
+    let remaining = ehp, dealt = 0, rounds = 0, teamHp = 0, incoming = 0;
+    for (const c of team) {
+      const mv = eng.bestMove(c.proj, enemy.types);
+      if (!mv) continue;
+      const eff = eng.typeEff(mv.type, enemy.types);
+      const dmg = eng.damage(c.proj, enemy.proj, mv, eff) * (mv.acc / 100);
+      const emv = eng.bestMove(enemy.proj, c.proj.types);
+      let inc = 0;
+      if (emv) {
+        const eeff = eng.typeEff(emv.type, c.proj.types);
+        inc = eng.damage(enemy.proj, c.proj, emv, eeff) * (emv.acc / 100) * enemy.damageMult;
+      }
+      teamHp += c.hp;
+      incoming += inc;
+      const alive = inc > 0 ? c.hp / inc : 99;
+      const toKill = dmg > 0 ? remaining / dmg : 99;
+      const r = Math.min(alive, toKill);
+      dealt += r * dmg;
+      remaining -= r * dmg;
+      rounds += r;
+      if (remaining <= 0) break;
+    }
+    const roundsDie = incoming > 0 ? teamHp / incoming : 99;
+    return { win: remaining <= 0, roundsKill: rounds, dmgDealt: dealt, roundsDie, hpLeft: Math.max(0, remaining) };
+  }
+
+  /** Score of a whole team against the chapter's foes. */
+  function evaluateTeam(team, enemies, eng, data, preset) {
+    let score = 0;
+    for (const e of enemies) {
+      const res = simulate(team, e, eng);
+      if (preset === 'offense') score += e.weight * res.dmgDealt / Math.max(1, e.hp);
+      else if (preset === 'defense') score += e.weight * res.roundsDie;
+      else score += e.weight * Math.min(res.roundsKill, res.roundsDie);
+    }
+    return score;
+  }
+
+  /** Greedy team builder: one Pokémon per species (the game keeps only one of each). */
+  function pickTeam(scored, enemies, eng, data, preset, size = 6) {
+    const pool = scored.slice()
+      .sort((a, b) => scoreFor(b, preset) - scoreFor(a, preset) || b.mon.level - a.mon.level)
+      .slice(0, 60);
+    const chosen = [];
+    const usedSpecies = new Set();
+    const usedShiny = new Set();
+    while (chosen.length < size) {
+      let best = null, bestScore = -Infinity;
+      for (const cand of pool) {
+        if (chosen.includes(cand)) continue;
+        if (!cand.mon.shiny && usedSpecies.has(cand.species.id)) continue;
+        if (cand.mon.shiny && usedShiny.has(cand.species.id)) continue;
+        const sc = evaluateTeam(chosen.concat([cand]), enemies, eng, data, preset);
+        // same score: prefer the Pokémon that is already the closest to the chapter cap
+        if (sc > bestScore || (sc === bestScore && best && cand.mon.level > best.mon.level)) {
+          bestScore = sc; best = cand;
+        }
+      }
+      if (!best) break;
+      chosen.push(best);
+      usedSpecies.add(best.species.id);
+      if (best.mon.shiny) usedShiny.add(best.species.id);
+    }
+    return chosen;
+  }
+
+  /* ------------------------------------------------------------------ *
+   * 7. Wipe watcher: remembers on which step the team falls
+   * ------------------------------------------------------------------ */
+  class WipeWatcher {
+    constructor(onChange) {
+      this.onChange = onChange;
+      this.fails = store.get('fails', []) || [];
+      this.running = false;
+      this.timer = null;
+      this.lastSig = null;
+    }
+    start() {
+      if (this.running) return;
+      this.running = true;
+      this.timer = setInterval(() => this.poll(), 700);
+      this.poll();
+    }
+    stop() {
+      this.running = false;
+      if (this.timer) clearInterval(this.timer);
+      this.timer = null;
+    }
+    poll() {
+      const save = readSave();
+      if (!save || !save.adv) return;
+      const battle = save.adv.battle;
+      const nodeIdx = save.adv.node;
+      if (!battle) { this.lastSig = null; return; }
+      const team = (save.team || []).map(u => monByUid(save, u)).filter(Boolean);
+      if (!team.length) return;
+      const ko = team.filter(m => (m.hp == null ? 1 : m.hp) <= 0).length;
+      const sig = JSON.stringify([battle.kind, nodeIdx, (battle.enemies || []).map(e => e.id + ':' + e.level)]);
+      if (ko === team.length && sig !== this.lastSig) {
+        this.lastSig = sig;
+        const node = (save.adv.nodes || [])[nodeIdx] || {};
+        const rec = {
+          at: Date.now(),
+          chapter: save.adv.chapter,
+          node: nodeIdx,
+          name: node.name || '?',
+          kind: node.type || battle.kind,
+          lv: node.lv || null,
+          enemies: (battle.enemies || []).map(e => ({ id: e.id, level: e.level })),
+          team: team.map(m => ({ uid: m.uid, id: m.id, level: m.level }))
+        };
+        this.fails.unshift(rec);
+        this.fails = this.fails.slice(0, 25);
+        store.set('fails', this.fails);
+        this.onChange && this.onChange(rec);
+      } else if (ko < team.length) {
+        this.lastSig = sig;
+      }
+    }
+    clear() {
+      this.fails = [];
+      store.set('fails', []);
+      this.onChange && this.onChange(null);
+    }
+  }
+
+  /* ------------------------------------------------------------------ *
+   * 8. Team editing (drag & drop, the way the game does it)
+   * ------------------------------------------------------------------ */
+  /** Open the Team/PC screen (resuming the game first when it sits on the start screen). */
+  async function gotoTeamScreen(tries = 6) {
+    const slots = () => document.querySelectorAll('#team-slots .slot').length;
+    for (let i = 0; i < tries; i++) {
+      if (slots()) return true;
+      const cont = [...document.querySelectorAll('button')].find(b => b.textContent.trim() === 'CONTINUE');
+      if (cont) { cont.click(); await sleep(500); continue; }
+      const btn = [...document.querySelectorAll('button')].find(b => b.textContent.trim().toLowerCase() === 'team/pc');
+      if (btn) { btn.click(); await sleep(500); }
+      else await sleep(300);
+    }
+    return slots() > 0;
+  }
+
+  const pcCellFor = uid => document.querySelector(`#pc-grid .pc-cell[data-uid="${uid}"]`);
+
+  /** The PC grid is virtualised: search for the mon when it is not rendered. */
+  async function findPcCell(uid, save) {
+    let cell = pcCellFor(uid);
+    if (cell) return cell;
+    const mon = monByUid(save, uid);
+    if (!mon) return null;
+    const input = document.querySelector('#pc-search');
+    if (!input) return null;
+    input.value = displayName(mon.id);
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+    await sleep(500);
+    return pcCellFor(uid);
+  }
+
+  async function clearPcSearch() {
+    const input = document.querySelector('#pc-search');
+    if (!input || !input.value) return;
+    input.value = '';
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+    await sleep(350);
+  }
+
+  function dragToSlot(cell, slot) {
+    const cb = cell.getBoundingClientRect(), sb = slot.getBoundingClientRect();
+    const cx = cb.left + cb.width / 2, cy = cb.top + cb.height / 2;
+    const tx = sb.left + sb.width / 2, ty = sb.top + sb.height / 2;
+    const fire = (type, x, y, target) => target.dispatchEvent(new PointerEvent(type, {
+      bubbles: true, cancelable: true, clientX: x, clientY: y,
+      pointerId: 1, pointerType: 'mouse', button: 0, buttons: type === 'pointerup' ? 0 : 1, isPrimary: true
+    }));
+    fire('pointerdown', cx, cy, cell);
+    fire('pointermove', cx + 24, cy + 12, cell);
+    fire('pointermove', tx, ty, document.body);
+    fire('pointerup', tx, ty, document.body);
+  }
+
+  async function applyTeam(team) {
+    if (!await gotoTeamScreen()) return { ok: false, error: 'team screen not available' };
+    if (!readSave()) return { ok: false, error: 'no save' };
+    const desired = team.slice(0, 6).map(t => t.mon.uid);
+    const slotEls = () => $$('#team-slots .slot');
+    if (slotEls().length < 6) return { ok: false, error: 'team slots not found' };
+    let done = 0;
+    for (let i = 0; i < desired.length; i++) {
+      const uid = desired[i];
+      const cur = readSave();
+      const teamUids = (cur.team || []).slice();
+      if (teamUids[i] === uid) continue;          // already in the right slot
+      const from = teamUids.indexOf(uid);
+      const slots = slotEls();
+      if (!slots[i]) continue;
+      // already in the team -> swap the two slots, otherwise pull it from the PC
+      const cell = from >= 0 ? slots[from] : await findPcCell(uid, cur);
+      if (!cell) { await clearPcSearch(); continue; }
+      dragToSlot(cell, slots[i]);
+      await sleep(700);
+      await clearPcSearch();
+      done++;
+    }
+    return { ok: true, done };
+  }
+
+  /* ------------------------------------------------------------------ *
+   * 8b. PokéAPI (pokeapi.co) cross-check and the game's moves panel
+   * ------------------------------------------------------------------ */
+  async function pokeApiSpecies(name) {
+    const key = 'api:' + name;
+    if (state.apiCache[key]) return state.apiCache[key];
+    const cached = store.get(key, null);
+    if (cached) { state.apiCache[key] = cached; return cached; }
+    const data = await httpGetJson('https://pokeapi.co/api/v2/pokemon/' + encodeURIComponent(name));
+    const out = {
+      types: (data.types || []).map(t => t.type.name),
+      stats: {
+        hp: data.stats?.[0]?.base_stat, atk: data.stats?.[1]?.base_stat, def: data.stats?.[2]?.base_stat,
+        spa: data.stats?.[3]?.base_stat, spd: data.stats?.[4]?.base_stat, spe: data.stats?.[5]?.base_stat
+      },
+      learn: (data.moves || [])
+        .filter(m => m.move && m.move.name)
+        .map(m => {
+          const vg = (m.version_group_details || []).find(v => v.move_learn_method?.name === 'level-up')
+            || (m.version_group_details || [])[0];
+          return { key: m.move.name, level: vg?.level_learned_at ?? 0 };
+        })
+    };
+    store.set(key, out);
+    state.apiCache[key] = out;
+    return out;
+  }
+
+  /** Open the game's own moves panel for a Pokémon (the authoritative learnset). */
+  async function showMovesPanel(uid) {
+    if (!await gotoTeamScreen()) return false;
+    document.querySelector('.mvd-root .dc-x')?.click();
+    document.querySelector('.modal-root .dc-x')?.click();
+    await sleep(250);
+    let cell = await findPcCell(uid, readSave() || { mons: [] });
+    if (!cell) {
+      await clearPcSearch();
+      // already in the team: open its slot instead
+      cell = document.querySelector(`#team-slots .slot[data-uid="${uid}"]`);
+    }
+    if (!cell) return false;
+    cell.click();
+    await sleep(600);
+    const mv = document.querySelector('.modal-root .dc-move');
+    if (mv) mv.click();
+    await sleep(500);
+    await clearPcSearch();
+    return !!mv;
+  }
+
+  /* ------------------------------------------------------------------ *
+   * 9. UI
+   * ------------------------------------------------------------------ */
+  const state = {
+    data: null, chart: null, chartSource: '', engine: null, learnAll: null,
+    events: null, enemies: null, scored: null, team: null,
+    preset: 'balanced', errors: [], busy: false, watcher: null, watching: false, eligible: 0,
+    apiCache: {}, info: {}
+  };
+
+  const TYPE_COLORS = {
+    normal: '#A8A77A', fire: '#EE8130', water: '#6390F0', electric: '#F7D02C', grass: '#7AC74C', ice: '#96D9D6',
+    fighting: '#C22E28', poison: '#A33EA1', ground: '#E2BF65', flying: '#A98FF3', psychic: '#F95587', bug: '#A6B91A',
+    rock: '#B6A136', ghost: '#735797', dragon: '#6F35FC', dark: '#705746', steel: '#B7B7CE', fairy: '#D685AD'
+  };
+  const typeColor = t => TYPE_COLORS[t] || '#888';
+
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  }
+
+  /** Names in the language the game is running in (the bundle only ships the French ones). */
+  function i18n() {
+    const data = window.I18N_DATA || {};
+    return Object.values(data)[0] || null;
+  }
+  function displayName(id) {
+    const lang = i18n();
+    const n = lang?.pokemon?.[id];
+    const name = Array.isArray(n) ? n[0] : n;
+    return name || state.data?.species?.[id]?.name || ('#' + id);
+  }
+  function displayMove(key) {
+    const lang = i18n();
+    const n = lang?.moves?.[key];
+    const name = Array.isArray(n) ? n[0] : n;
+    return name || state.data?.moves?.[key]?.name || key;
+  }
+
+  function typeChips(enemies, data) {
+    if (!enemies || !data) return '<span class="muted">no data</span>';
+    const counts = {};
+    for (const e of enemies) {
+      const types = data.species[e.id]?.types || [];
+      const w = (KIND_WEIGHT[e.kind] || 1) * (e.weight || 1);
+      for (const t of types) counts[t] = (counts[t] || 0) + w;
+    }
+    const entries = Object.entries(counts).sort((a, b) => b[1] - a[1]);
+    const total = entries.reduce((a, [, c]) => a + c, 0) || 1;
+    return entries.map(([t, c]) => `<span class="type" style="background:${typeColor(t)}">${t} ${Math.round(c / total * 100)}%</span>`).join('');
+  }
+
+  function renderFails() {
+    const fails = state.watcher?.fails || [];
+    if (!fails.length) return '<div class="muted">no wipe recorded yet</div>';
+    return fails.map(f => {
+      const foes = (f.enemies || []).map(e => `${displayName(e.id)} Lv${e.level}`).join(', ');
+      return `<div class="mon"><div><b>${esc(f.name)}</b> <span class="tag">#${f.node} · ${esc(f.kind || '')}${f.lv ? ' · Lv ' + f.lv.join('-') : ''}</div>`
+        + `<div class="muted">${esc(foes)}</div></div><div class="tag">${new Date(f.at).toLocaleTimeString()}</div></div>`;
+    }).join('');
+  }
+
+  function renderTeam() {
+    if (!state.team) return '<div class="muted">run the optimizer to get a team</div>';
+    if (!state.team.length) return '<div class="muted">no candidate</div>';
+    return state.team.map((s, i) => {
+      const sp = s.species;
+      const types = sp.types.map(t => `<span class="type" style="background:${typeColor(t)}">${t}</span>`).join('');
+      return `<div class="mon"><div>${i + 1}. <b>${esc(displayName(sp.id))}</b> <span class="tag">Lv${s.mon.level}${s.mon.shiny ? ' ✨' : ''}</span>`
+        + `<div class="types" style="margin:2px 0">${types}</div>`
+        + `<span class="muted">${esc(s.bestMoveKey ? displayMove(s.bestMoveKey) : (s.bestMoveName || '—'))} · ${Math.round(s.avgDmg)} dmg · ${Math.round(s.avgRounds)} rounds</span>`
+        + `<div class="muted" data-info="${s.mon.uid}">${state.info[s.mon.uid] || ''}</div></div>`
+        + `<div class="tag"><button data-moves="${s.mon.uid}">moves</button> <button data-api="${s.mon.uid}">api</button><br>${fmt(scoreFor(s, state.preset))}</div></div>`;
+    }).join('');
+  }
+
+  function renderPanel() {
+    let p = document.getElementById('pcopt-panel');
+    if (!p) {
+      p = document.createElement('div');
+      p.id = 'pcopt-panel';
+      document.body.appendChild(p);
+    }
+    const save = readSave();
+    const adv = save?.adv;
+    const node = adv?.nodes?.[adv.node];
+
+    p.innerHTML = `
+      <style>
+        #pcopt-panel{position:fixed;right:12px;bottom:12px;z-index:99999;width:340px;max-height:80vh;overflow:auto;
+          background:#14161c;color:#e8ecf1;border:1px solid #333a46;border-radius:10px;font:12px/1.45 system-ui,sans-serif;
+          box-shadow:0 8px 28px #0009}
+        #pcopt-panel h3{margin:0;padding:8px 10px;font-size:12px;letter-spacing:.04em;text-transform:uppercase;
+          background:#1c2029;border-bottom:1px solid #333a46;display:flex;justify-content:space-between;align-items:center}
+        #pcopt-panel section{padding:8px 10px;border-bottom:1px solid #262b35}
+        #pcopt-panel b{color:#ffd23f}
+        #pcopt-panel .row{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+        #pcopt-panel button{all:unset;cursor:pointer;padding:3px 8px;border-radius:5px;background:#2b313d;border:1px solid #3c4453}
+        #pcopt-panel button.on{background:#3f6fd8;border-color:#5b86e8}
+        #pcopt-panel button:disabled{opacity:.45;cursor:default}
+        #pcopt-panel .muted{color:#8e97a6}
+        #pcopt-panel .types{display:flex;gap:4px;flex-wrap:wrap;margin:4px 0}
+        #pcopt-panel .type{font-size:10px;padding:1px 5px;border-radius:9px;color:#10131a;font-weight:600}
+        #pcopt-panel .mon{display:flex;justify-content:space-between;gap:6px;padding:3px 0;border-bottom:1px solid #232833}
+        #pcopt-panel .mon:last-child{border-bottom:0}
+        #pcopt-panel .log{max-height:130px;overflow:auto;margin-top:6px}
+        #pcopt-panel .err{color:#ff8a8a}
+        #pcopt-panel .tag{font-size:10px;color:#8e97a6;white-space:nowrap}
+      </style>
+      <h3><span>Poke'Catch Optimizer</span><button id="pcopt-toggle">–</button></h3>
+      <div id="pcopt-body"></div>`;
+
+    const body = $('#pcopt-body', p);
+    $('#pcopt-toggle', p).onclick = () => {
+      const open = body.style.display !== 'none';
+      body.style.display = open ? 'none' : '';
+      $('#pcopt-toggle', p).textContent = open ? '+' : '–';
+    };
+
+    body.innerHTML = `
+      <section>
+        <div class="row"><b>Chapter</b> ${adv?.chapter != null ? `#${adv.chapter} ${esc(state.events?.name || '')}` : '<span class="muted">no save</span>'}</div>
+        <div class="muted">step ${adv?.node ?? '-'} / ${(adv?.nodes || []).length} · ${esc(node?.name || '-')} ${node?.lv ? '· Lv ' + node.lv.join('-') : ''}</div>
+        <div class="muted">cap ${state.events?.cap ?? '-'} · type chart: ${esc(state.chartSource || '-')}</div>
+        ${state.eligible ? `<div class="muted">${state.eligible} Pokémon can join this team${save?.link ? ' (region link: ' + esc(save.link.to) + ')' : ''}</div>` : ''}
+        ${state.errors.length ? `<div class="err">${state.errors.map(esc).join('<br>')}</div>` : ''}
+      </section>
+
+      <section>
+        <div class="row"><b>Chapter events</b><span class="tag">${state.enemies ? state.enemies.length + ' foes' : ''}</span></div>
+        ${state.watcher.fails[0] ? `<div class="muted">last wipe: step ${state.watcher.fails[0].node} · ${esc(state.watcher.fails[0].name)} (${esc((state.watcher.fails[0].enemies || []).map(e => displayName(e.id)).join(', '))})</div>` : ''}
+        <div class="types">${typeChips(state.enemies, state.data)}</div>
+        <div class="row">
+          <button id="pcopt-watch">${state.watching ? '● watching' : 'watch for wipes'}</button>
+          <button id="pcopt-clear">clear log</button>
+        </div>
+        <div class="log">${renderFails()}</div>
+      </section>
+
+      <section>
+        <div class="row">
+          <button data-preset="defense" class="${state.preset === 'defense' ? 'on' : ''}">Defense</button>
+          <button data-preset="offense" class="${state.preset === 'offense' ? 'on' : ''}">Offense</button>
+          <button data-preset="balanced" class="${state.preset === 'balanced' ? 'on' : ''}">Balanced</button>
+        </div>
+        <div class="row" style="margin-top:6px">
+          <button id="pcopt-run" ${state.busy ? 'disabled' : ''}>${state.busy ? 'working…' : 'optimize'}</button>
+          <button id="pcopt-apply" ${state.team && state.team.length && !state.busy ? '' : 'disabled'}>apply to team</button>
+        </div>
+        <div id="pcopt-team">${renderTeam()}</div>
+      </section>`;
+
+    body.querySelectorAll('[data-preset]').forEach(b => b.onclick = () => {
+      state.preset = b.dataset.preset;
+      if (state.scored) state.team = pickTeam(state.scored, state.enemies, state.engine, state.data, state.preset);
+      renderPanel();
+    });
+    body.querySelectorAll('[data-moves]').forEach(b => b.onclick = () => {
+      b.textContent = '…';
+      showMovesPanel(b.dataset.moves).then(() => { b.textContent = 'moves'; });
+    });
+    body.querySelectorAll('[data-api]').forEach(b => b.onclick = () => {
+      const uid = b.dataset.api;
+      const info = body.querySelector(`[data-info="${uid}"]`);
+      if (info) info.textContent = 'asking PokéAPI…';
+      compareWithPokeApi(uid, info);
+    });
+    $('#pcopt-run', body).onclick = () => runOptimizer();
+    $('#pcopt-apply', body).onclick = () => applyTeamFromPanel();
+    $('#pcopt-watch', body).onclick = () => {
+      if (state.watcher.running) state.watcher.stop(); else state.watcher.start();
+      state.watching = state.watcher.running;
+      renderPanel();
+    };
+    $('#pcopt-clear', body).onclick = () => { state.watcher.clear(); renderPanel(); };
+  }
+
+  /* ------------------------------------------------------------------ *
+   * 10. Boot + actions
+   * ------------------------------------------------------------------ */
+  async function ensureData() {
+    if (state.engine) return;
+    const url = bundleUrl();
+    if (!url) { state.errors = ['game bundle not loaded yet']; return; }
+    let data = store.get('bundle:' + url, null);
+    if (!data) {
+      state.busy = true; renderPanel();
+      try {
+        data = await parseBundle(url);
+        store.set('bundle:' + url, data);
+      } catch (e) {
+        state.errors = ['bundle parse failed: ' + e.message];
+        state.busy = false; renderPanel();
+        return;
+      }
+      state.busy = false;
+    }
+    state.data = data;
+    state.learnAll = buildLearnAll(data);
+    state.errors = state.errors.filter(e => !e.startsWith('bundle'));
+
+    if (!state.chart) {
+      const cachedChart = store.get('chart', null);
+      if (cachedChart) { state.chart = cachedChart.chart; state.chartSource = cachedChart.source; }
+      else {
+        try {
+          state.chart = parsePokemonDbChart(await httpGet('https://pokemondb.net/type'));
+          state.chartSource = 'pokemondb.net';
+        } catch (e1) {
+          try {
+            state.chart = await chartFromPokeApi();
+            state.chartSource = 'pokeapi.co';
+          } catch (e2) {
+            state.chart = data.chart;
+            state.chartSource = 'game';
+          }
+        }
+        store.set('chart', { chart: state.chart, source: state.chartSource });
+      }
+    }
+    state.engine = makeEngine(data, state.chart, state.learnAll);
+    refreshChapter();
+  }
+
+  /** Read the current chapter events (foes, types, cap) without running the full optimizer. */
+  function refreshChapter() {
+    const save = readSave();
+    if (!save || !save.adv || !state.data) return;
+    const info = chapterInfo(state.data, save.adv.chapter);
+    if (!info) return;
+    state.events = info;
+    state.enemies = chapterEnemies(state.data, info).map(e => {
+      const types = state.data.species[e.id]?.types || [];
+      const proj = { id: e.id, level: e.level, types };
+      return { ...e, proj, types, hp: state.engine ? state.engine.maxHp(proj) : 0 };
+    });
+    const away = awayUids(save);
+    state.eligible = save.mons.filter(m => !away.has(m.uid) && state.data.species[m.id] && canJoinTeam(save, m)).length;
+  }
+
+  async function runOptimizer() {
+    state.busy = true; state.errors = []; renderPanel();
+    try {
+      await ensureData();
+      if (!state.data) { state.busy = false; renderPanel(); return; }
+      const save = readSave();
+      if (!save) { state.errors = ['no save found']; state.busy = false; renderPanel(); return; }
+      const info = chapterInfo(state.data, save.adv.chapter);
+      if (!info) { state.errors = ['chapter not found']; state.busy = false; renderPanel(); return; }
+      state.events = info;
+      state.enemies = chapterEnemies(state.data, info);
+      const away = awayUids(save);
+      const candidates = save.mons.filter(m => !away.has(m.uid) && state.data.species[m.id] && canJoinTeam(save, m));
+      state.eligible = candidates.length;
+      state.scored = scoreCandidates(state.engine, state.data, state.enemies, candidates, info.cap);
+      state.enemies = state.enemies.map(e => {
+        const types = state.data.species[e.id]?.types || [];
+        const proj = { id: e.id, level: e.level, types };
+        return { ...e, proj, types, hp: state.engine.maxHp(proj) };
+      });
+      state.team = pickTeam(state.scored, state.enemies, state.engine, state.data, state.preset);
+      if (!state.team.length) state.errors = ['no candidate found in the PC'];
+    } catch (e) {
+      state.errors = ['optimizer error: ' + e.message];
+    }
+    state.busy = false;
+    renderPanel();
+  }
+
+  /** Compare the game learnset with the canonical PokéAPI one (the game is freer). */
+  async function compareWithPokeApi(uid, info) {
+    const save = readSave();
+    const mon = save && monByUid(save, uid);
+    if (!mon) return;
+    const name = displayName(mon.id).toLowerCase().replace(/[^a-z0-9]+/g, '-');
+    try {
+      const api = await pokeApiSpecies(name);
+      const game = (state.learnAll?.learnAll?.[mon.id] || []).filter(([lv]) => lv <= (state.events?.cap ?? 100));
+      const apiKeys = new Set(api.learn.map(l => l.key));
+      const extra = game.filter(([, key]) => !apiKeys.has(key)).map(([lv, key]) => displayMove(key) + '@' + lv);
+      const same = api.types.length === (state.data.species[mon.id]?.types.length)
+        && api.types.every(t => (state.data.species[mon.id]?.types || []).includes(t));
+      if (info) {
+        info.innerHTML = `PokéAPI: ${api.types.join('/')}${same ? '' : ' (game: ' + (state.data.species[mon.id]?.types.join('/')) + ')'}`
+          + (extra.length ? `<br>${extra.length} extra moves in game: ${extra.slice(0, 6).join(', ')}${extra.length > 6 ? '…' : ''}` : '<br>same learnset');
+        state.info[uid] = info.innerHTML;
+      }
+    } catch (e) {
+      if (info) { info.textContent = 'PokéAPI: ' + e.message; state.info[uid] = info.textContent; }
+    }
+  }
+
+  async function applyTeamFromPanel() {
+    if (!state.team || !state.team.length) return;
+    state.busy = true; renderPanel();
+    const res = await applyTeam(state.team);
+    state.busy = false;
+    if (!res.ok) state.errors = ['apply failed: ' + res.error];
+    renderPanel();
+  }
+
+  function boot() {
+    state.watcher = new WipeWatcher(rec => {
+      renderPanel();
+      if (rec) {
+        // the team fell on this step: rebuild an optimal team for the chapter
+        runOptimizer();
+      }
+    });
+    renderPanel();
+    ensureData().then(() => renderPanel());
+    // the game keeps playing in the background: keep the panel in sync
+    setInterval(() => {
+      if (state.busy) return;
+      refreshChapter();
+      renderPanel();
+    }, 5000);
+  }
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
+  else boot();
+
+  // exposed for tests / manual checks
+  window.__pcopt = {
+    state, ensureData, runOptimizer, parsePokemonDbChart, buildLearnAll, makeEngine,
+    chapterEnemies, chapterInfo, readSave, scoreCandidates, pickTeam, scoreFor,
+    WipeWatcher, applyTeam, bundleUrl, httpGet, canJoinTeam, showMovesPanel, pokeApiSpecies, compareWithPokeApi
+  };
+})();
