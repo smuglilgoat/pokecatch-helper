@@ -17,7 +17,8 @@ A Tampermonkey helper for [Poke'Catch](https://pokecatch-online.netlify.app/) th
    CSS (same buttons, badges, colours and light/dark theme), so it looks like part of the UI.
    Drag its left edge to widen it (the width is remembered), and use the `–` button to fold it.
    The panel only redraws when something actually changed, so it never flickers while the game
-   plays in the background.
+   plays in the background. All Pokémon and move names are shown in **English** (the game ships
+   an English pack in every language; the script fetches it when missing).
 
 ## Using it
 
