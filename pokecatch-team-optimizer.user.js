@@ -231,6 +231,13 @@
       try { return evalLit(lit); } catch { return evalSandbox(lit); }
     });
     const leagueTeams = table('LEAGUE_TEAMS', false, read('a.LEAGUE_TEAMS=')) || {};
+    // the moves that can inflict a status: the learnset grading counts them as usable
+    const statusMoves = table('STATUS.MOVES', false, () => {
+      const anchor = src.indexOf('a.STATUS=function(){const s={');
+      if (anchor < 0) throw new Error('marker not found');
+      const brace = src.indexOf('{', anchor + 'a.STATUS=function(){const s='.length - 1);
+      return evalLit(literalAt(src, brace));
+    }) || {};
     // legend zones live in the same bundle: reading them here means one fetch, not two
     let legends = null;
     try { legends = parseLegends(src); } catch (e) { logError('bundle: legends', e); }
@@ -265,6 +272,7 @@
       chapters,
       regions,
       leagueTeams,
+      statusMoves,
       legends,
       cfg: {
         LEVEL_GAP: cfg.LEVEL_GAP, CRIT_MULT: cfg.CRIT_MULT, CRIT_CHANCE: cfg.CRIT_CHANCE,
@@ -352,6 +360,7 @@
       for (let id = sp.id, p; (p = PREVO[id]) && byId[p.from]; id = p.from)
         for (const l of byId[p.from].learn)
           if (!seen.has(l[1])) { seen.add(l[1]); list.push([l[0], l[1], p.from]); }
+    const orig = new Map(list.map(l => [l, l[0]]));   // level before any re-grading
 
       for (let i = list.length - 1; i >= 0; i--)
         if (cfg.MOVE_RECHARGE.includes(list[i][1])) list.splice(i, 1);
@@ -390,7 +399,42 @@
       for (const l of list) if (l[0] === 0) l[0] = evoLevel(l[2]);
       for (const l of list) l[0] = Math.max(l[0], levelFloor(l[1]));
 
-      learnAll[sp.id] = list.filter(l => !dropped.has(l[1])).sort((a, b) => a[0] - b[0]).map(l => [l[0], l[1]]);
+      // --- the 2026-11 grading, exactly as the game does it -----------------
+      // (no damaging move GAP_MAX above the previous one, then the levels of
+      // each type reassigned by weight order, then every usable move
+      // spaced by a per-species 4-5 step, then the gap cap again)
+      const statusMoves = data.statusMoves || {};
+      const usable = key => !cfg.MOVE_BLACKLIST.includes(key) && (movePower(key) > 0 || !!statusMoves[key]);
+      const kept = list.filter(l => !dropped.has(l[1]));
+      const damaging = kept.filter(l => movePower(l[1]) > 0 && usable(l[1]));
+      let prev = 0;
+      for (const l of [...damaging].sort((a, b) => a[0] - b[0] || orig.get(a) - orig.get(b) || weight(a[1]) - weight(b[1]))) {
+        if (prev) l[0] = Math.min(l[0], prev + cfg.MOVE_GAP_MAX);
+        prev = l[0];
+      }
+      for (const type of new Set(damaging.map(l => moves[l[1]].type))) {
+        const group = damaging.filter(l => moves[l[1]].type === type && isRealMove(l[1]));
+        const levels = group.map(l => l[0]).sort((a, b) => a - b);
+        [...group].sort((a, b) => weight(a[1]) - weight(b[1]) || a[0] - b[0]).forEach((l, i) => { l[0] = levels[i]; });
+      }
+      const spaced = kept.filter(l => usable(l[1]))
+        .sort((a, b) => a[0] - b[0] || (movePower(b[1]) > 0) - (movePower(a[1]) > 0) || weight(a[1]) - weight(b[1]));
+      const [stepLo, stepHi] = cfg.MOVE_STEP || [4, 5];
+      const stepOf = i => stepLo + (Math.imul(sp.id * 64 + i, 2654435761) >>> 16) % (stepHi - stepLo + 1);
+      const spread = stepFn => { let p = -Infinity; return spaced.map((l, i) => p = Math.max(l[0], p + stepFn(i))); };
+      let graded = [];
+      for (const stepFn of [stepOf, ...Array.from({ length: stepLo }, (_, i) => () => stepLo - i)])
+        if (Math.max(0, ...graded = spread(stepFn)) <= 100) break;
+      spaced.forEach((l, i) => { l[0] = graded[i]; });
+      let last = 0;
+      spaced.forEach((l, i) => {
+        if (movePower(l[1]) > 0) {
+          if (last && l[0] > last + cfg.MOVE_GAP_MAX)
+            l[0] = Math.max(i ? spaced[i - 1][0] + Math.min(stepLo, l[0] - spaced[i - 1][0]) : 0, last + cfg.MOVE_GAP_MAX);
+          last = l[0];
+        }
+      });
+      learnAll[sp.id] = kept.sort((a, b) => a[0] - b[0]).map(l => [l[0], l[1]]);
     }
     return { learnAll, movePower, moveAcc, PREVO };
   }
@@ -2068,7 +2112,7 @@
     state.loading = (async () => {
       const url = bundleUrl();
       if (!url) { state.errors = ['game bundle not loaded yet']; log('warn', 'data: the game bundle is not on the page yet'); return; }
-      const cacheKey = 'bundle:v5:' + url;
+      const cacheKey = 'bundle:v6:' + url;
       let data = store.get(cacheKey, null);
       if (data && !dataLooksValid(data)) {
         log('warn', 'data: the cached tables are invalid, parsing the bundle again');
