@@ -2113,7 +2113,7 @@
     state.loading = (async () => {
       const url = bundleUrl();
       if (!url) { state.errors = ['game bundle not loaded yet']; log('warn', 'data: the game bundle is not on the page yet'); return; }
-      const cacheKey = 'bundle:v6:' + url;
+      const cacheKey = 'bundle:v7:' + url;
       let data = store.get(cacheKey, null);
       if (data && !dataLooksValid(data)) {
         log('warn', 'data: the cached tables are invalid, parsing the bundle again');
