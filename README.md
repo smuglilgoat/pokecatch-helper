@@ -147,8 +147,23 @@ Every action is logged to the browser console with a `[pcopt]` prefix — bundle
 slot, picker/Team-PC injections, legendary runs and their odds, wipes and their mode, and every
 error with its message. The last 400 entries are also available as `window.__pcopt.logs`.
 
-The script declares an `@updateURL` pointing at the GitHub raw file, so Tampermonkey can pick up
-fixes automatically (`@version` is bumped on each release).
+### Automatic updates
+
+The script declares `@updateURL` / `@downloadURL` pointing at the raw file on GitHub `main`,
+so Tampermonkey pulls every push by itself — no reinstall, as long as `@version` was bumped
+(it is, on every release). Tampermonkey checks on its own schedule: dashboard → Settings →
+**Update** → set the *check interval* to the shortest you accept, or force a check any time
+from the toolbar (⚙ → *Check for updates*). GitHub raw serves with a 5-minute cache, so a
+push is live almost immediately.
+
+The script also checks once per page load and shows a notice in the panel —
+`update 1.2.2 is on GitHub (installed 1.2.1) — Tampermonkey → Check for updates` — so a fresh
+push is visible the moment you open the game, even before the manager's next check.
+
+For truly instant updates, install the script from a **local clone** instead: Tampermonkey
+re-reads a `file://` script when it changes (needs *Allow access to file URLs* for the
+extension and a path Chrome can read, e.g. a Windows-synced folder), so every `git pull`
+becomes an update on the next page load.
 
 ## Notes / limits
 
