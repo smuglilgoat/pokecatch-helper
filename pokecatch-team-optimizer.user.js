@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Poke'Catch Team Optimizer
 // @namespace    pokecatch-helper
-// @version      1.2.0
+// @version      1.2.1
 // @description  Reads the current chapter events, watches for team wipes (and where they happen), then builds an optimal team of 6 from the PC with Defense / Offense / Balanced presets.
 // @author       GrumpyOwl
 // @match        https://pokecatch-online.netlify.app/*
@@ -26,6 +26,8 @@
    * 0. Small helpers
    * ------------------------------------------------------------------ */
   const SAVE_KEY = 'gachamon-save-v1';
+  const VERSION = '1.2.1';
+  const UPDATE_URL = 'https://raw.githubusercontent.com/smuglilgoat/pokecatch-helper/main/pokecatch-team-optimizer.user.js';
   const $ = (sel, root = document) => root.querySelector(sel);
   const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
   const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
@@ -157,6 +159,20 @@
       }
     });
     return new Function('__scope', 'with (__scope) { return (' + lit + '); }')(scope);
+  }
+
+  /** Notice when the repo has a newer version: the install itself stays in Tampermonkey's hands. */
+  async function checkUpdate() {
+    const installed = (typeof GM_info !== 'undefined' && GM_info?.script?.version) || VERSION;
+    try {
+      const code = await httpGet(UPDATE_URL + '?cb=' + Date.now());
+      const repo = (code.match(/@version\s+(\S+)/) || [])[1];
+      if (!repo || repo === installed) { log('debug', 'update: up to date', installed); return; }
+      log('info', 'update: a newer version is on GitHub', { installed, repo });
+      state.update = { installed, repo };
+      state.lastSig = null;
+      renderPanel();
+    } catch (e) { log('debug', 'update: check failed', e.message); }
   }
 
   /** Every `name = <literal>` in the bundle (minified names are reused in several scopes). */
@@ -2039,7 +2055,7 @@
       odds: state.legOdds ? [state.legOdds.winChance, state.legOdds.rounds, state.legOdds.attempts, state.legOdds.totalMs].join('|') : '',
       fails: state.watcher?.fails.length, busy: state.busy,
       errors: state.errors.join('|'), waiting: state.waiting,
-      data: state.data ? Object.keys(state.data.species).length : 0,
+      update: state.update?.repo || '', data: state.data ? Object.keys(state.data.species).length : 0,
       legends: state.legends?.zones.length ?? 0,
       info: Object.keys(state.info).map(k => k + ':' + state.info[k]).join(',')
     };
@@ -2143,6 +2159,7 @@
         ${state.leagueInfo ? `<div class="pcopt-mut">${esc(state.leagueInfo)}</div>` : ''}
         ${state.eligible ? `<div class="pcopt-mut">${state.eligible} Pokémon can join this team${save?.link ? ' (region link: ' + esc(save.link.to) + ')' : ''}</div>` : ''}
         ${state.waiting ? `<div class="pcopt-mut">${esc(state.waiting)}</div>` : ''}
+        ${state.update ? `<div class="pcopt-err">update ${esc(state.update.repo)} is on GitHub (installed ${esc(state.update.installed)}) — Tampermonkey → Check for updates</div>` : ''}
         ${state.errors.length ? `<div class="pcopt-err">${state.errors.map(esc).join('<br>')}</div>` : ''}
       </section>
 
@@ -2446,8 +2463,9 @@
   }
 
   function boot() {
-    log('info', 'boot', { version: '1.2.0', bundle: bundleUrl()?.split('/').pop() || null });
+    log('info', 'boot', { version: VERSION, bundle: bundleUrl()?.split('/').pop() || null });
     ensureEnglish().catch(e => logError('names: English pack', e));
+    checkUpdate().catch(e => logError('update: check', e));
     // the game's own team picker (legend zones, raids, elite league): put my controls beside its Optimize button
     let pending = false;
     new MutationObserver(() => {
