@@ -119,7 +119,10 @@ Elite tiers add the game's per-species `[HP, damage]` multipliers and make the b
 * **The game itself** — the script parses the bundle the page already loaded
   (`bundle/app.<hash>.js`) and extracts the Pokédex, the move table, the evolutions, the
   chapter list and the encounter tables. The per-species learnset is recomputed with the
-  game's own algorithm, so it matches the *moves panel* exactly (verified species by species).
+  game's own grading algorithm (the 2026-11 re-grading: a max 20-level gap between damaging
+  moves, per-type level reassignment by weight, and a per-species 4–5 spacing step), so the
+  recommended attacks are exactly the ones the game allows at the level cap — verified equal
+  to the game's own algorithm on all 649 species.
 * **https://pokemondb.net/type** — the type chart (it is identical to the chart the game uses).
 * **https://pokeapi.co/api/v2** — cross-check of species types and level-up learnsets, and a
   fallback source for the type chart.
