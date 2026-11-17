@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Poke'Catch Team Optimizer
 // @namespace    pokecatch-helper
-// @version      1.1.0
+// @version      1.2.0
 // @description  Reads the current chapter events, watches for team wipes (and where they happen), then builds an optimal team of 6 from the PC with Defense / Offense / Balanced presets.
 // @author       GrumpyOwl
 // @match        https://pokecatch-online.netlify.app/*
@@ -256,7 +256,7 @@
     if (bad.length) throw new Error('game update changed the bundle: implausible ' + bad.join(', '));
 
     const species = {};
-    for (const s of dex) species[s.id] = { id: s.id, name: s.name, types: s.types, stats: s.stats, learn: s.learn, captureRate: s.captureRate, legendary: s.legendary, mythical: s.mythical };
+    for (const s of dex) species[s.id] = { id: s.id, name: s.name, types: s.types, stats: s.stats, learn: s.learn, captureRate: s.captureRate, legendary: s.legendary, mythical: s.mythical, baby: s.baby, unique: s.unique };
 
     log('info', 'bundle: parsed', {
       url: url.split('/').pop(), dex: dex.length, moves: Object.keys(moves).length,
@@ -285,6 +285,9 @@
         MULTI_HIT: cfg.MULTI_HIT || {}, MULTI_HIT_ODDS: cfg.MULTI_HIT_ODDS || [],
         MOVE_LEVELS: cfg.MOVE_LEVELS || [], MOVE_FLOOR_FROM: cfg.MOVE_FLOOR_FROM ?? 100,
         MOVE_GAP_MAX: cfg.MOVE_GAP_MAX ?? 20, MOVE_STEP: cfg.MOVE_STEP || [4, 5],
+        TIME_EVOLUTIONS: cfg.TIME_EVOLUTIONS || {}, TIER_MIN: cfg.TIER_MIN || {},
+        TRADE_FEE: cfg.ONLINE_TRADE?.FEE || [30000, 120000, 450000],
+        TRADE_SHINY_FEE: cfg.ONLINE_TRADE?.SHINY_FEE ?? 5,
         ACC_CURVE: cfg.ACC_CURVE || [40, 150, 80],
         TEAM_SIZE: cfg.TEAM_SIZE, MAX_LEVEL: cfg.MAX_LEVEL, LEAGUE_CAP_MARGIN: cfg.LEAGUE_CAP_MARGIN,
         LEAGUE_DONE_CAP: cfg.LEAGUE_DONE_CAP, LEVEL_CAP_MARGIN: cfg.LEVEL_CAP_MARGIN,
@@ -943,39 +946,124 @@
    * ------------------------------------------------------------------ */
   const KIND_WEIGHT = { wild: 1, trainer: 4, gym: 8 };
 
-  /**
-   * The species a mon becomes at the cap, exactly like the game evolves them on
-   * level-up: level evolutions within the cap happen by themselves, item
-   * evolutions only if the item is in the bag. Trade/friendship and other
-   * gated evolutions stay out (you cannot count on them).
-   */
-  function evolvedSpecies(data, save, id, cap) {
-    let cur = id;
-    for (let hop = 0; hop < 4; hop++) {
-      let next = null;
-      for (const e of data.evo[cur] || []) {
-        if (e.level != null) { if (e.level <= cap) { next = e.to; break; } }
-        else if (e.item && (save?.items?.[e.item] ?? 0) > 0) { next = e.to; break; }
+  /** The game only evolves into a species whose region dex is open. */
+  function regionHas(data, save, targetId) {
+    const base = targetId > 10000 ? Math.floor(targetId / 100) : targetId;
+    const unlocked = save?.adv?.unlocked ?? 0;
+    return (data.regions || []).some(r => r.dex
+      && unlocked >= data.chapters.findIndex(c => (c.reg || 'kanto') === r.key)
+      && base >= r.dex[0] && base <= r.dex[1]);
+  }
+
+  /** The game's daytime phases: morning < 10h, day 10-20h, night >= 20h (a
+   *  chapter flagged `day` stays day until it is fully unlocked). */
+  function daytimeMatches(data, save, key) {
+    if (!key) return true;
+    const adv = save?.adv;
+    const ch = adv?.chapter != null ? data.chapters[adv.chapter] : null;
+    const dayLocked = !!ch?.day && !(adv.unlocked > adv.chapter);
+    const hour = new Date().getHours();
+    const idx = dayLocked ? 1 : (hour >= 20 || hour < 8 ? 2 : hour >= 10 ? 1 : 0);
+    return key === 'night' ? idx === 2 : idx !== 2;
+  }
+
+  /** The game's trade tier (captureRate, evolution depth, BST, TIER_MIN). */
+  function tradeTier(data, id, cache = new Map()) {
+    if (cache.has(id)) return cache.get(id);
+    const sp = data.species[id];
+    if (!sp) { cache.set(id, 0); return 0; }
+    let o;
+    const PREVO = {};
+    for (const [from, list] of Object.entries(data.evo)) for (const e of list) PREVO[e.to] ??= { from: +from, ...e };
+    PREVO[233] ??= { from: 137 }; PREVO[474] ??= { from: 233 };
+    const prevo = x => {
+      const p = PREVO[x];
+      return (p && data.species[p.from] && !data.species[p.from].baby) ? p.from : null;
+    };
+    if (sp.unique) o = 4;
+    else if (sp.legendary || sp.mythical) o = 3;
+    else {
+      o = sp.captureRate <= 45 ? 2 : sp.captureRate <= 120 ? 1 : 0;
+      if (!sp.baby) {
+        const d = prevo(id);
+        const w = (data.evo[id] || []).some(e => data.species[e.to] && !data.species[e.to].legendary && !data.species[e.to].mythical);
+        let depth = 0;
+        for (let i = d; i != null; i = prevo(i)) depth++;
+        if (d != null) o = Math.max(o, w ? 1 : depth >= 2 ? 2 : 1);
+        if (d != null || !w) {
+          const bst = Object.values(sp.stats || {}).reduce((a, b) => a + b, 0);
+          o = Math.max(o, bst >= 500 ? 2 : bst >= 450 ? 1 : 0);
+        }
+        o = Math.max(o, data.cfg.TIER_MIN?.[id] ?? 0);
+        if (d != null) o = Math.max(o, Math.min(2, tradeTier(data, d, cache)));
       }
-      if (!next || !data.species[next] || next === cur) break;
-      cur = next;
     }
-    return cur;
+    cache.set(id, o);
+    return o;
+  }
+
+  /** What an online trade of this mon costs (the game's fee table, no economy multiplier). */
+  function tradeFee(data, mon) {
+    const tier = tradeTier(data, mon.id);
+    const fee = (data.cfg.TRADE_FEE || [])[Math.min(2, tier)] ?? 0;
+    return Math.round(fee * (mon.shiny ? (data.cfg.TRADE_SHINY_FEE ?? 5) : 1));
+  }
+
+  /**
+   * Every species the mon can become at the cap: all reachable branches, current
+   * form last. Level evolutions respect the game's daytime and party gates and
+   * its uid-hash pick when several branches qualify; item evolutions need the
+   * item in the bag; link-cable evolutions (trades) need the trade fee in the
+   * wallet. Evolutions into a closed region's dex stay out.
+   */
+  function evolvedBranches(data, save, mon, cap) {
+    const out = [];
+    const seen = new Set([mon.id]);
+    const partyIds = new Set((save.team || []).map(u => monByUid(save, u)?.id).filter(Boolean));
+    const walk = (id, uid, depth) => {
+      if (depth > 4) return;
+      const chain = data.evo[id] || [];
+      // level branches: the game picks one by uid hash when several qualify
+      const levelOk = chain.filter(e => e.level != null && e.level <= cap
+        && daytimeMatches(data, save, data.cfg.TIME_EVOLUTIONS?.[e.to])
+        && (!e.party || partyIds.has(e.party))
+        && regionHas(data, save, e.to));
+      const picks = levelOk.length > 1 ? [levelOk[[...uid].reduce((d, w) => d * 31 + w.charCodeAt(0) >>> 0, 7) % levelOk.length]] : levelOk;
+      for (const e of picks) {
+        if (seen.has(e.to) || !data.species[e.to]) continue;
+        seen.add(e.to); out.push(e.to);
+        walk(e.to, uid, depth + 1);
+      }
+      // item branches: every one you can pay for is reachable (you choose what to use)
+      for (const e of chain) {
+        if (e.item == null || seen.has(e.to) || !data.species[e.to]) continue;
+        const owned = e.item === 'link-cable'
+          ? save.money >= tradeFee(data, { id, shiny: mon.shiny })
+          : (save.items?.[e.item] ?? 0) > 0;
+        if (owned && regionHas(data, save, e.to) && daytimeMatches(data, save, data.cfg.TIME_EVOLUTIONS?.[e.to])) {
+          seen.add(e.to); out.push(e.to);
+          walk(e.to, uid, depth + 1);
+        }
+      }
+    };
+    walk(mon.id, mon.uid, 0);
+    out.push(mon.id);
+    return out;
   }
 
   /** The Pokémon that may join the team, projected at the chapter cap (evolutions included). */
   function projectCandidates(eng, data, save, level) {
     const away = awayUids(save);
     const cands = save.mons.filter(m => !away.has(m.uid) && data.species[m.id] && canJoinTeam(save, m));
-    return cands.map(c => {
-      const sp = data.species[evolvedSpecies(data, save, c.id, level)];
+    return cands.flatMap(c => evolvedBranches(data, save, c, level).map(sid => {
+      const sp = data.species[sid];
       const base = { id: sp.id, shiny: c.shiny, status: c.status, types: sp.types };
       const proj = { ...base, level };
       const hp = eng.maxHp(proj);
       // the team keeps its HP between fights: use what is left, like the game does
       const hpCur = c.hp != null ? Math.min(c.hp, hp) : hp;
       return { mon: c, base, proj, species: sp, hp, hpCur };
-    });
+    }));
   }
 
   /** Individual metrics of every candidate against the chapter's foes. */
@@ -1099,10 +1187,11 @@
     const chosen = [];
     const usedSpecies = new Set();
     const usedShiny = new Set();
+    const usedUids = new Set();
     while (chosen.length < size) {
       let best = null, bestScore = -Infinity;
       for (const cand of pool) {
-        if (chosen.includes(cand)) continue;
+        if (chosen.includes(cand) || usedUids.has(cand.mon.uid)) continue;
         if (!cand.mon.shiny && usedSpecies.has(cand.species.id)) continue;
         if (cand.mon.shiny && usedShiny.has(cand.species.id)) continue;
         const sc = evaluateTeam(chosen.concat([cand]), enemies, eng, data, preset);
@@ -1114,6 +1203,7 @@
       if (!best) break;
       chosen.push(best);
       usedSpecies.add(best.species.id);
+      usedUids.add(best.mon.uid);
       if (best.mon.shiny) usedShiny.add(best.species.id);
     }
     return chosen;
@@ -1286,10 +1376,11 @@
     const chosen = [];
     const usedSpecies = new Set();
     const usedShiny = new Set();
+    const usedUids = new Set();
     while (chosen.length < size) {
       let best = null, bestScore = -Infinity;
       for (const cand of pool) {
-        if (chosen.includes(cand)) continue;
+        if (chosen.includes(cand) || usedUids.has(cand.mon.uid)) continue;
         if (!cand.proj.shiny && usedSpecies.has(cand.species.id)) continue;
         if (cand.proj.shiny && usedShiny.has(cand.species.id)) continue;
         const sc = evaluateLegendTeam(chosen.concat([cand]), zone, tier, eng, data);
@@ -1298,6 +1389,7 @@
       if (!best) break;
       chosen.push(best);
       usedSpecies.add(best.species.id);
+      usedUids.add(best.mon.uid);
       if (best.proj.shiny) usedShiny.add(best.species.id);
     }
     return chosen;
@@ -1781,17 +1873,40 @@
     const data = window.I18N_DATA || {};
     return Object.values(data)[0] || null;
   }
+  /** The game ships an English pack even in other languages: use it for every name. */
+  function englishData() {
+    return (window.I18N_DATA || {}).en || null;
+  }
+  async function ensureEnglish() {
+    if (englishData()) return true;
+    const src = document.querySelector('script[src*="lang-en"]')?.src;
+    if (!src) { log('warn', 'names: the English pack is not on the page'); return false; }
+    try {
+      const code = await httpGet(src);
+      const tag = document.createElement('script');
+      tag.textContent = code;
+      document.head.appendChild(tag);
+      tag.remove();
+      log('info', 'names: English pack loaded', src.split('/').pop());
+    } catch (e) { logError('names: English pack', e); }
+    if (englishData()) { state.lastSig = null; renderPanel(); return true; }
+    return false;
+  }
   function displayName(id) {
+    const en = englishData()?.pokemon?.[id];
+    const name = Array.isArray(en) ? en[0] : en;
+    if (name) return name;
     const lang = i18n();
     const n = lang?.pokemon?.[id];
-    const name = Array.isArray(n) ? n[0] : n;
-    return name || state.data?.species?.[id]?.name || ('#' + id);
+    return (Array.isArray(n) ? n[0] : n) || state.data?.species?.[id]?.name || ('#' + id);
   }
   function displayMove(key) {
+    const en = englishData()?.moves?.[key];
+    const name = Array.isArray(en) ? en[0] : en;
+    if (name) return name;
     const lang = i18n();
     const n = lang?.moves?.[key];
-    const name = Array.isArray(n) ? n[0] : n;
-    return name || state.data?.moves?.[key]?.name || key;
+    return (Array.isArray(n) ? n[0] : n) || state.data?.moves?.[key]?.name || key;
   }
 
   /** The game's own type badge (same markup as the rest of the UI). */
@@ -2133,7 +2248,7 @@
     state.loading = (async () => {
       const url = bundleUrl();
       if (!url) { state.errors = ['game bundle not loaded yet']; log('warn', 'data: the game bundle is not on the page yet'); return; }
-      const cacheKey = 'bundle:v7:' + url;
+      const cacheKey = 'bundle:v8:' + url;
       let data = store.get(cacheKey, null);
       if (data && !dataLooksValid(data)) {
         log('warn', 'data: the cached tables are invalid, parsing the bundle again');
@@ -2331,7 +2446,8 @@
   }
 
   function boot() {
-    log('info', 'boot', { version: '1.1.0', bundle: bundleUrl()?.split('/').pop() || null });
+    log('info', 'boot', { version: '1.2.0', bundle: bundleUrl()?.split('/').pop() || null });
+    ensureEnglish().catch(e => logError('names: English pack', e));
     // the game's own team picker (legend zones, raids, elite league): put my controls beside its Optimize button
     let pending = false;
     new MutationObserver(() => {
@@ -2379,6 +2495,6 @@
     WipeWatcher, applyTeam, bundleUrl, httpGet, canJoinTeam, showMovesPanel, pokeApiSpecies, compareWithPokeApi,
     parseLegends, legendBoss, simulateLegend, pickLegendTeam, evaluateLegendTeam, runLegendOptimizer,
     legendFightOnce, legendOdds, logs,
-    projectCandidates, evolvedSpecies, refreshChapter
+    projectCandidates, evolvedBranches, refreshChapter
   };
 })();
