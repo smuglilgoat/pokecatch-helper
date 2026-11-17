@@ -161,6 +161,12 @@ fixes automatically (`@version` is bumped on each release).
   a shiny is scored with the boosted stats and marked with ✨ in the panel.
 * Only Pokémon that the game currently accepts in the team are considered (region link,
   duplicates, one Pokémon per species).
+* **Evolutions within the cap count.** The game evolves a mon by itself when it levels past
+  its evolution level, so the team you field at the cap is its evolved form: the optimizer
+  projects the whole evolution chain that the cap allows. Item evolutions are only counted
+  when the item is in the bag of the current region (`fire-stone` at 0 means Growlithe stays
+  Growlithe); trades and other gated evolutions are not projected, and a branching evolution
+  takes the first reachable branch.
 * Random trainers (the ones you meet on the routes) have a random team; the script uses the
   wild encounters of the same route for them and the fixed teams (gym leader, story trainers)
   as they are.
