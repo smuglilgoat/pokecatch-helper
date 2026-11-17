@@ -943,13 +943,33 @@
    * ------------------------------------------------------------------ */
   const KIND_WEIGHT = { wild: 1, trainer: 4, gym: 8 };
 
-  /** The Pokémon that may join the team, projected at the chapter cap. */
+  /**
+   * The species a mon becomes at the cap, exactly like the game evolves them on
+   * level-up: level evolutions within the cap happen by themselves, item
+   * evolutions only if the item is in the bag. Trade/friendship and other
+   * gated evolutions stay out (you cannot count on them).
+   */
+  function evolvedSpecies(data, save, id, cap) {
+    let cur = id;
+    for (let hop = 0; hop < 4; hop++) {
+      let next = null;
+      for (const e of data.evo[cur] || []) {
+        if (e.level != null) { if (e.level <= cap) { next = e.to; break; } }
+        else if (e.item && (save?.items?.[e.item] ?? 0) > 0) { next = e.to; break; }
+      }
+      if (!next || !data.species[next] || next === cur) break;
+      cur = next;
+    }
+    return cur;
+  }
+
+  /** The Pokémon that may join the team, projected at the chapter cap (evolutions included). */
   function projectCandidates(eng, data, save, level) {
     const away = awayUids(save);
     const cands = save.mons.filter(m => !away.has(m.uid) && data.species[m.id] && canJoinTeam(save, m));
     return cands.map(c => {
-      const sp = data.species[c.id];
-      const base = { id: c.id, shiny: c.shiny, status: c.status, types: sp.types };
+      const sp = data.species[evolvedSpecies(data, save, c.id, level)];
+      const base = { id: sp.id, shiny: c.shiny, status: c.status, types: sp.types };
       const proj = { ...base, level };
       const hp = eng.maxHp(proj);
       // the team keeps its HP between fights: use what is left, like the game does
@@ -972,7 +992,7 @@
 
     const out = [];
     for (const cand of candidates) {
-      const sp = data.species[cand.id];
+      const sp = data.species[cand.base?.id ?? cand.id];
       if (!sp) continue;
       const base = cand.base || { id: cand.id, shiny: cand.shiny, status: cand.status, types: sp.types };
       let dmgSum = 0, surviveSum = 0, wSum = 0, bestDmg = 0, bestMoveName = '', bestMoveKey = '', bestEff = 1;
@@ -2222,7 +2242,8 @@
       const away = awayUids(save);
       const candidates = save.mons.filter(m => !away.has(m.uid) && state.data.species[m.id] && canJoinTeam(save, m));
       state.eligible = candidates.length;
-      state.scored = scoreCandidates(state.engine, state.data, state.enemies, candidates, info.cap, state.league);
+      state.scored = scoreCandidates(state.engine, state.data, state.enemies,
+        projectCandidates(state.engine, state.data, save, info.cap), info.cap, state.league);
       state.enemies = state.enemies.map(e => {
         const types = state.data.species[e.id]?.types || [];
         const proj = { id: e.id, level: e.level, types };
