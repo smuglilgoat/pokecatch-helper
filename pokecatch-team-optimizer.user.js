@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Poke'Catch Team Optimizer
 // @namespace    pokecatch-helper
-// @version      1.6.0
+// @version      1.6.1
 // @description  Reads the current chapter events, watches for team wipes (and where they happen), then builds an optimal team of 6 from the PC with Defense / Offense / Balanced presets.
 // @author       GrumpyOwl
 // @match        https://pokecatch-online.netlify.app/*
@@ -26,7 +26,7 @@
    * 0. Small helpers
    * ------------------------------------------------------------------ */
   const SAVE_KEY = 'gachamon-save-v1';
-  const VERSION = '1.6.0';
+  const VERSION = '1.6.1';
   const UPDATE_URL = 'https://raw.githubusercontent.com/smuglilgoat/pokecatch-helper/main/pokecatch-team-optimizer.user.js';
   const $ = (sel, root = document) => root.querySelector(sel);
   const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
