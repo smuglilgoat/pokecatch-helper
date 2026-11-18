@@ -1595,7 +1595,7 @@
   function simulateChapter(cands, plan, cap, runs, onProgress) {
     const team = cands.map(c => ({
       uid: c.mon.uid, id: c.mon.id, level: c.mon.level, xp: c.mon.xp || 0, shiny: c.mon.shiny,
-      reg: c.mon.reg, hpStart: Math.max(1, c.mon.hp ?? simHp({ id: c.mon.id, level: c.mon.level, shiny: c.mon.shiny })),
+      reg: c.mon.reg, hpStart: simHp({ id: c.mon.id, level: c.mon.level, shiny: c.mon.shiny, hpMult: c.mon.hpMult }),
     }));
     let wins = 0, clearedSum = 0, totalBattles = 0;
     const wipeAt = {};
