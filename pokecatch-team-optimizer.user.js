@@ -2243,7 +2243,11 @@
     const mv = state.engine.bestMove(mon, boss.mon.types);
     if (!mv) return 0;
     const eff = effRaw(mv.type, boss.mon.types);
-    return state.engine.damage(mon, boss.mon, mv, eff) * (state.engine.moveAcc(mv.key) / 100);
+    const dmg = state.engine.damage(mon, boss.mon, mv, eff);
+    const acc = state.engine.moveAcc(mv.key);
+    const out = dmg * (acc / 100);
+    if (!Number.isFinite(out)) log('warn', 'raid: dps NaN', { id: mon.id, level: mon.level, mv: mv.key, dmg, acc, eff, hasChart: !!state.chart, hasEngine: !!state.engine });
+    return out;
   }
   const raidDpsCache = new Map();
   function raidDpsCached(mon) {
