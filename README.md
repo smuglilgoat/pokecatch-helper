@@ -2,224 +2,166 @@
 
 A Tampermonkey helper for [Poke'Catch](https://pokecatch-online.netlify.app/) that
 
-1. reads the **events of the current chapter** (wild encounters, story trainers and the gym leader),
-2. **watches the team** and records **on which step the team falls** when it is wiped,
-3. builds an **optimal team of 6** out of your PC with three presets: **Defense**, **Offense** and **Balanced**,
-4. does the same for the **legendary bosses** (legend zones and their elite versions),
-5. can **apply** that team to the game (it drags the Pokémon into the team slots like a player would).
+- **simulates a whole chapter** with the game's own battle rules and finds the team of 6 with the
+  highest completion rate (wilds, trainers, gyms, heal stops, statuses, XP and evolutions included),
+- does the same for **legendary battles** (every legend zone and its five elite tiers) with win
+  chance, run time and capture odds,
+- optimizes **shiny raids** (DPS badges on every pick/ally suggestion and a one-click fastest clear),
+- **watches the team** and records where a wipe happens,
+- and **applies** a team to the game by dragging mons into the real slots, like a player.
+
+All Pokémon and move names are **English** (the game ships an English pack in every language).
 
 ## Install
 
 1. Install [Tampermonkey](https://www.tampermonkey.net/).
 2. Open `pokecatch-team-optimizer.user.js` → Tampermonkey offers to install it.
-3. Open <https://pokecatch-online.netlify.app/> and log in to your account. A small
-   **Team Optimizer** panel appears in the bottom-right corner. It is built from the game's own
-   CSS (same buttons, badges, colours and light/dark theme), so it looks like part of the UI.
-   Drag its left edge to widen it (the width is remembered), and use the `–` button to fold it.
-   The panel only redraws when something actually changed, so it never flickers while the game
-   plays in the background. All Pokémon and move names are shown in **English** (the game ships
-   an English pack in every language; the script fetches it when missing).
-
-### The chapter simulation
-
-The button in the chapter section is now a full **run simulation**, not a per-foe score:
-
-* the chapter's real node list (the one the game generated) is walked in order: wild
-  encounters, random trainers (with the game's team size, level bonus and evolved-chance
-  rolls, plus its doubles/triples odds), gym teams with the gym HP scaling, and heal stops;
-* battles follow the game's own rules, ported from its bundle: every living mon acts each
-  round in speed order, OHKO-capable moves are preferred, status moves are used with the
-  game's 30% chance (and their capped accuracy), damage rolls .85–1.15, crits, multi-hits
-  and secondary status effects are rolled per hit;
-* statuses behave exactly as in game: sleep 1–3 turns, freeze until a .2 thaw, full-para
-  .25 with a 3-turn cap, burn/poison tick maxHp/8 for 5 turns, the .75 stat cuts, confusion
-  self-hits, night-sleep on diurnal wilds — and they **persist between fights** until a heal;
-* the team keeps its HP between fights, gains XP per defeated foe (the game's XP formula)
-  and **levels up mid-run** — new moves from the graded learnset and evolutions with their
-  gates happen on the way; the panel shows the form each mon becomes at the cap;
-* the search is a hill climb over the strongest pool (one mon per species, like the game
-  allows) scored by Monte-Carlo completion rate; a progress bar tracks it.
+3. Open <https://pokecatch-online.netlify.app/> and log in. A small **Team Optimizer** panel
+   appears bottom-right, built from the game's own CSS (buttons, badges, light/dark theme).
+   Drag its left edge to widen it (remembered), `–` folds it. It redraws only when something
+   changed, so it never flickers while the game plays. Its header shows the running version
+   (`Team Optimizer v1.3.0`).
 
 ## Using it
 
-| Panel button | What it does |
+| Panel control | What it does |
 |---|---|
-| **Defense / Offense / Balanced** | Chooses the scoring preset: incoming damage, outgoing damage, or both. The switch sits next to the optimize button, and next to the boss choice for legendary fights — one click, one preset. |
-| **simulate** | Simulates the whole chapter — every wild, trainer and gym battle in order — with the game's own battle rules, and searches the team of 6 with the highest completion rate. Shows the progress bar while it runs and reports win %, battles cleared and where wipes happen. |
-| **apply to team** | Puts the recommended team into the game (drag & drop on the real UI). |
-| **watch for wipes** | Records every wipe: the chapter and step it happened on, the foes and your team at that moment. The game heals the team the instant it is wiped, so the "all knocked out" state never lasts; the watcher reads the game's own counters instead — `adv.deaths[chapter]` for a normal chapter, `adv.league.tries` for a league run, `adv.zone.tries` for an elite legend zone (the 2026-11 update stopped counting league and elite wipes in `deaths`). |
-| **moves** (per Pokémon) | Opens the game's own *moves panel* for that Pokémon — the authoritative learnset. |
-| **✨ Optimize (mine)** (in the game's picker) | My optimizer, inside the game's own team picker, right next to its Optimize button: it fills the slots and prints the fight's win/run/catch odds. |
-| **✨ Optimize (mine)** (in Team/PC) | The chapter optimizer, inside the game's own Team/PC header: it picks the best six for the chapter you are running right now and puts them in your team. |
-| **api** (per Pokémon) | Fetches the same species from [PokéAPI](https://pokeapi.co/api/v2) and shows its canonical types/learnset next to the game's freer one. |
+| **Defense / Offense / Balanced** | Orders the candidate pool the search starts from (survivability, damage, or the balance of both). The final team is the one that wins the simulation. |
+| **simulate** | Runs the chapter simulator (below), with a progress bar, and reports win %, battles cleared and where the wipes happen. |
+| **apply to team** | Puts the recommended team into the game's slots (drag & drop on the real UI). |
+| **watch for wipes** | Records wipes: chapter, step, foes and your team at that moment (see below). |
+| **moves** | Opens the game's own *moves panel* for that Pokémon — the authoritative learnset. |
+| **api** | Shows the same species from [PokéAPI](https://pokeapi.co/api/v2) next to the game's freer data. |
+| **✨ Optimize (mine)** (in the game's pickers) | My optimizer inside the game's own team picker and Team/PC header (see below). |
 
-### Legendary fight
+## The chapter simulator
 
-The **Legendary fight** section lists the roaming legendaries (legend zones) of every region with
-their game knobs (HP, damage, burst move) and the five **elite** tiers the game adds on top of them:
+The **simulate** button is a full run simulation of the chapter the game generated, not a per-foe
+score:
 
-| Region | Bosses |
-|---|---|
-| Kanto | Zapdos, Articuno, Moltres, Mewtwo, Mew |
-| Johto | Ho-Oh, Lugia, Celebi |
-| Hoenn | Groudon, Kyogre, Rayquaza (+ Sky Pillar), Regirock/Regice/Registeel, Deoxys (+ forms) |
-| Sinnoh | Dialga, Palkia, Giratina (+ Origin), Heatran, Regigigas, Cresselia, Darkrai, Arceus (+ Sky Forme), Mesprit, Azelf |
-| Unova | Reshiram, Zekrom, Kyurem (+ Black/White), Victini, Cobalion/Terrakion/Virizion, Keldeo, Landorus (+ mirrors), Genesect (+ modules) |
+- it walks the chapter's real node list in order — wild encounters, random trainers, story
+  trainers, gym leaders, heal stops. A **league** chapter is built by the game with all five
+  members' paths; the sim walks them all, and a wipe still rewinds the league to its first member.
+- battles use the game's own rules, ported from its bundle: every living mon acts each round in
+  speed order (paralysis ×0.25 speed), OHKO-capable moves are preferred, **status moves are used
+  with the game's 30 % chance** (accuracy capped 100/70/30 by move kind, immunity by type), else the
+  best attack; damage rolls 0.85–1.15, crits, multi-hits and secondary status effects per hit.
+- statuses behave exactly as in game: sleep 1–3 turns, freeze until a 0.2 thaw, full-para 0.25 with
+  a 3-turn cap, burn/poison tick `maxHp/8` for 5 turns, the 0.75 stat cuts, confusion self-hits,
+  night-sleep on diurnal wilds — and they **persist between fights** until a heal.
+- the team keeps its HP between fights, gains the game's XP per defeated foe and **levels up
+  mid-run**: new moves from the graded learnset, evolutions with their gates; the panel shows the
+  form each mon becomes at the cap (`Mascaïman → Krookodile · Lv32 → 100`).
+- the search is a hill climb over the strongest pool (Monte-Carlo runs per team, one mon per
+  species), scored by completion rate. The result line reads like
+  `chapter sim: win 62% · clears 19/24 battles · 121 teams in 1.1s · wipe at step #7×3`.
 
-Pick a boss and a tier, then **optimize for this boss**: the boss fights the whole team every round
-(main move + burst + counter, the same way the game does it) and the boss scales with the team
-(shiny and level raise the boss' HP and damage, like the game's aura scaling).
+## Legendary battles
+
+Choose a boss and a tier, then **optimize for this boss**: the boss fights the whole team every
+round (main move + burst + counter, like the game), scales with the team's shiny/level and uses the
+elite tables. The fight is simulated at the level the game brings the team to — the **zone's level**
+(100) or the max level for an elite tier — starting from a **healed team**, which is how a
+legendary fight always begins.
 
 Under the boss the line tells you what the fight costs:
 
-* **win %** — the victory chance, from 200 simulated fights with the game's rolls (0.85–1 damage
-  variance, 1/24 crits, misses);
-* **rounds ≈ time/run** — the length of one attempt (a round is ~2.5 s at the game's fast speed,
-  scaled by your speed setting);
-* **catch %/run** — the capture chance of one successful attempt, using the game's own formula
-  (`captureRate × 0.6 / 255`, or the legendary rate `3/255`, times your capture-berry buff);
-* **~N runs ≈ total time** — the expected attempts and wall-clock time to catch it, capped by the
-  raid pity (150 tries).
+| Number | Meaning |
+|---|---|
+| **win %** | victory chance, from 200 simulated fights with the game's rolls |
+| **rounds ≈ time/run** | length of one attempt (~2.5 s per round at the game's fast speed, scaled by your speed) |
+| **catch %/run** | capture chance of one successful attempt (the game's formula: `captureRate × 0.6 / 255`, legendary `3/255`, times your capture-berry buff) |
+| **~N runs ≈ total time** | expected attempts and wall-clock time, capped by the raid pity (150 tries) |
 
-### Shiny raid optimization
+## Shiny raids
 
-The game's raid picker ("Raid vs *boss*") gets my row with a **⚡ Fastest clear** button:
+In the game's raid picker ("Raid vs *boss*") my row adds a **⚡ Fastest clear** button:
 
-* every suggestion — the community species cards in the picker and each ally row in the
-  "Pick an ally" list — carries an **atk** badge: the expected damage per round against the
-  raid boss (the game's own raid knobs: `BOSS.HP/POWER × (BST_REF/BST)^exp × ADJ`, shiny
-  boss, the 6-slot HP scaling), accuracy-weighted;
-* the button fills your two pick slots with the highest-DPS mons (any PC mon is allowed,
-  one per species, capped at the raid level), then walks the ally slots and picks the two
-  best allies by the same score;
-* the line reports the total team DPS (mine + allies) and the rounds needed to break the boss.
+- every suggestion carries an **atk** badge — the expected damage per round against the raid boss,
+  using the game's own raid knobs (`BOSS.HP/POWER × (BST_REF/BST)^exp × ADJ`, shiny boss, the
+  6-slot HP scaling) and accuracy-weighted;
+- the community species cards in the picker and every ally row in "Pick an ally" are annotated
+  (the ally score is the sum of the two mons shown in the row);
+- the button fills your two pick slots with the highest-DPS mons (any PC mon is allowed, capped at
+  the raid level, one per species), then walks the ally slots and picks the two best allies;
+- the line reports the total: `team dps 2.1k (mine 831 + allies 1279) · Swablu 10 rounds to break`.
 
-### Inside the game: beside its own "Optimize" button
+## Inside the game, beside its own buttons
 
 The game has its own **Optimize** button in the team picker it opens for a legendary zone, a raid
-or the elite league. This helper adds its own row right beside it — **Defense / Offense / Balanced**,
-**✨ Optimize (mine)** and the same win/run/catch line — and its button fills the game's own slots
-with the team it computed, so the two optimizers sit side by side and both write to the game.
+or the elite league, and its own controls in the Team/PC header. This helper adds a row right next
+to them, built from the game's own classes:
 
-The same row also sits in the **Team/PC** header, aimed at the chapter you are currently running
-(it shows the chapter, its foes and the cap), so you can re-optimise without leaving the screen.
+- in the **legend picker**: presets, **✨ Optimize (mine)** and the win/run/catch line; its button
+  fills the game's own slots, so both optimizers sit side by side and write to the game;
+- in the **Team/PC header**: the chapter optimizer with the current chapter, its foes and the cap,
+  so you can re-optimise without leaving the screen;
+- in the **raid picker**: the fastest-clear button and the DPS line.
 
-A legendary fight is simulated at the level the game brings the team to — the **zone's level**
-(100 for every legend zone), or the max level when you pick an elite tier — with the team at full
-health, which is how a legendary fight always starts.
+## Wipe watcher
 
-<figure the picker header: Optimize | Defense Offense Balanced | Optimize (mine) | win 100% · 11 rounds ≈ 30s/run · catch 1.2%/run · ~71 runs ≈ 35.7 min>
-
-### How this compares to the game's own optimizer
-
-Poke'Catch has an optimizer of its own, but it works on a different axis: the **auto-switch**
-(option *Switch auto*, on by default) re-orders the Pokémon you already have by a **type-matchup
-score** — `strong +3 / weak −3 / immune −5 / exposed −2 / resists +2` — against the enemy in front
-of you. It never changes *which* Pokémon are in the team, and it looks at types only: no stats, no
-levels, no damage numbers.
-
-This helper keeps the same type logic but adds what the game leaves out: the real damage formula
-(STAB, accuracy curve, crits, level gap, multi-hit, burn), the foe's own best move and damage
-multipliers, the chapter's actual encounters, the legendary zone knobs and elite tiers, the
-team-eligibility rules, and the fact that your team keeps its HP between fights.
-
-### League chapters (the five Elite Four paths)
-
-A league chapter is not one fight: it is the **four Elite Four members plus the champion**, each
-its own mini path (a heal, the trainers on the way, then the member). The game therefore:
-
-* **rewinds the whole league to the first member** after a wipe — so the first member is the real
-  gate, whatever member you died to;
-* **raises the level cap** for the league as you clear members (the cap is the next gym you still
-  owe: `ace + 3` for an Elite Four chapter, `ace + 5` for the champion);
-* **heals the team** between members (every member's path starts with a heal node).
-
-The optimizer follows that: in a league it plans against **all five members** at once, each one
-evaluated with the team at the level it will have reached by then, at full health.
-
-### Scoring
-
-* **Defense** – how many rounds the team survives against the chapter's foes.
-* **Offense** – how much damage the team puts into them.
-* **Balanced** – rounds survived ÷ rounds needed to win (the classic "turns to die / turns to kill" margin).
-
-For a legendary boss the same three numbers are used, but the boss fights the **whole team** every
-round (its best move ÷ 6, plus its burst and counter moves) and it **scales with your team**
-(shiny and level raise the boss' HP and damage, exactly like the game's aura scaling).
-Elite tiers add the game's per-species `[HP, damage]` multipliers and make the boss take less damage.
+The game heals the team the instant it is wiped, so an "all knocked out" state never lasts. The
+watcher reads the game's own counters instead: `adv.deaths[chapter]` for a normal chapter,
+`adv.league.tries` for a league run and `adv.zone.tries` for an elite legend zone (the 2026-11
+update stopped counting league and elite wipes in `deaths`). Each record holds the step the team
+fell on, the foes, your team and the wipe mode (chapter / league / elite zone).
 
 ## Where the data comes from
 
-* **The game itself** — the script parses the bundle the page already loaded
-  (`bundle/app.<hash>.js`) and extracts the Pokédex, the move table, the evolutions, the
-  chapter list and the encounter tables. The per-species learnset is recomputed with the
-  game's own grading algorithm (the 2026-11 re-grading: a max 20-level gap between damaging
-  moves, per-type level reassignment by weight, and a per-species 4–5 spacing step), so the
-  recommended attacks are exactly the ones the game allows at the level cap — verified equal
-  to the game's own algorithm on all 649 species.
-* **https://pokemondb.net/type** — the type chart (it is identical to the chart the game uses).
-* **https://pokeapi.co/api/v2** — cross-check of species types and level-up learnsets, and a
-  fallback source for the type chart.
+- **The game itself** — the script parses the bundle the page already loaded
+  (`bundle/app.<hash>.js`): Pokédex, moves, evolutions, chapters, encounters, the config knobs and
+  the legend zones. The per-species learnset is recomputed with the game's own grading algorithm
+  (the 2026-11 re-grading: a 20-level gap cap, per-type level reassignment by weight, a per-species
+  4–5 spacing step), so the recommended attacks are exactly the ones the game allows at the cap —
+  verified equal to the game's own algorithm on all 649 species.
+- **https://pokemondb.net/type** — the type chart (identical to the game's), with PokeAPI and the
+  game chart as fallbacks.
+- **https://pokeapi.co/api/v2** — cross-check of types and level-up learnsets.
 
-Everything is cached in the userscript storage, keyed by the bundle hash, so a game update
-invalidates the cache automatically. The cached tables are validated on load (species, moves,
-chapters): an implausible or half-read table is thrown away and parsed again instead of being
-used.
+Tables are cached in userscript storage keyed by the bundle hash and validated on load: an
+implausible or half-read table is thrown away and re-parsed.
 
 ## When the game updates
 
-The game rewrites its bundle on every release, including the minified names the script reads.
-The parser therefore never trusts a minified name: it locates each table by its public marker
-(`a.POKEDEX=`, `a.CONFIG=`…) or by the shape of its data, and reads the legend zones through the
-game's public `a.LegendZones` export. Each table is parsed on its own; a table the update broke
-is reported by name in the panel (`bundle parse failed: game update changed the bundle: MOVES — …`)
-while everything else keeps working.
+The game rewrites its bundle on every release, including the minified names the script reads. The
+parser never trusts a minified name: it locates tables by their public markers (`a.POKEDEX=`,
+`a.CONFIG=`…) or by the shape of the data, and reads legend zones through the public
+`a.LegendZones` export. Each table parses on its own; one the update broke is named in the panel
+(`bundle parse failed: game update changed the bundle: MOVES — …`) while the rest keeps working.
 
-Every action is logged to the browser console with a `[pcopt]` prefix — bundle fetch and parse
-(with table sizes), cache hits, type-chart source, optimizer runs and their team, each applied
-slot, picker/Team-PC injections, legendary runs and their odds, wipes and their mode, and every
-error with its message. The last 400 entries are also available as `window.__pcopt.logs`.
+Every action is logged to the console with a `[pcopt]` prefix — bundle parse with table sizes,
+cache hits, chart source, optimizer runs and their teams, applied slots, injections, raid/legend
+runs, wipes and their mode, and every error. The last 400 entries are in `window.__pcopt.logs`.
 
 ### Automatic updates
 
-The script declares `@updateURL` / `@downloadURL` pointing at the raw file on GitHub `main`,
-so Tampermonkey pulls every push by itself — no reinstall, as long as `@version` was bumped
-(it is, on every release). Tampermonkey checks on its own schedule: dashboard → Settings →
-**Update** → set the *check interval* to the shortest you accept, or force a check any time
-from the toolbar (⚙ → *Check for updates*). GitHub raw serves with a 5-minute cache, so a
-push is live almost immediately.
+The script declares `@updateURL` / `@downloadURL` at the raw file on GitHub `main`, so Tampermonkey
+pulls every release by itself — no reinstall — **as long as `@version` changed** (it does, on every
+release; the panel header shows the running version). Tampermonkey checks on its own schedule
+(dashboard → Settings → **Update** → check interval), or force it from the toolbar (⚙ → *Check for
+updates*). GitHub raw caches for ~5 minutes.
 
-The script also checks once per page load and shows a notice in the panel —
-`update 1.2.2 is on GitHub (installed 1.2.1) — Tampermonkey → Check for updates` — so a fresh
-push is visible the moment you open the game, even before the manager's next check.
+The script also checks once per page load and shows
+`update 1.3.1 is on GitHub (installed 1.3.0) — Tampermonkey → Check for updates` as soon as a
+newer version exists. For truly instant updates, install from a **local clone** instead:
+Tampermonkey re-reads a `file://` script when it changes (needs *Allow access to file URLs*).
 
-For truly instant updates, install the script from a **local clone** instead: Tampermonkey
-re-reads a `file://` script when it changes (needs *Allow access to file URLs* for the
-extension and a path Chrome can read, e.g. a Windows-synced folder), so every `git pull`
-becomes an update on the next page load.
+## Notes and limits
 
-## Notes / limits
-
-* The team is evaluated at the **level cap** — the level the game lets your Pokémon reach right
-  now (it stops their XP until you beat the next badge; the mon card then says *"Plafond Nv. 83"*).
-  The cap is the game's own formula: the next gym you still owe, its *ace* level plus the league
-  margin (so the Elite Four chapters give `ace + 3`). The panel shows it as *level cap* and writes
-  every recommendation as `Lv74 → 83` (now → cap), because the team you will actually field is
-  the one at the cap.
-* **Shiny Pokémon get the game's +10 % stat bonus** (all stats and HP), exactly like in game —
-  a shiny is scored with the boosted stats and marked with ✨ in the panel.
-* Only Pokémon that the game currently accepts in the team are considered (region link,
-  duplicates, one Pokémon per species).
-* **Evolutions within the cap count.** The game evolves a mon by itself when it levels past
-  its evolution level, so the team you field at the cap is its evolved form: the optimizer
-  projects the whole evolution chain that the cap allows. Item evolutions are only counted
-  when the item is in the bag of the current region (`fire-stone` at 0 means Growlithe stays
-  Growlithe); trades and other gated evolutions are not projected, and a branching evolution
-  takes the first reachable branch.
-* Random trainers (the ones you meet on the routes) have a random team; the script uses the
-  wild encounters of the same route for them and the fixed teams (gym leader, story trainers)
-  as they are.
-* The chapter's foes are read from the nodes the game itself built (`adv.nodes`), so trainer
-  teams, levels and gym multipliers are the real ones; the static chapter data is only the
-  fallback (and the source for the other members of a league).
-* The weekly **raid** bosses are not modelled yet — only the legend zones.
+- **Level cap projection.** The team is evaluated at the cap the game currently allows (its own
+  formula: the next gym you still owe, ace + margin), written as `Lv74 → cap`, because that is the
+  team you will field.
+- **Shiny** Pokémon get the game's +10 % stat bonus and are marked ✨.
+- **Eligibility.** Only mons the game accepts join an adventure team (region link, one per species);
+  the **raid** picker accepts any PC mon.
+- **Evolutions.** Level evolutions within the cap are projected, with the game's gates: daytime
+  (`TIME_EVOLUTIONS`), the party requirement (e.g. Mantyke needs a Remoraid), and the uid-hash pick
+  when several level branches qualify. Item evolutions count only when the item is in the current
+  region's bag; **link-cable** evolutions count when your wallet covers the game's trade fee
+  (computed with the game's own tier formula). Branching item evolutions are all scored, and the
+  sim evolves the real mon as it levels. The game's dex-dedup evolution gate is not modelled.
+- **Random trainers** are rolled like the game's encounter builder (team size, level bonus,
+  evolved chance, doubles/triples odds) and wilds are sampled from the node's live pool.
+- **Raid bosses** are optimized for DPS and clear time; their fight is not simulated round by round
+  like the chapter.
+- The simulator is a model: expected rolls and the game's probabilities, not frame-perfect.
