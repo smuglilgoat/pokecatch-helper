@@ -2924,14 +2924,24 @@
       const arena = adv.querySelector('#arena');
       if (arena) adv.insertBefore(el, arena); else adv.appendChild(el);
     }
-    // the game renders its bar when the Team/PC screen opens: clone it, else the set numbers
+    // the game renders its bar when the Team/PC screen opens: clone it, else build the same markup
     const source = document.querySelector('#team-sets');
     const sourceHtml = source && source.children.length ? source.innerHTML : '';
+    const sprite = (uids) => {
+      const m = (uids || []).map(u => monByUid(save, u)).find(Boolean);
+      if (!m) return '';
+      return `<span class="ts-lead"><div class="sprbox" style="height:32px"><img src="assets/pokemon/${m.id}.png" alt="" data-id="${m.id}" data-k="1" style="width:68px;height:56px;transform:translate(0px, 0px)"></div></span>`;
+    };
     const fallback = [0, 1, 2, 3, 4].map(i => {
-      const filled = (sets.list[i] || []).length;
-      return `<button type="button" data-set="${i}" class="${sets.on === i ? 'on' : ''}${filled ? '' : ' ts-empty'}" aria-pressed="${sets.on === i}">${i + 1}</button>`;
+      const uids = sets.list[i] || [];
+      const names = uids.map(u => monByUid(save, u)).filter(Boolean).map(m => displayName(m.id));
+      const on = sets.on === i;
+      return `<button type="button" data-set="${i}" class="${on ? 'on' : ''}${uids.length ? '' : ' ts-empty'}" aria-pressed="${on}">`
+        + `${uids.length ? sprite(uids) + (i + 1) : '<span class="ts-lead ts-none">+</span>'}`
+        + `<span class="bag-tip ts-tip" role="tooltip"><b>Team ${i + 1}${on ? ' · in use' : ''}</b>`
+        + `<small>${esc(names.slice(0, 6).join(', ') || 'empty')}</small></span></button>`;
     }).join('');
-    const sig = sourceHtml || ('fallback:' + (sets.on ?? '') + ':' + (sets.list || []).map(x => x && x.length).join(','));
+    const sig = sourceHtml || ('fallback:' + (sets.on ?? '') + ':' + (sets.list || []).map(x => (x || []).join('.')).join('|'));
     if (el.dataset.sig === sig) return;
     el.dataset.sig = sig;
     el.innerHTML = sourceHtml || fallback;
