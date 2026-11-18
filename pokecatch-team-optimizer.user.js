@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Poke'Catch Team Optimizer
 // @namespace    pokecatch-helper
-// @version      1.5.1
+// @version      1.5.2
 // @description  Reads the current chapter events, watches for team wipes (and where they happen), then builds an optimal team of 6 from the PC with Defense / Offense / Balanced presets.
 // @author       GrumpyOwl
 // @match        https://pokecatch-online.netlify.app/*
@@ -26,7 +26,7 @@
    * 0. Small helpers
    * ------------------------------------------------------------------ */
   const SAVE_KEY = 'gachamon-save-v1';
-  const VERSION = '1.5.1';
+  const VERSION = '1.5.2';
   const UPDATE_URL = 'https://raw.githubusercontent.com/smuglilgoat/pokecatch-helper/main/pokecatch-team-optimizer.user.js';
   const $ = (sel, root = document) => root.querySelector(sel);
   const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
@@ -2466,7 +2466,7 @@
     apiCache: {}, info: {}, legends: null, legBoss: null, legTier: 0, legTeam: null, waiting: null,
     evtOdds: null, loading: null,
     league: false, leagueInfo: null, legOdds: null,
-    segments: null, segOn: null, reuseAll: false
+    segments: null, segOn: null, reuseAll: false, switching: false
   };
 
   const TYPE_COLORS = {
@@ -2744,7 +2744,8 @@
   }
 
   /** Switch to the prepared template of the segment the run is in (never mid-battle). */
-  function switchSegment() {
+  async function switchSegment() {
+    if (state.switching) return;
     const save = readSave();
     const idx = segmentIndex(save);
     if (idx == null || !state.segments?.list?.length) return;
@@ -2755,10 +2756,19 @@
     if (!target) return;
     const btn = document.querySelector(`#team-sets button[data-set="${target.slot}"]`);
     if (!btn) return;
-    btn.click();
-    state.segOn = idx;
-    log('info', 'segments: switched to template', { slot: target.slot, node: save.adv.node, segment: idx + 1 });
-    refreshUi();
+    state.switching = true;
+    try {
+      btn.click();
+      await sleep(400);
+      // the click can land on a button the game just re-rendered: only claim the segment once the set is active
+      if (readSave()?.teamSets?.on !== target.slot) {
+        log('warn', 'segments: switch did not take', { slot: target.slot, node: save.adv.node });
+        return;
+      }
+      state.segOn = idx;
+      log('info', 'segments: switched to template', { slot: target.slot, node: save.adv.node, segment: idx + 1 });
+      refreshUi();
+    } finally { state.switching = false; }
   }
 
   /** The simulation progress bar: updated in place so the panel never flickers. */
