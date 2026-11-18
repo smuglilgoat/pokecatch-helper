@@ -2254,24 +2254,30 @@
     }
     return raidDpsCache.get(key);
   }
-  /** Annotate my pick suggestions and ally suggestions with their DPS. */
+  /** Annotate the raid suggestions with their DPS:
+   *  - the community species cards in the picker (rp-pk, with my best copy under each),
+   *  - the ally rows in the modal (their two mons summed). */
   function annotateRaidSuggestions() {
     const boss = state.raidBoss;
     if (!boss) return;
-    // my picks: the picker grid
-    document.querySelectorAll('#evt-pc .pc-cell[data-uid]').forEach(cell => {
-      if (cell.querySelector('.pcopt-atk')) return;
-      const mon = monByUid(readSave(), cell.dataset.uid);
-      if (!mon) return;
-      const dps = raidDpsCached(mon);
+    // the community species suggestions in the picker sidebar
+    document.querySelectorAll('#evt-pick .rp-pk').forEach(card => {
+      if (card.querySelector('.pcopt-atk')) return;
+      const img = card.querySelector('img[data-id]');
+      const id = parseInt(img?.dataset.id, 10);
+      if (!id || !state.data.species[id]) return;
+      // my best copy of this species (the game shows it under the card)
+      const save = readSave();
+      const mine = save.mons.filter(m => m.id === id && canJoinTeam(save, m)).sort((a, b) => b.level - a.level)[0];
+      const dps = raidDps({ id, level: Math.min(mine?.level ?? 100, 100), shiny: !!mine?.shiny }, boss);
       const tag = document.createElement('span');
       tag.className = 'pcopt-atk';
       tag.textContent = 'atk ' + (dps >= 1000 ? (dps / 1000).toFixed(1) + 'k' : Math.round(dps));
-      tag.style.cssText = 'position:absolute;left:2px;top:2px;font-size:10px;padding:1px 4px;border-radius:4px;background:color-mix(in srgb,var(--c) 70%,#000a);color:#fff;z-index:2';
-      cell.style.position = 'relative';
-      cell.prepend(tag);
+      tag.style.cssText = 'position:absolute;left:3px;top:3px;font-size:10px;padding:1px 5px;border-radius:4px;background:color-mix(in srgb,var(--c) 72%,#000c);color:#fff;z-index:2';
+      card.style.position = 'relative';
+      card.prepend(tag);
     });
-    // allies: the modal rows
+    // the ally modal rows
     document.querySelectorAll('.modal-root.open .raid-pick').forEach(row => {
       if (row.querySelector('.pcopt-atk')) return;
       const mons = [...row.querySelectorAll('.rt-mon')].map(m => {
@@ -2286,7 +2292,7 @@
       const tag = document.createElement('span');
       tag.className = 'pcopt-atk';
       tag.textContent = 'atk ' + (dps >= 1000 ? (dps / 1000).toFixed(1) + 'k' : Math.round(dps));
-      tag.style.cssText = 'font-size:11px;padding:2px 6px;border-radius:5px;background:color-mix(in srgb,var(--c) 70%,#000a);color:#fff;margin-right:4px';
+      tag.style.cssText = 'font-size:11px;padding:2px 6px;border-radius:5px;background:color-mix(in srgb,var(--c) 72%,#000c);color:#fff;margin-right:4px';
       row.prepend(tag);
       row.dataset.pcoptDps = String(Math.round(dps));
     });
