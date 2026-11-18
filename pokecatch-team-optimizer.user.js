@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Poke'Catch Team Optimizer
 // @namespace    pokecatch-helper
-// @version      1.5.2
+// @version      1.5.3
 // @description  Reads the current chapter events, watches for team wipes (and where they happen), then builds an optimal team of 6 from the PC with Defense / Offense / Balanced presets.
 // @author       GrumpyOwl
 // @match        https://pokecatch-online.netlify.app/*
@@ -26,7 +26,7 @@
    * 0. Small helpers
    * ------------------------------------------------------------------ */
   const SAVE_KEY = 'gachamon-save-v1';
-  const VERSION = '1.5.2';
+  const VERSION = '1.5.3';
   const UPDATE_URL = 'https://raw.githubusercontent.com/smuglilgoat/pokecatch-helper/main/pokecatch-team-optimizer.user.js';
   const $ = (sel, root = document) => root.querySelector(sel);
   const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
@@ -2466,7 +2466,7 @@
     apiCache: {}, info: {}, legends: null, legBoss: null, legTier: 0, legTeam: null, waiting: null,
     evtOdds: null, loading: null,
     league: false, leagueInfo: null, legOdds: null,
-    segments: null, segOn: null, reuseAll: false, switching: false
+    segments: null, segOn: null, reuseAll: false, switching: false, selfClick: false, manual: null
   };
 
   const TYPE_COLORS = {
@@ -2726,9 +2726,13 @@
       btn = document.querySelector(`#team-sets button[data-set="${slot}"]`);
     }
     if (!btn) { state.errors = ['team template ' + (slot + 1) + ' not found']; refreshUi(); return; }
+    state.selfClick = true;
     btn.click();
-    state.segOn = segmentIndex(readSave());
-    log('info', 'templates: manual switch', { slot, segment: state.segOn });
+    state.selfClick = false;
+    const idx = segmentIndex(readSave());
+    state.segOn = idx;
+    state.manual = { idx, slot, at: Date.now() };
+    log('info', 'templates: manual switch', { slot, segment: idx });
     refreshUi();
   }
 
@@ -2749,17 +2753,20 @@
     const save = readSave();
     const idx = segmentIndex(save);
     if (idx == null || !state.segments?.list?.length) return;
-    // act once per segment: a manual pick inside a segment is left alone
-    if (idx === state.segOn) return;
-    if (save?.adv?.battle) return;
+    // a pick the player made by hand (the game's own buttons or this block) wins for its segment
+    if (state.manual && state.manual.idx === idx) return;
     const target = state.segments.list[Math.min(idx, state.segments.list.length - 1)];
     if (!target) return;
+    // the game reverts the template on a wipe, so keep re-asserting until the set really is active
+    if (save.teamSets?.on === target.slot) { state.segOn = idx; return; }
     const btn = document.querySelector(`#team-sets button[data-set="${target.slot}"]`);
     if (!btn) return;
     state.switching = true;
     try {
+      state.selfClick = true;
       btn.click();
       await sleep(400);
+      state.selfClick = false;
       // the click can land on a button the game just re-rendered: only claim the segment once the set is active
       if (readSave()?.teamSets?.on !== target.slot) {
         log('warn', 'segments: switch did not take', { slot: target.slot, node: save.adv.node });
@@ -2768,7 +2775,7 @@
       state.segOn = idx;
       log('info', 'segments: switched to template', { slot: target.slot, node: save.adv.node, segment: idx + 1 });
       refreshUi();
-    } finally { state.switching = false; }
+    } finally { state.switching = false; state.selfClick = false; }
   }
 
   /** The simulation progress bar: updated in place so the panel never flickers. */
@@ -3370,6 +3377,13 @@
         try { refreshUi(); } catch (e) { logError('ui: observer', e); }
       });
     }).observe(document.body, { childList: true, subtree: true });
+    // a template picked in the game's own bar is the player's choice: the watcher leaves that segment alone
+    document.addEventListener('click', e => {
+      const b = e.target.closest?.('#team-sets button[data-set]');
+      if (!b || state.selfClick) return;
+      state.manual = { idx: segmentIndex(readSave()), slot: +b.dataset.set, at: Date.now() };
+      log('info', 'templates: manual pick in the game', { slot: +b.dataset.set });
+    }, true);
     state.watcher = new WipeWatcher(rec => {
       refreshUi();
       if (rec) {
