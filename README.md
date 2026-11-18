@@ -20,12 +20,32 @@ A Tampermonkey helper for [Poke'Catch](https://pokecatch-online.netlify.app/) th
    plays in the background. All Pokémon and move names are shown in **English** (the game ships
    an English pack in every language; the script fetches it when missing).
 
+### The chapter simulation
+
+The button in the chapter section is now a full **run simulation**, not a per-foe score:
+
+* the chapter's real node list (the one the game generated) is walked in order: wild
+  encounters, random trainers (with the game's team size, level bonus and evolved-chance
+  rolls, plus its doubles/triples odds), gym teams with the gym HP scaling, and heal stops;
+* battles follow the game's own rules, ported from its bundle: every living mon acts each
+  round in speed order, OHKO-capable moves are preferred, status moves are used with the
+  game's 30% chance (and their capped accuracy), damage rolls .85–1.15, crits, multi-hits
+  and secondary status effects are rolled per hit;
+* statuses behave exactly as in game: sleep 1–3 turns, freeze until a .2 thaw, full-para
+  .25 with a 3-turn cap, burn/poison tick maxHp/8 for 5 turns, the .75 stat cuts, confusion
+  self-hits, night-sleep on diurnal wilds — and they **persist between fights** until a heal;
+* the team keeps its HP between fights, gains XP per defeated foe (the game's XP formula)
+  and **levels up mid-run** — new moves from the graded learnset and evolutions with their
+  gates happen on the way; the panel shows the form each mon becomes at the cap;
+* the search is a hill climb over the strongest pool (one mon per species, like the game
+  allows) scored by Monte-Carlo completion rate; a progress bar tracks it.
+
 ## Using it
 
 | Panel button | What it does |
 |---|---|
 | **Defense / Offense / Balanced** | Chooses the scoring preset: incoming damage, outgoing damage, or both. The switch sits next to the optimize button, and next to the boss choice for legendary fights — one click, one preset. |
-| **optimize** | Reads the chapter events + your PC and computes the best team of 6. |
+| **simulate** | Simulates the whole chapter — every wild, trainer and gym battle in order — with the game's own battle rules, and searches the team of 6 with the highest completion rate. Shows the progress bar while it runs and reports win %, battles cleared and where wipes happen. |
 | **apply to team** | Puts the recommended team into the game (drag & drop on the real UI). |
 | **watch for wipes** | Records every wipe: the chapter and step it happened on, the foes and your team at that moment. The game heals the team the instant it is wiped, so the "all knocked out" state never lasts; the watcher reads the game's own counters instead — `adv.deaths[chapter]` for a normal chapter, `adv.league.tries` for a league run, `adv.zone.tries` for an elite legend zone (the 2026-11 update stopped counting league and elite wipes in `deaths`). |
 | **moves** (per Pokémon) | Opens the game's own *moves panel* for that Pokémon — the authoritative learnset. |
