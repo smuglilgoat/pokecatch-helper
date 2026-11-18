@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Poke'Catch Team Optimizer
 // @namespace    pokecatch-helper
-// @version      1.5.3
+// @version      1.5.4
 // @description  Reads the current chapter events, watches for team wipes (and where they happen), then builds an optimal team of 6 from the PC with Defense / Offense / Balanced presets.
 // @author       GrumpyOwl
 // @match        https://pokecatch-online.netlify.app/*
@@ -26,7 +26,7 @@
    * 0. Small helpers
    * ------------------------------------------------------------------ */
   const SAVE_KEY = 'gachamon-save-v1';
-  const VERSION = '1.5.3';
+  const VERSION = '1.5.4';
   const UPDATE_URL = 'https://raw.githubusercontent.com/smuglilgoat/pokecatch-helper/main/pokecatch-team-optimizer.user.js';
   const $ = (sel, root = document) => root.querySelector(sel);
   const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
@@ -2680,7 +2680,10 @@
         const r = await searchChapterTeam(save, info, info.cap, Math.max(6000, Math.round(30000 / count)), segs[i].plan);
         if (r.error) { log('warn', 'segments: search failed', r.error); continue; }
         // pick the free template, then let applyTeam fill it (the game syncs the active set)
-        document.querySelector(`#team-sets button[data-set="${free[i]}"]`)?.click();
+        // selfClick: the pick is the script's, not the player's — it must not shield the segment
+        state.selfClick = true;
+        try { document.querySelector(`#team-sets button[data-set="${free[i]}"]`)?.click(); }
+        finally { state.selfClick = false; }
         await sleep(500);
         const applied = await applyTeam(r.team);
         await sleep(700);
@@ -2696,7 +2699,7 @@
     state.segments = out.length ? { chapter: info.index, at: Date.now(), list: out, total: segs.length } : null;
     store.set('segments', state.segments);
     state.reuseAll = false; store.set('reuseTemplates', false);
-    state.segOn = null;
+    state.segOn = null; state.manual = null;
     state.busy = false; state.progress = null;
     refreshUi();
   }
