@@ -3133,6 +3133,7 @@
     WipeWatcher, applyTeam, bundleUrl, httpGet, canJoinTeam, showMovesPanel, pokeApiSpecies, compareWithPokeApi,
     parseLegends, legendBoss, simulateLegend, pickLegendTeam, evaluateLegendTeam, runLegendOptimizer,
     legendFightOnce, legendOdds, logs,
-    projectCandidates, evolvedBranches, refreshChapter
+    projectCandidates, evolvedBranches, refreshChapter,
+    chapterPlan, simulateChapter, searchChapterTeam
   };
 })();
