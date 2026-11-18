@@ -2739,7 +2739,7 @@
         <div class="pcopt-row" style="margin-top:8px">
           ${presetSeg()}
           <button class="btn small" id="pcopt-run" ${state.busy ? 'disabled' : ''}>${state.busy ? 'working…' : 'simulate'}</button>
-          <div id="pcopt-simbar" style="display:none;flex:1 1 120px;height:10px;border-radius:5px;background:var(--line);overflow:hidden"><div style="height:100%;width:0%;background:var(--c);transition:width .2s"></div><span class="pcopt-mut" style="padding:0 6px;font-size:11px"></span></div>
+          <div id="pcopt-simbar" style="display:none;flex:1 1 160px;align-items:center;gap:6px"><div style="flex:1;height:10px;border-radius:5px;background:var(--line);overflow:hidden"><div style="height:100%;width:0%;background:var(--c);transition:width .15s"></div></div><span class="pcopt-mut" style="font-size:11px;white-space:nowrap"></span></div>
           <button class="btn small ghost" id="pcopt-apply" ${state.team && state.team.length && !state.busy ? '' : 'disabled'}>apply to team</button>
         </div>
         <div id="pcopt-team">${renderTeam()}</div>
