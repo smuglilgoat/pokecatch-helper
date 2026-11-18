@@ -884,9 +884,15 @@
         for (const [id, lv] of node.team) {
           out.push({ id, level: lv, weight: 2, kind: 'trainer', source: node.trainer || node.name, hpMult: 1, damageMult: cfg.ENEMY_DAMAGE.trainer ?? 1 });
         }
-      } else if (node.type === 'wild' && node.areas) {
+      } else if ((node.type === 'wild' || node.type === 'trainer') && (node.pool?.length || node.areas)) {
         const pool = new Map();
-        for (const area of node.areas) {
+        if (node.pool?.length) {
+          for (const p of node.pool) {
+            const cur = pool.get(p.id) || { id: p.id, w: 0 };
+            cur.w += (p.w ?? 1);
+            pool.set(p.id, cur);
+          }
+        } else for (const area of node.areas) {
           for (const e of data.enc[area] || []) {
             const [id, min, max, pct, method] = e;
             if (pct >= 100) continue;
@@ -905,10 +911,15 @@
         for (const p of pool.values()) {
           out.push({
             id: p.id, level: band ? Math.round((band[0] + band[1]) / 2) : 0,
-            weight: Math.max(0.2, p.w / 10), kind: 'wild', source: node.name,
-            hpMult: 1, damageMult: cfg.ENEMY_DAMAGE.wild ?? 1
+            weight: Math.max(0.2, p.w / 10), kind: node.type === 'trainer' ? 'trainer' : 'wild', source: node.name,
+            hpMult: 1, damageMult: cfg.ENEMY_DAMAGE[node.type] ?? 1
           });
         }
+      } else if (node.type === 'static' && node.id != null) {
+        out.push({
+          id: node.id, level: node.level ?? 100, weight: 3, kind: 'static', source: node.name,
+          hpMult: 1, damageMult: cfg.ENEMY_DAMAGE.static ?? 1
+        });
       }
     }
     return out;
