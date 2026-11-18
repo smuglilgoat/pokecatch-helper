@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Poke'Catch Team Optimizer
 // @namespace    pokecatch-helper
-// @version      1.2.1
+// @version      1.3.0
 // @description  Reads the current chapter events, watches for team wipes (and where they happen), then builds an optimal team of 6 from the PC with Defense / Offense / Balanced presets.
 // @author       GrumpyOwl
 // @match        https://pokecatch-online.netlify.app/*
@@ -26,7 +26,7 @@
    * 0. Small helpers
    * ------------------------------------------------------------------ */
   const SAVE_KEY = 'gachamon-save-v1';
-  const VERSION = '1.2.1';
+  const VERSION = '1.3.0';
   const UPDATE_URL = 'https://raw.githubusercontent.com/smuglilgoat/pokecatch-helper/main/pokecatch-team-optimizer.user.js';
   const $ = (sel, root = document) => root.querySelector(sel);
   const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
@@ -2851,7 +2851,7 @@
         #pcopt-panel .type.sm{font-size:11px}
         @media (max-width:640px){#pcopt-panel{width:calc(100vw - 16px);right:8px;bottom:64px}}
       </style>
-      <div class="map-head"><h2>Team Optimizer</h2>
+      <div class="map-head"><h2>Team Optimizer <span class="pcopt-mut" style="font-size:11px;font-weight:400">v${VERSION}</span></h2>
         <button class="btn small ghost" id="pcopt-toggle" aria-label="Collapse">–</button></div>
       <div id="pcopt-body"></div>
       <div class="pcopt-resize" id="pcopt-resize" title="Drag to widen"></div>`;
