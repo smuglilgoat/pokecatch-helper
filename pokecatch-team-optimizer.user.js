@@ -2328,6 +2328,7 @@
     log('info', 'raid: fastest clear', { boss: displayName(rc.id), picks: team.map(t => displayName(t.mon.id) + ' ' + Math.round(t.dps || 0)) });
     await applyToEventPicker(team);
     // allies: walk the game's ally slots and take the best row of each modal
+    const allyDps = [];
     const grpButtons = [...document.querySelectorAll('#screen-raid .rc-grp')];
     for (const grp of grpButtons.slice(1)) {
       grp.click();
@@ -2340,12 +2341,17 @@
         .map(row => ({ row, dps: parseFloat(row.dataset.pcoptDps || '0') }))
         .sort((a, b) => b.dps - a.dps);
       if (!rows.length) break;
+      allyDps.push(rows[0].dps);
       log('info', 'raid: ally picked', { dps: rows[0].dps });
       rows[0].row.click();
       await sleep(600);
       modal.querySelector('.dc-x')?.click();
       await sleep(500);
     }
+    const total = myDps + allyDps.reduce((a, b) => a + b, 0);
+    state.evtOdds = { key: 'raid:' + rc.id, text: `team dps ${total >= 1000 ? (total / 1000).toFixed(1) + 'k' : Math.round(total)} (mine ${Math.round(myDps)} + allies ${Math.round(allyDps.reduce((a, b) => a + b, 0))}) · ${displayName(rc.id)} ${Math.round(boss.maxHp / Math.max(1, total))} rounds to break` };
+    const info2 = document.querySelector('#pcopt-evt-info');
+    if (info2) info2.textContent = state.evtOdds.text;
   }
 
   /* ------------------------------------------------------------------ *
