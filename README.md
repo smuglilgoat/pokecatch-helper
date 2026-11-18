@@ -16,23 +16,23 @@ All Pokémon and move names are **English** (the game ships an English pack in e
 
 1. Install [Tampermonkey](https://www.tampermonkey.net/).
 2. Open `pokecatch-team-optimizer.user.js` → Tampermonkey offers to install it.
-3. Open <https://pokecatch-online.netlify.app/> and log in. A small **Team Optimizer** panel
-   appears bottom-right, built from the game's own CSS (buttons, badges, light/dark theme).
-   Drag its left edge to widen it (remembered), `–` folds it. It redraws only when something
-   changed, so it never flickers while the game plays. Its header shows the running version
-   (`Team Optimizer v1.3.0`).
+3. Open <https://pokecatch-online.netlify.app/> and log in. There is **no floating window**:
+   the helper's data lives inside the game's own screens (see below), styled with the game's
+   CSS so it reads as part of the UI. Blocks only rebuild when something changed, so nothing
+   flickers while the game plays. The block title shows the running version.
 
-## Using it
+## Where everything is
 
-| Panel control | What it does |
+| Game screen | What the helper adds there |
 |---|---|
-| **Defense / Offense / Balanced** | Orders the candidate pool the search starts from (survivability, damage, or the balance of both). The final team is the one that wins the simulation. |
-| **simulate** | Runs the chapter simulator (below), with a progress bar, and reports win %, battles cleared and where the wipes happen. |
-| **apply to team** | Puts the recommended team into the game's slots (drag & drop on the real UI). |
-| **watch for wipes** | Records wipes: chapter, step, foes and your team at that moment (see below). |
-| **moves** | Opens the game's own *moves panel* for that Pokémon — the authoritative learnset. |
-| **api** | Shows the same species from [PokéAPI](https://pokeapi.co/api/v2) next to the game's freer data. |
-| **✨ Optimize (mine)** (in the game's pickers) | My optimizer inside the game's own team picker and Team/PC header (see below). |
+| **Progress** | Run monitor: chapter, step and cap; data source and bundle; eligible count; league info; errors and the update notice; the chapter's events with the type chips; the **wipe watcher** with its log. |
+| **Team/PC** | The **chapter optimizer** above the PC list: presets, **simulate** with the progress bar, the simulation result, the team with each mon's move and a `moves`/`api` button, **apply to team**. |
+| **Legendary team picker** (any legend zone) | The **legendary optimizer**: the boss with its HP and damage, the odds line, presets, **✨ Optimize (mine)**, the team and **apply to team**. |
+| **Raid team picker** ("Raid vs boss") | The **raid optimizer**: **⚡ Fastest clear**, the DPS line and an `atk` badge on every pick/ally suggestion. |
+
+The **Defense / Offense / Balanced** presets order the candidate pool the search starts from
+(survivability, damage, or the balance of both); the final team is the one that wins the
+simulation.
 
 ## The chapter simulator
 
@@ -58,7 +58,7 @@ score:
 
 ## Legendary battles
 
-Choose a boss and a tier, then **optimize for this boss**: the boss fights the whole team every
+Open a legend zone's team picker, then **✨ Optimize (mine)**: the boss fights the whole team every
 round (main move + burst + counter, like the game), scales with the team's shiny/level and uses the
 elite tables. The fight is simulated at the level the game brings the team to — the **zone's level**
 (100) or the max level for an elite tier — starting from a **healed team**, which is how a
@@ -88,15 +88,9 @@ In the game's raid picker ("Raid vs *boss*") my row adds a **⚡ Fastest clear**
 
 ## Inside the game, beside its own buttons
 
-The game has its own **Optimize** button in the team picker it opens for a legendary zone, a raid
-or the elite league, and its own controls in the Team/PC header. This helper adds a row right next
-to them, built from the game's own classes:
-
-- in the **legend picker**: presets, **✨ Optimize (mine)** and the win/run/catch line; its button
-  fills the game's own slots, so both optimizers sit side by side and write to the game;
-- in the **Team/PC header**: the chapter optimizer with the current chapter, its foes and the cap,
-  so you can re-optimise without leaving the screen;
-- in the **raid picker**: the fastest-clear button and the DPS line.
+The game has its own **Optimize** button in the team pickers and its own controls in the Team/PC
+header. The helper's blocks sit right there, built from the game's own classes, and their buttons
+fill the game's own slots — the two optimizers work side by side and both write to the game.
 
 ## Wipe watcher
 
@@ -142,7 +136,7 @@ release; the panel header shows the running version). Tampermonkey checks on its
 updates*). GitHub raw caches for ~5 minutes.
 
 The script also checks once per page load and shows
-`update 1.3.1 is on GitHub (installed 1.3.0) — Tampermonkey → Check for updates` as soon as a
+`update 1.3.2 is on GitHub (installed 1.3.1) — Tampermonkey → Check for updates` as soon as a
 newer version exists. For truly instant updates, install from a **local clone** instead:
 Tampermonkey re-reads a `file://` script when it changes (needs *Allow access to file URLs*).
 
