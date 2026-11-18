@@ -3270,8 +3270,13 @@
       requestAnimationFrame(() => {
         pending = false;
         try {
-          if (!document.querySelector('#evt-pick-head')) state.raidBoss = null;
-        if (document.querySelector('#evt-pick-head')) injectPickerUi().catch(e => logError('picker ui: inject', e));
+          if (document.querySelector('#evt-pick-head')) {
+          if (!state.raidBoss) {
+            const rc = raidContext();
+            if (rc) state.raidBoss = raidBoss(rc);
+          }
+          injectPickerUi().catch(e => logError('picker ui: inject', e));
+        } else state.raidBoss = null;
           if (document.querySelector('#screen-team .team-panel .map-head')) injectTeamUi().catch(e => logError('team ui: inject', e));
           if (state.raidBoss) annotateRaidSuggestions();
         } catch (e) { logError('ui: observer', e); }
