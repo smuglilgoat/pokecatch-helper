@@ -156,7 +156,7 @@ release; the panel header shows the running version). Tampermonkey checks on its
 updates*). GitHub raw caches for ~5 minutes.
 
 The script also checks once per page load and shows
-`update 1.5.0 is on GitHub (installed 1.4.2) — Tampermonkey → Check for updates` as soon as a
+`update 1.5.4 is on GitHub (installed 1.5.3) — Tampermonkey → Check for updates` as soon as a
 newer version exists, and it removes the previous version's floating panel and quick-optimize
 rows from the page, so after an update only the blocks' controls remain (reload the page once
 after installing). For truly instant updates, install from a **local clone** instead:
