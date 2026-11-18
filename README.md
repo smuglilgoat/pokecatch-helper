@@ -66,7 +66,8 @@ each stretch and stores it in a **free** team template of the game (`#team-sets`
 templates are never overwritten. While the run is in a chapter that has prepared segments, the
 script watches the node: when the run moves into a new segment (i.e. after a Pokémon Center) and
 **no battle is running**, it switches to that segment's template. The block lists the prepared
-segments as `#slot team…`.
+segments as `#slot team…`. The plan survives a page reload: the segment→template map is kept
+next to the data cache, so switching resumes where the run is.
 
 ## Legendary battles
 
@@ -148,7 +149,7 @@ release; the panel header shows the running version). Tampermonkey checks on its
 updates*). GitHub raw caches for ~5 minutes.
 
 The script also checks once per page load and shows
-`update 1.4.1 is on GitHub (installed 1.4.0) — Tampermonkey → Check for updates` as soon as a
+`update 1.4.2 is on GitHub (installed 1.4.1) — Tampermonkey → Check for updates` as soon as a
 newer version exists, and it removes the previous version's floating panel and quick-optimize
 rows from the page, so after an update only the blocks' controls remain (reload the page once
 after installing). For truly instant updates, install from a **local clone** instead:

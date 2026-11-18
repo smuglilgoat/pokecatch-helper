@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Poke'Catch Team Optimizer
 // @namespace    pokecatch-helper
-// @version      1.4.1
+// @version      1.4.2
 // @description  Reads the current chapter events, watches for team wipes (and where they happen), then builds an optimal team of 6 from the PC with Defense / Offense / Balanced presets.
 // @author       GrumpyOwl
 // @match        https://pokecatch-online.netlify.app/*
@@ -26,7 +26,7 @@
    * 0. Small helpers
    * ------------------------------------------------------------------ */
   const SAVE_KEY = 'gachamon-save-v1';
-  const VERSION = '1.4.1';
+  const VERSION = '1.4.2';
   const UPDATE_URL = 'https://raw.githubusercontent.com/smuglilgoat/pokecatch-helper/main/pokecatch-team-optimizer.user.js';
   const $ = (sel, root = document) => root.querySelector(sel);
   const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
@@ -2691,6 +2691,7 @@
       state.errors = ['segments: ' + e.message];
     }
     state.segments = out.length ? { chapter: info.index, at: Date.now(), list: out, total: segs.length } : null;
+    store.set('segments', state.segments);
     state.segOn = null;
     state.busy = false; state.progress = null;
     refreshUi();
@@ -3268,6 +3269,9 @@
 
   function boot() {
     log('info', 'boot', { version: VERSION, bundle: bundleUrl()?.split('/').pop() || null });
+    // a prepared segment plan survives a reload (the templates live in the save)
+    state.segments = store.get('segments', null);
+    if (state.segments && !Array.isArray(state.segments.list)) state.segments = null;
     // a previous version's floating panel / quick rows: gone, the blocks replace them
     cleanupLegacy();
     ensureEnglish().catch(e => logError('names: English pack', e));
