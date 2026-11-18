@@ -158,8 +158,9 @@ Tampermonkey re-reads a `file://` script when it changes (needs *Allow access to
   (`TIME_EVOLUTIONS`), the party requirement (e.g. Mantyke needs a Remoraid), and the uid-hash pick
   when several level branches qualify. Item evolutions count only when the item is in the current
   region's bag; **link-cable** evolutions count when your wallet covers the game's trade fee
-  (computed with the game's own tier formula). Branching item evolutions are all scored, and the
-  sim evolves the real mon as it levels. The game's dex-dedup evolution gate is not modelled.
+  (computed with the game's own tier formula). The legend optimizer scores every reachable branch;
+  the chapter sim evolves the real mon as it levels. The game's dex-dedup evolution gate is not
+  modelled.
 - **Random trainers** are rolled like the game's encounter builder (team size, level bonus,
   evolved chance, doubles/triples odds) and wilds are sampled from the node's live pool.
 - **Raid bosses** are optimized for DPS and clear time; their fight is not simulated round by round
