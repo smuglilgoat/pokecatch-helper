@@ -170,8 +170,7 @@
       if (!repo || repo === installed) { log('debug', 'update: up to date', installed); return; }
       log('info', 'update: a newer version is on GitHub', { installed, repo });
       state.update = { installed, repo };
-      state.lastSig = null;
-      renderPanel();
+      refreshUi();
     } catch (e) { log('debug', 'update: check failed', e.message); }
   }
 
@@ -2423,159 +2422,27 @@
   }
 
   /** Add my controls beside the game's own "Optimize" button, inside its team picker.
-   *  Raids get the fastest-clear button + DPS badges; legend zones keep the odds line. */
+   *  Raids get the fastest-clear button + DPS badges; legend zones get the odds + team. */
   async function injectPickerUi() {
     const head = document.querySelector('#evt-pick-head');
-    if (!head || head.querySelector('#pcopt-evt')) return;
+    if (!head) return;
     if (!state.engine) { try { await ensureData(); } catch { return; } }
-    if (!head.isConnected || head.querySelector('#pcopt-evt')) return;
+    if (!head.isConnected) return;
     const rc = raidContext();
     if (rc) {
       state.raidBoss = raidBoss(rc);
-      injectRaidUi(head, rc);
+      mountRaidBox(head, rc);
+      annotateRaidSuggestions();
       return;
     }
     const ctx = pickerContext();
     if (!ctx) return;
-    const box = document.createElement('div');
-    box.id = 'pcopt-evt';
-    box.className = 'pcopt-row';
-    box.style.marginLeft = '8px';
-    const ctxKey = 'zone:' + ctx.zone.id + ':' + ctx.tier;
-    const saved = state.evtOdds && state.evtOdds.key === ctxKey ? state.evtOdds.text : '';
-    box.innerHTML = `${presetSeg()}
-      <button class="btn small" id="pcopt-evt-run">✨ Optimize (mine)</button>
-      <span class="pcopt-mut" id="pcopt-evt-info">${esc(saved)}</span>`;
-    head.appendChild(box);
-    log('info', 'picker ui: injected', { boss: displayName(ctx.zone.id), tier: ctx.tier });
-    box.querySelectorAll('[data-preset]').forEach(b => b.onclick = () => {
-      state.preset = b.dataset.preset;
-      box.querySelectorAll('[data-preset]').forEach(x => x.classList.toggle('on', x.dataset.preset === state.preset));
-      log('info', 'picker ui: preset', state.preset);
-    });
-    const run = async () => {
-      const btn = box.querySelector('#pcopt-evt-run');
-      const info = box.querySelector('#pcopt-evt-info');
-      btn.disabled = true;
-      info.textContent = 'working…';
-      log('info', 'picker ui: optimize clicked', { boss: displayName(ctx.zone.id), tier: ctx.tier });
-      try {
-        await ensureData();
-        const { zone, tier } = ctx;
-        const save = readSave();
-        const zoneLevel = tier ? state.data.cfg.MAX_LEVEL : (zone.level ?? state.data.cfg.MAX_LEVEL);
-        const cands = projectCandidates(state.engine, state.data, save, zoneLevel)
-          .map(c => ({ ...c, hpCur: c.hp }));
-        const team = pickLegendTeam(cands, zone, tier, state.engine, state.data);
-        const o = legendOdds(zone, tier, team, state.engine, state.data, save);
-        state.evtOdds = { key: 'zone:' + zone.id + ':' + tier, text: oddsText(o) };
-        info.textContent = state.evtOdds.text;
-        const placed = await applyToEventPicker(team);
-        log('info', 'picker ui: team applied', { placed, of: team.length, odds: state.evtOdds.text });
-        // the game re-renders the head when the team changes: put my line back
-        setTimeout(() => {
-          const again = document.querySelector('#pcopt-evt-info');
-          if (again && !again.textContent) again.textContent = state.evtOdds.text;
-        }, 900);
-      } catch (e) {
-        logError('picker ui: optimize failed', e);
-        info.textContent = 'error: ' + e.message;
-      }
-      btn.disabled = false;
-    };
-    box.querySelector('#pcopt-evt-run').onclick = run;
+    mountLegendBox(head, ctx);
   }
 
-  /** My row inside the game's raid picker: fastest clear + the catch line. */
-  function injectRaidUi(head, rc) {
-    if (!head.isConnected || head.querySelector('#pcopt-evt')) return;
-    const boss = state.raidBoss;
-    const cfg = state.data.cfg;
-    const catchRate = cfg.RAID?.CATCH ?? .01;
-    const pity = cfg.RAID_PITY ?? 150;
-    const saved = state.evtOdds && state.evtOdds.key === 'raid:' + rc.id ? state.evtOdds.text : '';
-    const box = document.createElement('div');
-    box.id = 'pcopt-evt';
-    box.className = 'pcopt-row';
-    box.style.marginLeft = '8px';
-    box.innerHTML = `<button class="btn small" id="pcopt-raid-run">⚡ Fastest clear</button>
-      <span class="pcopt-mut" id="pcopt-evt-info">${esc(saved)}</span>`;
-    head.appendChild(box);
-    log('info', 'raid ui: injected', { boss: displayName(rc.id), hp: boss.maxHp });
-    box.querySelector('#pcopt-raid-run').onclick = async () => {
-      const btn = box.querySelector('#pcopt-raid-run');
-      const info = box.querySelector('#pcopt-evt-info');
-      btn.disabled = true;
-      info.textContent = 'working…';
-      try {
-        await fastestClear(rc);
-        const dpsText = state.evtOdds?.key === 'raid:' + rc.id ? state.evtOdds.text : '';
-        info.textContent = dpsText;
-      } catch (e) {
-        logError('raid: fastest clear', e);
-        info.textContent = 'error: ' + e.message;
-      }
-      btn.disabled = false;
-    };
-    annotateRaidSuggestions();
-  }
 
-  /** One line on what the chapter optimizer is aiming at. */
-  function teamUiInfo() {
-    if (!state.events) return '';
-    const foes = state.enemies ? state.enemies.length + ' foes · ' : '';
-    return `Chapter ${state.events.index} ${state.events.name} · ${state.league ? 'league · ' : ''}${foes}cap ${state.events.cap}`;
-  }
 
   /** Put my controls in the game's Team/PC header: they optimise for the chapter being run. */
-  async function injectTeamUi() {
-    const head = document.querySelector('#screen-team .team-panel .map-head');
-    if (!head || head.querySelector('#pcopt-team-ui')) return;
-    if (!state.engine) { try { await ensureData(); } catch { return; } }
-    if (!head.isConnected || head.querySelector('#pcopt-team-ui')) return;
-    refreshChapter();
-    const box = document.createElement('div');
-    box.id = 'pcopt-team-ui';
-    box.className = 'pcopt-row';
-    box.style.flexBasis = '100%';
-    box.style.marginTop = '4px';
-    box.innerHTML = `${presetSeg()}
-      <button class="btn small" id="pcopt-team-run">✨ Optimize (mine)</button>
-      <span class="pcopt-mut" id="pcopt-team-info">${esc(teamUiInfo())}</span>`;
-    head.appendChild(box);
-    log('info', 'team ui: injected', { info: teamUiInfo() });
-    box.querySelectorAll('[data-preset]').forEach(b => b.onclick = () => {
-      state.preset = b.dataset.preset;
-      box.querySelectorAll('[data-preset]').forEach(x => x.classList.toggle('on', x.dataset.preset === state.preset));
-      log('info', 'team ui: preset', state.preset);
-    });
-    box.querySelector('#pcopt-team-run').onclick = async () => {
-      const btn = box.querySelector('#pcopt-team-run');
-      const info = box.querySelector('#pcopt-team-info');
-      btn.disabled = true;
-      info.textContent = 'working…';
-      log('info', 'team ui: optimize clicked', { chapter: state.events?.index });
-      const tick = setInterval(() => { if (state.waiting) info.textContent = state.waiting; }, 400);
-      try {
-        await runOptimizer();
-        if (!state.team || !state.team.length) { info.textContent = 'no candidate found'; }
-        else {
-          const res = await applyTeam(state.team);
-          info.textContent = res.ok
-            ? teamUiInfo() + (res.done ? ` · applied ${res.done}/${state.team.length}` : ' · team already in place')
-            : 'could not use the team screen: ' + res.error;
-          log('info', 'team ui: result', { ok: res.ok, done: res.done, same: res.same });
-        }
-      } catch (e) {
-        logError('team ui: optimize failed', e);
-        info.textContent = 'error: ' + e.message;
-      }
-      clearInterval(tick);
-      state.waiting = null;
-      btn.disabled = false;
-    };
-  }
-
   /* ------------------------------------------------------------------ *
    * 9. UI
    * ------------------------------------------------------------------ */
@@ -2585,7 +2452,7 @@
     preset: 'balanced', errors: [], busy: false, watcher: null, eligible: 0,
     apiCache: {}, info: {}, legends: null, legBoss: null, legTier: 0, legTeam: null, collapsed: false, waiting: null,
     evtOdds: null, loading: null,
-    interacting: false, lastSig: null, width: store.get('panelWidth', 344), league: false, leagueInfo: null, legOdds: null
+    league: false, leagueInfo: null, legOdds: null
   };
 
   const TYPE_COLORS = {
@@ -2620,7 +2487,7 @@
       tag.remove();
       log('info', 'names: English pack loaded', src.split('/').pop());
     } catch (e) { logError('names: English pack', e); }
-    if (englishData()) { state.lastSig = null; renderPanel(); return true; }
+    if (englishData()) { refreshUi(); return true; }
     return false;
   }
   function displayName(id) {
@@ -2668,13 +2535,7 @@
   }
 
   const legendZones = () => (state.legends?.zones || []);
-  const legendRegions = () => [...new Set(legendZones().map(z => z.region))];
 
-  function legendRegionOptions() {
-    const cur = state.legRegion || state.events?.region || legendRegions()[0] || 'kanto';
-    state.legRegion = cur;
-    return legendRegions().map(r => `<option value="${r}" ${r === cur ? 'selected' : ''}>${r}</option>`).join('');
-  }
 
   function legendZone() {
     const zones = legendZones().filter(z => z.region === state.legRegion);
@@ -2684,18 +2545,7 @@
     return cur;
   }
 
-  function legendBossOptions() {
-    const zones = legendZones().filter(z => z.region === state.legRegion);
-    return zones.map(z => `<option value="${z.id}" ${String(z.id) === String(state.legBoss) ? 'selected' : ''}>${esc(displayName(z.id))}${z.title ? ' · ' + esc(z.title) : ''}</option>`).join('');
-  }
 
-  function legendTierOptions() {
-    const zone = legendZone();
-    if (!zone) return '';
-    const tiers = Object.keys(state.legends?.elite?.[zone.id] || {}).map(Number).sort();
-    return `<option value="0" ${state.legTier === 0 ? 'selected' : ''}>normal</option>`
-      + tiers.map(t => `<option value="${t}" ${state.legTier === t ? 'selected' : ''}>elite ${t}</option>`).join('');
-  }
 
   function legendInfo() {
     const zone = legendZone();
@@ -2726,6 +2576,7 @@
   }
 
   function renderLegendTeam() {
+    const cap = state.events?.cap ?? state.data?.cfg?.MAX_LEVEL ?? 100;
     if (!state.legTeam) return '<div class="pcopt-mut">pick a boss and run the optimizer</div>';
     if (!state.legTeam.length) return '<div class="pcopt-mut">no candidate</div>';
     return state.legTeam.map((s, i) => {
@@ -2765,7 +2616,7 @@
   function updateProgress() {
     const bar = document.getElementById('pcopt-simbar');
     if (state.progress) {
-      if (!bar) { renderPanel(); return; }
+      if (!bar) { refreshUi(); return; }
       bar.style.display = 'flex';
       const fill = bar.firstElementChild.firstElementChild;
       fill.style.width = Math.round((state.progress.pct || 0) * 100) + '%';
@@ -2784,217 +2635,217 @@
     return cur;
   }
 
-  /** Only rebuild the panel when something actually changed (the game ticks every second). */
-  function panelSignature() {
-    const adv = readSave()?.adv;
-    const sig = {
-      ch: adv?.chapter, node: adv?.node, step: adv?.nodes?.[adv.node]?.name,
-      foes: state.enemies?.length, elig: state.eligible, preset: state.preset,
-      team: (state.team || []).map(t => t.mon.uid + ':' + t.hpCur).join(','),
-      leg: (state.legTeam || []).map(t => t.mon.uid).join(','),
-      boss: state.legBoss, region: state.legRegion, tier: state.legTier,
-      odds: state.legOdds ? [state.legOdds.winChance, state.legOdds.rounds, state.legOdds.attempts, state.legOdds.totalMs].join('|') : '',
-      fails: state.watcher?.fails.length, busy: state.busy,
-      errors: state.errors.join('|'), waiting: state.waiting,
-      update: state.update?.repo || '',
-      sim: state.sim ? [state.sim.rate, state.sim.avgCleared].join('|') : '',
-      progress: state.progress ? state.progress.label : '', data: state.data ? Object.keys(state.data.species).length : 0,
-      legends: state.legends?.zones.length ?? 0,
-      info: Object.keys(state.info).map(k => k + ':' + state.info[k]).join(',')
-    };
-    return JSON.stringify(sig);
+  /* ------------------------------------------------------------------ *
+   * 9b. UI — every block lives inside the game's own screens
+   *     Progress: run monitor (chapter, events, wipes, status)
+   *     Team/PC:  chapter optimizer + progress bar
+   *     Pickers:  legendary optimizer / raid fastest clear
+   * ------------------------------------------------------------------ */
+  /** Shared styles for the injected blocks (the game's classes still do most of the work). */
+  function ensureStyle() {
+    if (document.getElementById('pcopt-style')) return;
+    const st = document.createElement('style');
+    st.id = 'pcopt-style';
+    st.textContent = `
+      .pcopt-block{margin:10px;padding:10px 14px;border-radius:12px;border:2px solid var(--line);
+        background:color-mix(in srgb,var(--panel) 92%,transparent);color:var(--text)}
+      #evt-pick-head .pcopt-block{flex:1 1 100%;margin:6px 0 0}
+      .pcopt-block .pcopt-row{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+      .pcopt-block .pcopt-mut{color:var(--muted);font-size:13px;line-height:1.5}
+      .pcopt-block .pcopt-mon{display:flex;justify-content:space-between;gap:8px;padding:6px 0;border-bottom:1px solid var(--line)}
+      .pcopt-block .pcopt-mon:last-child{border-bottom:0}
+      .pcopt-block .pcopt-log{max-height:150px;overflow:auto}
+      .pcopt-block .pcopt-err{color:var(--red)}
+      .pcopt-block .btn.small{font-size:13px;padding:5px 10px}
+      .pcopt-block .seg button{font-size:13px;padding:5px 9px}
+      .pcopt-block select{font-size:13px;padding:4px 8px;max-width:100%}
+      .pcopt-block .type.sm{font-size:11px}
+      .pcopt-title{font-weight:700;font-size:15px;margin:0 0 6px;display:flex;justify-content:space-between;
+        align-items:center;gap:8px;flex-wrap:wrap}
+      .pcopt-title small{color:var(--muted);font-weight:400;font-size:11px}
+    `;
+    document.head.appendChild(st);
   }
 
-  function renderPanelInner(force = false) {
-    let p = document.getElementById('pcopt-panel');
-    if (!p) {
-      p = document.createElement('div');
-      p.id = 'pcopt-panel';
-      document.body.appendChild(p);
+  /** Create or reuse a block inside the host and rebuild it only when its signature changed. */
+  function mountBlock(host, key, sig, html, bind, place = {}) {
+    if (!host) return null;
+    ensureStyle();
+    let el = host.querySelector(`[data-pcopt="${key}"]`);
+    if (!el) {
+      el = document.createElement('div');
+      el.className = 'pcopt-block';
+      el.dataset.pcopt = key;
+      const before = place.before ? host.querySelector(place.before) : null;
+      if (before) host.insertBefore(el, before);
+      else if (place.prepend) host.prepend(el);
+      else host.appendChild(el);
     }
-    const sig = panelSignature();
-    // do not rebuild while the user is playing with the panel
-    const active = document.activeElement;
-    const busy = state.interacting || (active && p.contains(active) && /^(SELECT|INPUT|TEXTAREA)$/.test(active.tagName));
-    if (!force && (busy || sig === state.lastSig)) return;
-    state.lastSig = sig;
-    log('debug', 'panel: render', JSON.parse(sig));
+    if (el.dataset.sig !== sig) {
+      el.dataset.sig = sig;
+      el.innerHTML = html;
+      bind(el);
+    }
+    return el;
+  }
+
+  const errLine = () => state.errors.length ? `<div class="pcopt-err">${state.errors.map(esc).join('<br>')}</div>` : '';
+  const updateLine = () => state.update
+    ? `<div class="pcopt-err">update ${esc(state.update.repo)} is on GitHub (installed ${esc(state.update.installed)}) — Tampermonkey → Check for updates</div>` : '';
+
+  /** The Progress screen: what the game is doing right now, the wipes, the data status. */
+  function mountMonitor() {
+    const body = document.querySelector('#screen-map .map-body');
+    if (!body) return;
     const save = readSave();
     const adv = save?.adv;
     const node = adv?.nodes?.[adv.node];
-    const scroll = p.scrollTop;
-
-    // the panel is built from the game's own classes and CSS variables, so it follows its theme
-    p.className = 'map-region';
-    p.style.setProperty('--c', '#3b6fe0');
-    p.innerHTML = `
-      <style>
-        #pcopt-panel{position:fixed;right:10px;bottom:10px;z-index:45;width:var(--pcopt-w,344px);max-height:min(76vh,720px);
-          overflow:auto;box-shadow:0 10px 28px #00000073;background:var(--panel);color:var(--text)}
-        #pcopt-panel .pcopt-resize{position:absolute;top:0;left:0;width:10px;height:100%;cursor:ew-resize;z-index:3}
-        #pcopt-panel .pcopt-resize:after{content:'';position:absolute;top:50%;left:3px;width:4px;height:34px;margin-top:-17px;
-          border-radius:3px;background:var(--line);opacity:.8}
-        #pcopt-panel .map-head{position:sticky;top:0;z-index:2;
-          background:linear-gradient(90deg,color-mix(in srgb,var(--c) 40%,var(--panel)),var(--panel))}
-        #pcopt-panel .map-head h2{font-size:17px}
-        #pcopt-panel section{padding:10px 14px;border-bottom:2px solid var(--line)}
-        #pcopt-panel section:last-child{border-bottom:0}
-        #pcopt-panel .pcopt-row{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
-        #pcopt-panel .pcopt-mut{color:var(--muted);font-size:13px;line-height:1.5}
-        #pcopt-panel .pcopt-mon{display:flex;justify-content:space-between;gap:8px;padding:6px 0;border-bottom:1px solid var(--line)}
-        #pcopt-panel .pcopt-mon:last-child{border-bottom:0}
-        #pcopt-panel .pcopt-log{max-height:150px;overflow:auto}
-        #pcopt-panel .pcopt-err{color:var(--red)}
-        #pcopt-panel .btn.small{font-size:13px;padding:5px 10px}
-        #pcopt-panel .seg button{font-size:13px;padding:5px 9px}
-        #pcopt-panel select{font-size:13px;padding:4px 8px;max-width:100%}
-        #pcopt-panel .type.sm{font-size:11px}
-        @media (max-width:640px){#pcopt-panel{width:calc(100vw - 16px);right:8px;bottom:64px}}
-      </style>
-      <div class="map-head"><h2>Team Optimizer <span class="pcopt-mut" style="font-size:11px;font-weight:400">v${VERSION}</span></h2>
-        <button class="btn small ghost" id="pcopt-toggle" aria-label="Collapse">–</button></div>
-      <div id="pcopt-body"></div>
-      <div class="pcopt-resize" id="pcopt-resize" title="Drag to widen"></div>`;
-
-    const body = $('#pcopt-body', p);
-    const toggle = $('#pcopt-toggle', p);
-    p.style.setProperty('--pcopt-w', state.width + 'px');
-    p.onpointerdown = () => { state.interacting = true; };
-    p.onpointerup = p.onpointercancel = () => { state.interacting = false; };
-    // drag the right edge to widen the panel
-    const grip = $('#pcopt-resize', p);
-    if (grip && !grip.dataset.wired) {
-      grip.dataset.wired = '1';
-      grip.addEventListener('pointerdown', ev => {
-        ev.preventDefault();
-        grip.setPointerCapture(ev.pointerId);
-        const move = e => {
-          // the panel is pinned to the right: its left edge follows the pointer
-          const w = clamp(Math.round(innerWidth - 10 - e.clientX), 260, Math.min(900, innerWidth - 20));
-          state.width = w;
-          p.style.setProperty('--pcopt-w', w + 'px');
-        };
-        const up = () => {
-          grip.removeEventListener('pointermove', move);
-          grip.removeEventListener('pointerup', up);
-          store.set('panelWidth', state.width);
-        };
-        grip.addEventListener('pointermove', move);
-        grip.addEventListener('pointerup', up);
-      });
-    }
-    toggle.textContent = state.collapsed ? '+' : '–';
-    body.style.display = state.collapsed ? 'none' : '';
-    toggle.onclick = () => {
-      state.collapsed = body.style.display !== 'none';
-      body.style.display = state.collapsed ? 'none' : '';
-      toggle.textContent = state.collapsed ? '+' : '–';
-    };
-    p.scrollTop = scroll;
-
-    body.innerHTML = `
-      <section>
-        <div class="pcopt-row"><b>Chapter ${adv?.chapter ?? '-'}</b><span class="pcopt-mut">${esc(state.events?.name || '')}</span></div>
-        ${state.sim ? `<div class="pcopt-mut">chapter sim: win ${Math.round(state.sim.rate * 100)}% · clears ${state.sim.avgCleared}/${state.sim.battles} battles · ${state.sim.evaluated} teams in ${(state.sim.ms / 1000).toFixed(1)}s${Object.keys(state.sim.wipeAt || {}).length ? ' · wipe at step ' + Object.entries(state.sim.wipeAt).sort((a, b) => b[1] - a[1]).slice(0, 2).map(([i, n]) => '#' + i + '×' + n).join(', ') : ''}</div>` : ''}
-        <div class="pcopt-mut">step ${adv?.node ?? '-'} / ${(adv?.nodes || []).length} · ${esc(node?.name || '-')}${node?.lv ? ' · Lv ' + node.lv.join('-') : ''}</div>
-        <div class="pcopt-mut">level cap ${state.events?.cap ?? '-'} · type chart: ${esc(state.chartSource || '-')}</div>
-        <div class="pcopt-mut">data: ${state.data ? Object.keys(state.data.species).length + ' species · ' + (state.legends?.zones.length ?? 0) + ' legend zones' : 'not loaded'}
-          · bundle ${esc((bundleUrl() || '').split('/').pop() || '-')}</div>
-        ${state.leagueInfo ? `<div class="pcopt-mut">${esc(state.leagueInfo)}</div>` : ''}
-        ${state.eligible ? `<div class="pcopt-mut">${state.eligible} Pokémon can join this team${save?.link ? ' (region link: ' + esc(save.link.to) + ')' : ''}</div>` : ''}
-        ${state.waiting ? `<div class="pcopt-mut">${esc(state.waiting)}</div>` : ''}
-        ${state.update ? `<div class="pcopt-err">update ${esc(state.update.repo)} is on GitHub (installed ${esc(state.update.installed)}) — Tampermonkey → Check for updates</div>` : ''}
-        ${state.errors.length ? `<div class="pcopt-err">${state.errors.map(esc).join('<br>')}</div>` : ''}
-      </section>
-
-      <section>
-        <div class="pcopt-row"><b>Chapter events</b><span class="pcopt-mut">${state.enemies ? state.enemies.length + ' foes' : ''}</span></div>
-        ${state.watcher.fails[0] ? `<div class="pcopt-mut">last wipe: step ${state.watcher.fails[0].node} · ${esc(state.watcher.fails[0].name)} (${esc((state.watcher.fails[0].enemies || []).map(e => displayName(e.id)).join(', '))})</div>` : ''}
-        <div class="pcopt-row" style="margin:4px 0">${typeChips(state.enemies, state.data)}</div>
-        <div class="pcopt-row">
-          <button class="btn small ghost" id="pcopt-watch">${state.watcher.running ? '● watching' : 'watch for wipes'}</button>
-          <button class="btn small ghost" id="pcopt-clear">clear log</button>
-        </div>
-        <div class="pcopt-log">${renderFails()}</div>
-      </section>
-
-      <section>
-        <div class="pcopt-row"><b>Legendary fight</b><span class="pcopt-mut">${state.legends ? state.legends.zones.length + ' boss zones' : 'loading…'}</span></div>
-        <div class="pcopt-row">
-          <select id="pcopt-leg-region">${legendRegionOptions()}</select>
-          <select id="pcopt-leg-boss">${legendBossOptions()}</select>
-          <select id="pcopt-leg-tier">${legendTierOptions()}</select>
-          ${presetSeg()}
-        </div>
-        <div class="pcopt-mut" id="pcopt-leg-info">${legendInfo()}</div>
-        <div class="pcopt-mut" id="pcopt-leg-odds">${legendOddsLine()}</div>
-        <div class="pcopt-row" style="margin-top:6px">
-          <button class="btn small" id="pcopt-leg-run" ${state.busy ? 'disabled' : ''}>optimize for this boss</button>
-          <button class="btn small ghost" id="pcopt-leg-apply" ${state.legTeam && state.legTeam.length && !state.busy ? '' : 'disabled'}>apply to team</button>
-        </div>
-        <div id="pcopt-leg-team">${renderLegendTeam()}</div>
-      </section>
-
-      <section>
-        <div class="pcopt-row" style="margin-top:8px">
-          ${presetSeg()}
-          <button class="btn small" id="pcopt-run" ${state.busy ? 'disabled' : ''}>${state.busy ? 'working…' : 'simulate'}</button>
-          <div id="pcopt-simbar" style="display:none;flex:1 1 160px;align-items:center;gap:6px"><div style="flex:1;height:10px;border-radius:5px;background:var(--line);overflow:hidden"><div style="height:100%;width:0%;background:var(--c);transition:width .15s"></div></div><span class="pcopt-mut" style="font-size:11px;white-space:nowrap"></span></div>
-          <button class="btn small ghost" id="pcopt-apply" ${state.team && state.team.length && !state.busy ? '' : 'disabled'}>apply to team</button>
-        </div>
-        <div id="pcopt-team">${renderTeam()}</div>
-      </section>`;
-
-    body.querySelectorAll('[data-preset]').forEach(b => b.onclick = () => {
-      state.preset = b.dataset.preset;
-      if (state.scored) state.team = pickTeam(state.scored, state.enemies, state.engine, state.data, state.preset, 6, state.league);
-      const zone = legendZone();
-      if (zone && state.legTeam) {
-        const save = readSave();
-        const cands = save ? projectCandidates(state.engine, state.data, save, state.events?.cap ?? 100) : [];
-        state.legTeam = pickLegendTeam(cands, zone, state.legTier, state.engine, state.data);
-      }
-      renderPanel(true);
-    });
-    const regionSel = $('#pcopt-leg-region', body);
-    if (regionSel) regionSel.onchange = () => {
-      state.legRegion = regionSel.value;
-      state.legBoss = null;
-      state.legTier = 0;
-      renderPanel();
-    };
-    const bossSel = $('#pcopt-leg-boss', body);
-    if (bossSel) bossSel.onchange = () => {
-      state.legBoss = bossSel.value;
-      state.legTier = 0;
-      renderPanel();
-    };
-    const tierSel = $('#pcopt-leg-tier', body);
-    if (tierSel) tierSel.onchange = () => { state.legTier = +tierSel.value; renderPanel(); };
-    $('#pcopt-leg-run', body).onclick = () => runLegendOptimizer();
-    $('#pcopt-leg-apply', body).onclick = () => applyTeamFromPanel(state.legTeam);
-    body.querySelectorAll('[data-moves]').forEach(b => b.onclick = () => {
-      b.textContent = '…';
-      showMovesPanel(b.dataset.moves).then(() => { b.textContent = 'moves'; });
-    });
-    body.querySelectorAll('[data-api]').forEach(b => b.onclick = () => {
-      const uid = b.dataset.api;
-      const info = body.querySelector(`[data-info="${uid}"]`);
-      if (info) info.textContent = 'asking PokéAPI…';
-      compareWithPokeApi(uid, info);
-    });
-    $('#pcopt-run', body).onclick = () => runOptimizer();
-    $('#pcopt-apply', body).onclick = () => applyTeamFromPanel();
-    $('#pcopt-watch', body).onclick = () => {
-      if (state.watcher.running) state.watcher.stop(); else state.watcher.start();
-      renderPanel();
-    };
-    $('#pcopt-clear', body).onclick = () => { state.watcher.clear(); renderPanel(); };
+    const fails = state.watcher?.fails || [];
+    const last = fails[0];
+    const html = `
+      <div class="pcopt-title"><span>Run monitor <small>v${VERSION}</small></span>
+        <span class="pcopt-mut">${esc(state.events?.name || '')} · step ${adv?.node ?? '-'} / ${(adv?.nodes || []).length}</span></div>
+      <div class="pcopt-mut">chapter ${adv?.chapter ?? '-'} · level cap ${state.events?.cap ?? '-'} · type chart: ${esc(state.chartSource || '-')}</div>
+      <div class="pcopt-mut">data: ${state.data ? Object.keys(state.data.species).length + ' species · ' + (state.legends?.zones.length ?? 0) + ' legend zones' : 'not loaded'}
+        · bundle ${esc((bundleUrl() || '').split('/').pop() || '-')}</div>
+      ${state.leagueInfo ? `<div class="pcopt-mut">${esc(state.leagueInfo)}</div>` : ''}
+      ${state.eligible ? `<div class="pcopt-mut">${state.eligible} Pokémon can join this team${save?.link ? ' (region link: ' + esc(save.link.to) + ')' : ''}</div>` : ''}
+      ${state.waiting ? `<div class="pcopt-mut">${esc(state.waiting)}</div>` : ''}
+      ${updateLine()}${errLine()}
+      <div class="pcopt-title" style="margin-top:10px"><span>Chapter events</span>
+        <span class="pcopt-mut">${state.enemies ? state.enemies.length + ' foes · ' + esc(node?.name || '') : ''}</span></div>
+      ${last ? `<div class="pcopt-mut">last wipe: step ${last.node} · ${esc(last.name)} (${esc((last.enemies || []).map(e => displayName(e.id)).join(', '))})</div>` : ''}
+      <div class="pcopt-row" style="margin:4px 0">${typeChips(state.enemies, state.data)}</div>
+      <div class="pcopt-row">
+        <button class="btn small ghost" data-act="watch">${state.watcher.running ? '● watching' : 'watch for wipes'}</button>
+        <button class="btn small ghost" data-act="clear">clear log</button>
+      </div>
+      <div class="pcopt-log">${renderFails()}</div>`;
+    const sig = JSON.stringify([adv?.chapter, adv?.node, node?.name, state.enemies?.length, fails.length, state.watcher.running,
+      state.eligible, state.chartSource, state.errors, state.update?.repo, state.leagueInfo, state.waiting]);
+    mountBlock(body, 'monitor', sig, html, el => {
+      el.querySelector('[data-act="watch"]').onclick = () => {
+        if (state.watcher.running) state.watcher.stop(); else state.watcher.start();
+        refreshUi();
+      };
+      el.querySelector('[data-act="clear"]').onclick = () => { state.watcher.clear(); refreshUi(); };
+    }, { prepend: true });
   }
 
-  /** The panel must never take the script down: a render error is logged, the rest keeps running. */
-  function renderPanel(force = false) {
-    try { renderPanelInner(force); } catch (e) { logError('panel: render failed', e); }
+  /** The Team/PC screen: the chapter optimizer with its progress bar and the current team. */
+  function mountChapter() {
+    const host = document.querySelector('#screen-team');
+    if (!host || !state.data) return;
+    const cap = state.events?.cap ?? state.data.cfg?.MAX_LEVEL ?? 100;
+    const sim = state.sim;
+    const html = `
+      <div class="pcopt-title"><span>Chapter optimizer <small>v${VERSION}</small></span>
+        <span class="pcopt-mut">${state.events ? 'chapter ' + state.events.index + ' · ' + esc(state.events.name) + ' · cap ' + cap : ''}</span></div>
+      ${sim ? `<div class="pcopt-mut">chapter sim: win ${Math.round(sim.rate * 100)}% · clears ${sim.avgCleared}/${sim.battles} battles · ${sim.evaluated} teams in ${(sim.ms / 1000).toFixed(1)}s${Object.keys(sim.wipeAt || {}).length ? ' · wipe at step ' + Object.entries(sim.wipeAt).sort((a, b) => b[1] - a[1]).slice(0, 2).map(([i, n]) => '#' + i + '×' + n).join(', ') : ''}</div>` : ''}
+      <div class="pcopt-row" style="margin-top:6px">
+        ${presetSeg()}
+        <button class="btn small" data-act="run" ${state.busy ? 'disabled' : ''}>${state.busy ? 'working…' : 'simulate'}</button>
+        <div id="pcopt-simbar" style="display:none;flex:1 1 160px;align-items:center;gap:6px"><div style="flex:1;height:10px;border-radius:5px;background:var(--line);overflow:hidden"><div style="height:100%;width:0%;background:var(--c);transition:width .15s"></div></div><span class="pcopt-mut" style="font-size:11px;white-space:nowrap"></span></div>
+        <button class="btn small ghost" data-act="apply" ${state.team && state.team.length && !state.busy ? '' : 'disabled'}>apply to team</button>
+      </div>
+      <div data-team>${renderTeam()}</div>
+      ${state.waiting ? `<div class="pcopt-mut">${esc(state.waiting)}</div>` : ''}
+      ${errLine()}`;
+    const sig = JSON.stringify([state.preset, state.busy, state.team && state.team.map(t => t.mon.uid + ':' + t.hpCur).join(','),
+      sim && [sim.rate, sim.avgCleared, sim.evaluated, sim.ms], state.errors, state.waiting, state.events?.index, cap]);
+    mountBlock(host, 'chapter', sig, html, el => {
+      el.querySelectorAll('[data-preset]').forEach(b => b.onclick = () => {
+        state.preset = b.dataset.preset;
+        el.querySelectorAll('[data-preset]').forEach(x => x.classList.toggle('on', x.dataset.preset === state.preset));
+        refreshUi();
+      });
+      el.querySelector('[data-act="run"]').onclick = () => runOptimizer();
+      el.querySelector('[data-act="apply"]').onclick = () => applyTeamFromPanel();
+      el.querySelectorAll('[data-moves]').forEach(b => b.onclick = () => {
+        b.textContent = '…';
+        showMovesPanel(b.dataset.moves).then(() => { b.textContent = 'moves'; });
+      });
+      el.querySelectorAll('[data-api]').forEach(b => b.onclick = () => {
+        const uid = b.dataset.api;
+        const info = el.querySelector(`[data-info="${uid}"]`);
+        if (info) info.textContent = 'asking PokéAPI…';
+        compareWithPokeApi(uid, info);
+      });
+    }, { before: '.pc-sticky' });
+  }
+
+  /** The legendary team picker: boss info, odds, the team it computed. */
+  function mountLegendBox(head, ctx) {
+    state.legBoss = ctx.zone.id;
+    state.legTier = ctx.tier;
+    state.legRegion = ctx.zone.region;
+    const key = 'legend:' + ctx.zone.id + ':' + ctx.tier;
+    const html = `
+      <div class="pcopt-row" style="margin-top:6px">
+        ${presetSeg()}
+        <button class="btn small" data-act="run" ${state.busy ? 'disabled' : ''}>✨ Optimize (mine)</button>
+        <button class="btn small ghost" data-act="apply" ${state.legTeam && state.legTeam.length && !state.busy ? '' : 'disabled'}>apply to team</button>
+      </div>
+      <div class="pcopt-mut">${legendInfo()}</div>
+      <div class="pcopt-mut">${legendOddsLine()}</div>
+      <div data-team>${renderLegendTeam()}</div>
+      ${errLine()}`;
+    const sig = JSON.stringify([key, state.preset, state.busy,
+      state.legTeam && state.legTeam.map(t => t.mon.uid).join(','),
+      state.legOdds && [state.legOdds.winChance, state.legOdds.rounds, state.legOdds.pCatch, state.legOdds.attempts],
+      state.errors]);
+    mountBlock(head, 'legend', sig, html, el => {
+      el.querySelectorAll('[data-preset]').forEach(b => b.onclick = () => {
+        state.preset = b.dataset.preset;
+        el.querySelectorAll('[data-preset]').forEach(x => x.classList.toggle('on', x.dataset.preset === state.preset));
+        refreshUi();
+      });
+      el.querySelector('[data-act="run"]').onclick = () => runLegendOptimizer();
+      el.querySelector('[data-act="apply"]').onclick = () => applyTeamFromPanel(state.legTeam);
+    });
+  }
+
+  /** The raid picker: fastest clear and the total DPS line. */
+  function mountRaidBox(head, rc) {
+    const boss = state.raidBoss;
+    const key = 'raid:' + rc.id;
+    const saved = state.evtOdds?.key === key ? state.evtOdds.text : '';
+    const html = `
+      <div class="pcopt-row" style="margin-top:6px">
+        <button class="btn small" data-act="run">⚡ Fastest clear</button>
+        <span class="pcopt-mut" data-info>${esc(saved)}</span>
+      </div>
+      <div class="pcopt-mut">${esc(displayName(rc.id))} · ${boss ? boss.maxHp.toLocaleString('en-US') + ' HP' : ''} · ${esc((state.data.species[rc.id]?.types || []).join('/'))}</div>
+      ${errLine()}`;
+    const sig = JSON.stringify([key, state.busy, saved, state.errors]);
+    mountBlock(head, 'raid', sig, html, el => {
+      el.querySelector('[data-act="run"]').onclick = async () => {
+        const btn = el.querySelector('[data-act="run"]');
+        const info = el.querySelector('[data-info]');
+        btn.disabled = true;
+        info.textContent = 'working…';
+        log('info', 'raid ui: fastest clear clicked', { boss: displayName(rc.id) });
+        try {
+          await fastestClear(rc);
+          info.textContent = state.evtOdds?.key === key ? state.evtOdds.text : '';
+          refreshUi();
+        } catch (e) {
+          logError('raid: fastest clear', e);
+          info.textContent = 'error: ' + e.message;
+        }
+        btn.disabled = false;
+      };
+    });
+  }
+
+  /** Refresh every block that is currently on screen (cheap: signature-guarded). */
+  function refreshUi() {
+    try {
+      mountMonitor();
+      mountChapter();
+      if (document.querySelector('#evt-pick-head')) injectPickerUi().catch(e => logError('picker ui: inject', e));
+      else state.raidBoss = null;
+    } catch (e) { logError('ui: refresh', e); }
   }
 
   /* ------------------------------------------------------------------ *
@@ -3019,7 +2870,7 @@
         log('info', 'data: cache hit', url.split('/').pop());
       }
       if (!data) {
-        state.busy = true; renderPanel();
+        state.busy = true; refreshUi();
         try {
           data = await parseBundle(url);
           store.set(cacheKey, data);
@@ -3179,15 +3030,15 @@
   }
 
   async function runOptimizer() {
-    state.busy = true; state.errors = []; renderPanel();
+    state.busy = true; state.errors = []; refreshUi();
     log('info', 'optimizer: start', { preset: state.preset });
     try {
       await ensureData();
-      if (!state.data) { state.busy = false; renderPanel(); return; }
+      if (!state.data) { state.busy = false; refreshUi(); return; }
       const save = readSave();
-      if (!save) { state.errors = ['no save found']; state.busy = false; renderPanel(); return; }
+      if (!save) { state.errors = ['no save found']; state.busy = false; refreshUi(); return; }
       const info = chapterInfo(state.data, save.adv.chapter, save.adv);
-      if (!info) { state.errors = ['chapter not found']; state.busy = false; renderPanel(); return; }
+      if (!info) { state.errors = ['chapter not found']; state.busy = false; refreshUi(); return; }
       state.events = info;
       const league = leagueChapters(state.data, info.index);
       state.league = league.length > 0;
@@ -3202,7 +3053,7 @@
       const started = Date.now();
       const out = await searchChapterTeam(save, info, info.cap, 15000);
       state.progress = null;
-      if (out.error) { state.errors = [out.error]; state.busy = false; renderPanel(); return; }
+      if (out.error) { state.errors = [out.error]; state.busy = false; refreshUi(); return; }
       state.team = out.team;
       state.sim = { rate: out.res.rate, avgCleared: out.res.avgCleared, battles: out.res.totalBattles, wipeAt: out.res.wipeAt, ms: Date.now() - started, evaluated: out.evaluated };
       log('info', 'optimizer: done', {
@@ -3217,7 +3068,7 @@
     }
     state.progress = null;
     state.busy = false;
-    renderPanel(true);
+    refreshUi();
   }
 
   /** Compare the game learnset with the canonical PokéAPI one (the game is freer). */
@@ -3244,14 +3095,14 @@
   }
 
   async function runLegendOptimizer() {
-    state.busy = true; state.errors = []; renderPanel();
+    state.busy = true; state.errors = []; refreshUi();
     log('info', 'legend optimizer: start', { region: state.legRegion, boss: state.legBoss, tier: state.legTier });
     try {
       await ensureData();
       const zone = legendZone();
-      if (!zone) { state.errors = ['no boss zone']; state.busy = false; renderPanel(); return; }
+      if (!zone) { state.errors = ['no boss zone']; state.busy = false; refreshUi(); return; }
       const save = readSave();
-      if (!save) { state.errors = ['no save found']; state.busy = false; renderPanel(); return; }
+      if (!save) { state.errors = ['no save found']; state.busy = false; refreshUi(); return; }
       // the game brings the team to the zone's level (max level for an elite tier) and heals it
       const zoneLevel = state.legTier ? state.data.cfg.MAX_LEVEL : (zone.level ?? state.data.cfg.MAX_LEVEL);
       const cands = projectCandidates(state.engine, state.data, save, zoneLevel)
@@ -3271,19 +3122,19 @@
       state.errors = ['legend optimizer error: ' + e.message];
     }
     state.busy = false;
-    renderPanel();
+    refreshUi();
   }
 
   async function applyTeamFromPanel(team) {
     team = team || state.team;
     if (!team || !team.length) return;
-    state.busy = true; renderPanel();
+    state.busy = true; refreshUi();
     log('info', 'panel: apply team', { mons: team.length });
     const res = await applyTeam(team);
     state.busy = false;
     state.waiting = null;
     if (!res.ok) { log('error', 'panel: apply failed', res.error); state.errors = ['apply failed: ' + res.error]; }
-    renderPanel();
+    refreshUi();
   }
 
   function boot() {
@@ -3297,29 +3148,19 @@
       pending = true;
       requestAnimationFrame(() => {
         pending = false;
-        try {
-          if (document.querySelector('#evt-pick-head')) {
-          if (!state.raidBoss) {
-            const rc = raidContext();
-            if (rc) state.raidBoss = raidBoss(rc);
-          }
-          injectPickerUi().catch(e => logError('picker ui: inject', e));
-        } else state.raidBoss = null;
-          if (document.querySelector('#screen-team .team-panel .map-head')) injectTeamUi().catch(e => logError('team ui: inject', e));
-          if (state.raidBoss) annotateRaidSuggestions();
-        } catch (e) { logError('ui: observer', e); }
+        try { refreshUi(); } catch (e) { logError('ui: observer', e); }
       });
     }).observe(document.body, { childList: true, subtree: true });
     state.watcher = new WipeWatcher(rec => {
-      renderPanel();
+      refreshUi();
       if (rec) {
         // the team fell on this step: rebuild an optimal team for the chapter
         runOptimizer();
       }
     });
-    renderPanel();
+    refreshUi();
     ensureData().then(() => {
-      renderPanel();
+      refreshUi();
       log('info', 'boot: ready', {
         species: state.data ? Object.keys(state.data.species).length : 0,
         legends: state.legends?.zones?.length ?? 0,
@@ -3329,7 +3170,7 @@
     // the game keeps playing in the background: keep the panel in sync
     setInterval(() => {
       if (state.busy) return;
-      try { refreshChapter(); renderPanel(); } catch (e) { logError('panel: refresh', e); }
+      try { refreshChapter(); refreshUi(); } catch (e) { logError('ui: refresh', e); }
     }, 5000);
   }
 
