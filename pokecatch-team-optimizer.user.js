@@ -2301,12 +2301,16 @@
   async function fastestClear(rc) {
     const boss = state.raidBoss;
     const save = readSave();
-    const away = awayUids(save);
+    const levelCap = state.data.cfg.RAID?.LEVEL ?? 100;
+    // the raid picker allows every PC mon (no region link), capped at the raid level
     const mine = save.mons
-      .filter(m => !away.has(m.uid) && state.data.species[m.id] && canJoinTeam(save, m))
-      .map(m => ({ mon: m, dps: raidDps({ id: m.id, level: Math.min(m.level, state.events?.cap ?? 100), shiny: m.shiny }, boss) }))
+      .filter(m => state.data.species[m.id])
+      .map(m => ({ mon: m, dps: raidDps({ id: m.id, level: Math.min(m.level, levelCap), shiny: m.shiny }, boss) }))
       .sort((a, b) => b.dps - a.dps);
-    const team = mine.slice(0, 2).map(x => ({ mon: x.mon, species: state.data.species[x.mon.id], proj: { id: x.mon.id, level: x.mon.level, shiny: x.mon.shiny }, base: { id: x.mon.id }, hp: 0 }));
+    // one per species (the game's rule), keep the highest-dps copy
+    const seen = new Set();
+    const picked = mine.filter(x => !seen.has(x.mon.id) && seen.add(x.mon.id));
+    const team = picked.slice(0, 2).map(x => ({ mon: x.mon, species: state.data.species[x.mon.id], proj: { id: x.mon.id, level: x.mon.level, shiny: x.mon.shiny }, base: { id: x.mon.id }, hp: 0 }));
     const myDps = team.reduce((a, t) => a + t.dps, 0);
     state.evtOdds = { key: 'raid:' + rc.id, text: `team dps ${myDps >= 1000 ? (myDps / 1000).toFixed(1) + 'k' : Math.round(myDps)} · ${displayName(rc.id)} ${Math.round(boss.maxHp / Math.max(1, myDps))} rounds` };
     log('info', 'raid: fastest clear', { boss: displayName(rc.id), picks: team.map(t => displayName(t.mon.id) + ' ' + Math.round(t.dps || 0)) });
