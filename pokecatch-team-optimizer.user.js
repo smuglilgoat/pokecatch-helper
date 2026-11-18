@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Poke'Catch Team Optimizer
 // @namespace    pokecatch-helper
-// @version      1.5.5
+// @version      1.6.0
 // @description  Reads the current chapter events, watches for team wipes (and where they happen), then builds an optimal team of 6 from the PC with Defense / Offense / Balanced presets.
 // @author       GrumpyOwl
 // @match        https://pokecatch-online.netlify.app/*
@@ -26,7 +26,7 @@
    * 0. Small helpers
    * ------------------------------------------------------------------ */
   const SAVE_KEY = 'gachamon-save-v1';
-  const VERSION = '1.5.5';
+  const VERSION = '1.6.0';
   const UPDATE_URL = 'https://raw.githubusercontent.com/smuglilgoat/pokecatch-helper/main/pokecatch-team-optimizer.user.js';
   const $ = (sel, root = document) => root.querySelector(sel);
   const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
@@ -2660,7 +2660,11 @@
     if (!save?.adv || !state.data || !state.engine) return;
     const info = state.events && state.events.index != null ? state.events : chapterInfo(state.data, save.adv.chapter, save);
     if (!info) return;
-    const segs = segmentPlans(chapterPlan(state.data, save));
+    const plan = chapterPlan(state.data, save);
+    const segs = segmentPlans(plan);
+    // a heal on the first step leaves no segment before it: align the index against that
+    let lead = 0;
+    while (lead < plan.length && plan[lead].kind === 'heal') lead++;
     if (segs.length < 2) { state.errors = ['this chapter has a single segment — nothing to switch']; refreshUi(); return; }
     const slots = (save.teamSets?.list || []);
     const free = [];
@@ -2696,7 +2700,7 @@
       logError('segments: prepare', e);
       state.errors = ['segments: ' + e.message];
     }
-    state.segments = out.length ? { chapter: info.index, at: Date.now(), list: out, total: segs.length } : null;
+    state.segments = out.length ? { chapter: info.index, at: Date.now(), list: out, total: segs.length, lead } : null;
     store.set('segments', state.segments);
     state.reuseAll = false; store.set('reuseTemplates', false);
     state.segOn = null; state.manual = null;
@@ -2721,7 +2725,6 @@
   /** Manual template switch (Progress screen). The watcher leaves it alone until the next segment. */
   async function switchTemplate(slot) {
     if (state.busy) return;
-    if (readSave()?.adv?.battle) { state.errors = ['a battle is running — switch after it ends']; refreshUi(); return; }
     let btn = document.querySelector(`#team-sets button[data-set="${slot}"]`);
     if (!btn) {
       if (!await gotoTeamScreen()) { state.errors = ['team screen not reachable']; refreshUi(); return; }
@@ -2739,15 +2742,19 @@
     refreshUi();
   }
 
-  /** The current segment index of the running chapter (heal nodes split it). */
+  /** The current segment index of the running chapter (heal nodes split it).
+   *  The switch happens one node BEFORE a center: the game heals the team when
+   *  the heal node starts, so a team fielded at the center would miss the heal. */
   function segmentIndex(save) {
     const adv = save?.adv;
-    const nodes = adv?.nodes || [];
     if (!state.segments || adv?.chapter !== state.segments.chapter) return null;
-    let idx = 0;
-    for (let i = 0; i < Math.min(adv.node ?? 0, nodes.length); i++) if (nodes[i]?.type === 'heal') idx++;
-    if (nodes[adv.node]?.type === 'heal') idx++;
-    return idx;
+    const nodes = adv?.nodes || [];
+    const n = adv.node ?? 0;
+    const heals = [];
+    for (let i = 0; i < nodes.length; i++) if (nodes[i]?.type === 'heal') heals.push(i);
+    const count = heals.filter(h => n >= h - 1).length;
+    const idx = count - (state.segments.lead || 0);
+    return Math.max(0, Math.min(idx, state.segments.list.length - 1));
   }
 
   /** Switch to the prepared template of the segment the run is in (never mid-battle). */
@@ -2829,6 +2836,7 @@
       .pcopt-block .seg button{font-size:13px;padding:5px 9px}
       .pcopt-block select{font-size:13px;padding:4px 8px;max-width:100%}
       .pcopt-block .type.sm{font-size:11px}
+      .pcopt-templates{margin:8px 10px 2px;flex-wrap:wrap}
       .pcopt-title{font-weight:700;font-size:15px;margin:0 0 6px;display:flex;justify-content:space-between;
         align-items:center;gap:8px;flex-wrap:wrap}
       .pcopt-title small{color:var(--muted);font-weight:400;font-size:11px}
@@ -2901,37 +2909,34 @@
     }, { prepend: true });
   }
 
-  /** The Progress screen: the game's team templates, for a manual switch under the timeline. */
+  /** The Adventure screen: the game's own team-template bar, between the route timeline and the arena.
+   *  The buttons are the game's markup (sprites, tooltips, active state), so it reads as native. */
   function mountTemplates() {
-    const host = document.querySelector('#screen-map .mp-list');
-    if (!host) return;
+    const adv = document.querySelector('#screen-adventure .adv-main');
     const save = readSave();
     const sets = save?.teamSets;
-    if (!sets || !Array.isArray(sets.list)) return;
-    const plan = state.segments && state.segments.chapter === save.adv?.chapter ? state.segments : null;
-    const segOf = slot => plan ? plan.list.findIndex(x => x.slot === slot) : -1;
-    const rows = [0, 1, 2, 3, 4].map(i => {
-      const uids = sets.list[i] || [];
-      const names = uids.map(u => monByUid(save, u)).filter(Boolean).map(m => displayName(m.id));
-      const seg = segOf(i);
-      const active = sets.on === i;
-      const label = '#' + (i + 1) + (seg >= 0 ? ' · segment ' + (seg + 1) : '') + ' · ' + (names.length ? names.join(', ') : 'free');
-      return `<div class="pcopt-row" style="justify-content:space-between;gap:8px;border-bottom:1px solid var(--line);padding:4px 0">`
-        + `<span class="pcopt-mut" style="flex:1 1 140px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(label)}">${esc(label)}</span>`
-        + `<button class="btn small ${active ? '' : 'ghost'}" data-switch="${i}" ${active || !names.length ? 'disabled' : ''}>${active ? 'active' : 'use'}</button></div>`;
+    if (!adv || !sets || !Array.isArray(sets.list)) return;
+    let el = adv.querySelector('[data-pcopt="templates"]');
+    if (!el) {
+      el = document.createElement('div');
+      el.dataset.pcopt = 'templates';
+      el.className = 'pcopt-templates seg team-sets';
+      const arena = adv.querySelector('#arena');
+      if (arena) adv.insertBefore(el, arena); else adv.appendChild(el);
+    }
+    // the game renders its bar when the Team/PC screen opens: clone it, else the set numbers
+    const source = document.querySelector('#team-sets');
+    const sourceHtml = source && source.children.length ? source.innerHTML : '';
+    const fallback = [0, 1, 2, 3, 4].map(i => {
+      const filled = (sets.list[i] || []).length;
+      return `<button type="button" data-set="${i}" class="${sets.on === i ? 'on' : ''}${filled ? '' : ' ts-empty'}" aria-pressed="${sets.on === i}">${i + 1}</button>`;
     }).join('');
-    const cur = plan ? segmentIndex(save) : null;
-    const html = `
-      <div class="pcopt-title" style="margin-top:10px"><span>Team templates</span>
-        <span class="pcopt-mut">${sets.on != null ? '#' + (sets.on + 1) + ' active' : 'none active'}${cur != null ? ' · segment ' + (cur + 1) + '/' + plan.total : ''}</span></div>
-      ${rows}
-      <div class="pcopt-mut">${plan ? `segment plan for chapter ${plan.chapter} — the watcher switches at each Pokémon Center` : 'no segment plan for this chapter — prepare it in Team/PC'}</div>
-      ${state.reuseAll ? '<div class="pcopt-mut">all templates freed for the next prepare</div>' : ''}
-      ${errLine()}`;
-    const sig = JSON.stringify([sets.on, (sets.list || []).map(x => x && x.length), (sets.list || []).map(x => (x || []).join('.')),
-      plan && plan.chapter, plan && plan.list.map(x => x.slot), cur, state.reuseAll, state.errors, state.busy]);
-    mountBlock(host, 'templates', sig, html, el => {
-      el.querySelectorAll('[data-switch]').forEach(b => b.onclick = () => switchTemplate(+b.dataset.switch));
+    const sig = sourceHtml || ('fallback:' + (sets.on ?? '') + ':' + (sets.list || []).map(x => x && x.length).join(','));
+    if (el.dataset.sig === sig) return;
+    el.dataset.sig = sig;
+    el.innerHTML = sourceHtml || fallback;
+    el.querySelectorAll('button[data-set]').forEach(b => {
+      b.onclick = e => { e.preventDefault(); e.stopPropagation(); switchTemplate(+b.dataset.set); };
     });
   }
 
@@ -3390,6 +3395,9 @@
     state.watcher = new WipeWatcher(rec => {
       refreshUi();
       if (rec) {
+        // the run restarts from the chapter start: drop the manual pick and field segment 1 again
+        state.manual = null;
+        state.segOn = null;
         // the team fell on this step: rebuild an optimal team for the chapter
         runOptimizer();
       }

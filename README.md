@@ -27,7 +27,8 @@ labels.
 
 | Game screen | What the helper adds there |
 |---|---|
-| **Progress** | Run monitor: chapter, step and cap; data source and bundle; eligible count; league info; errors and the update notice; the chapter's events with the type chips; the **wipe watcher** with its log; and, under the chapter timeline, the **team template switch** (each template with its team and segment, one click to field it). |
+| **Progress** | Run monitor: chapter, step and cap; data source and bundle; eligible count; league info; errors and the update notice; the chapter's events with the type chips; the **wipe watcher** with its log. |
+| **Adventure** | Between the route timeline and the arena, the game's **team-template bar** (same markup, sprites and active state): one click fields that template, which the segment watcher then leaves alone until the next center. |
 | **Team/PC** | The **chapter optimizer** above the PC list: presets, **simulate** with the progress bar, the simulation result, the team with each mon's move and a `moves`/`api` button, **apply to team**, **prepare segments** (one team per stretch between Pokémon Centers, stored in the game's free team templates) and **free all templates** (let the planner reuse every template; the game has no delete, so the next prepare overwrites them). |
 | **Legendary team picker** (any legend zone) | The **legendary optimizer**: the boss with its HP and damage, the odds line, presets, **✨ Optimize (mine)**, the team and **apply to team**. |
 | **Raid team picker** ("Raid vs boss") | The **raid optimizer**: **⚡ Fastest clear**, the DPS line and an `atk` badge on every pick/ally suggestion. |
@@ -64,17 +65,19 @@ A chapter is split at its **heal nodes**; each stretch is simulated on its own (
 healed team, which is what a Pokémon Center gives you). **prepare segments** computes a team for
 each stretch and stores it in a **free** team template of the game (`#team-sets`) — your own
 templates are never overwritten. While the run is in a chapter that has prepared segments, the
-script watches the node: when the run moves into a new segment (i.e. after a Pokémon Center) and
-**no battle is running**, it switches to that segment's template. The block lists the prepared
-segments as `#slot team…`. The plan survives a page reload: the segment→template map is kept
-next to the data cache, so switching resumes where the run is.
+script watches the node and switches **one node before each Pokémon Center** — the game heals when
+the center node starts, so a team fielded at the center itself would miss the heal. The chapter
+block lists the prepared segments as `#slot team…`. The plan survives a page reload: the
+segment→template map is kept next to the data cache, so switching resumes where the run is.
+
+A **wipe restarts the chapter**, so the script drops the current segment and fields **segment 1's
+template** again as soon as the run is back at the start.
 
 The game has no "delete template" action, so **free all templates** cannot empty them: it releases
 the segment plan and lets the next **prepare segments** overwrite every template (it asks first,
-and the filled templates are only replaced when you prepare). To switch by hand, the **Team
-templates** block under the Progress timeline lists all five with their teams and the segment they
-belong to: `use` fields that template at once and the watcher leaves your pick alone until the next
-Pokémon Center.
+and the filled templates are only replaced when you prepare). To switch by hand, the game's own
+template bar sits on the Adventure screen between the timeline and the arena: click a template and
+the watcher leaves your pick alone until the next Pokémon Center.
 
 ## Legendary battles
 
@@ -156,7 +159,7 @@ release; the panel header shows the running version). Tampermonkey checks on its
 updates*). GitHub raw caches for ~5 minutes.
 
 The script also checks once per page load and shows
-`update 1.5.4 is on GitHub (installed 1.5.3) — Tampermonkey → Check for updates` as soon as a
+`update 1.6.0 is on GitHub (installed 1.5.5) — Tampermonkey → Check for updates` as soon as a
 newer version exists, and it removes the previous version's floating panel and quick-optimize
 rows from the page, so after an update only the blocks' controls remain (reload the page once
 after installing). For truly instant updates, install from a **local clone** instead:
