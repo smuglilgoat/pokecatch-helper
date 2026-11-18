@@ -1579,6 +1579,7 @@
   function runChapter(mons, plan, cap) {
     const cfg = state.data.cfg;
     let cleared = 0, battles = 0, ended = null;
+    const startLevels = mons.map(m => m.level);
     for (const mon of mons) { mon.hp = mon.hpStart; simClear(mon); }
     for (const step of plan) {
       if (step.kind === 'heal') {
@@ -1600,7 +1601,7 @@
         break;
       }
     }
-    return { cleared, battles, ended: ended ? ended.index : null, done: cleared === battles && battles > 0 };
+    return { cleared, battles, ended: ended ? ended.index : null, done: cleared === battles && battles > 0, gained: Math.max(...mons.map((m, i) => m.level - startLevels[i])) };
   }
   /** Monte-Carlo the chapter for one team. */
   function simulateChapter(cands, plan, cap, runs, onProgress) {
@@ -1608,18 +1609,19 @@
       uid: c.mon.uid, id: c.mon.id, level: c.mon.level, xp: c.mon.xp || 0, shiny: c.mon.shiny,
       reg: c.mon.reg, hpStart: simHp({ id: c.mon.id, level: c.mon.level, shiny: c.mon.shiny, hpMult: c.mon.hpMult }),
     }));
-    let wins = 0, clearedSum = 0, totalBattles = 0;
+    let wins = 0, clearedSum = 0, totalBattles = 0, gainedMax = 0;
     const wipeAt = {};
     for (let i = 0; i < runs; i++) {
       const st = team.map(m => ({ ...m }));
       const res = runChapter(st, plan, cap);
       totalBattles = Math.max(totalBattles, res.battles);
       clearedSum += res.cleared;
+      gainedMax = Math.max(gainedMax, res.gained || 0);
       if (res.done) wins++;
       else if (res.ended != null) wipeAt[res.ended] = (wipeAt[res.ended] || 0) + 1;
       if (onProgress && i % 4 === 0) onProgress(i + 1, runs);
     }
-    return { wins, runs, rate: wins / Math.max(1, runs), avgCleared: clearedSum / Math.max(1, runs), totalBattles, wipeAt };
+    return { wins, runs, rate: wins / Math.max(1, runs), avgCleared: clearedSum / Math.max(1, runs), totalBattles, wipeAt, gainedMax };
   }
 
   /** One battle (the game's ia/bs loop): slots, refills, stall, XP. */
