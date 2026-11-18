@@ -247,6 +247,7 @@
       try { return evalLit(lit); } catch { return evalSandbox(lit); }
     });
     const leagueTeams = table('LEAGUE_TEAMS', false, read('a.LEAGUE_TEAMS=')) || {};
+    const baseExp = table('BASE_EXP', false, read('a.BASE_EXP=')) || {};
     // the moves that can inflict a status: the learnset grading counts them as usable
     const statusMoves = table('STATUS.MOVES', false, () => {
       const anchor = src.indexOf('a.STATUS=function(){const s={');
@@ -288,6 +289,7 @@
       chapters,
       regions,
       leagueTeams,
+      baseExp,
       statusMoves,
       legends,
       cfg: {
@@ -302,6 +304,19 @@
         MOVE_LEVELS: cfg.MOVE_LEVELS || [], MOVE_FLOOR_FROM: cfg.MOVE_FLOOR_FROM ?? 100,
         MOVE_GAP_MAX: cfg.MOVE_GAP_MAX ?? 20, MOVE_STEP: cfg.MOVE_STEP || [4, 5],
         TIME_EVOLUTIONS: cfg.TIME_EVOLUTIONS || {}, TIER_MIN: cfg.TIER_MIN || {},
+        STATUS_FX: cfg.STATUS_FX || { STAT: { burn: ['atk', .75], poison: ['spa', .75], sleep: ['def', .75], freeze: ['spd', .75] }, DOT_TURNS: 5, PARA_TURNS: 3 },
+        STALL_ROUNDS: cfg.STALL_ROUNDS ?? 8, MAX_ROUNDS: cfg.MAX_ROUNDS ?? 200,
+        STATUS_MOVE_CHANCE: cfg.STATUS_MOVE_CHANCE ?? .3, FULL_PARA_CHANCE: cfg.FULL_PARA_CHANCE ?? .25,
+        THAW_CHANCE: cfg.THAW_CHANCE ?? .2, CONFUSION_SELF_HIT: cfg.CONFUSION_SELF_HIT ?? .33,
+        NIGHT_SLEEP: cfg.NIGHT_SLEEP ?? .35, DOUBLE_CHANCE: cfg.DOUBLE_CHANCE ?? .3, TRIPLE: cfg.TRIPLE || null,
+        TRAINER_LEVEL_BONUS: cfg.TRAINER_LEVEL_BONUS || [0, 1], TRAINER_EVOLVED_CHANCE: cfg.TRAINER_EVOLVED_CHANCE ?? .75,
+        TRAINER_ITEM_EVO_LEVEL: cfg.TRAINER_ITEM_EVO_LEVEL ?? 40,
+        TYPE_POWER: cfg.TYPE_POWER || { strong: 3, weak: -3, immune: -5, exposed: -2, resists: 2 },
+        XP_WINS_PER_LEVEL: cfg.XP_WINS_PER_LEVEL ?? 15, XP_ACTIVE_BONUS: cfg.XP_ACTIVE_BONUS ?? 1.1,
+        XP_SCALE: cfg.XP_SCALE ?? 3, XP_BASE_REF: cfg.XP_BASE_REF ?? 60,
+        XP_GROWTH_FROM: cfg.XP_GROWTH_FROM ?? 10, XP_GROWTH_EXTRA: cfg.XP_GROWTH_EXTRA ?? 1,
+        CHAPTER_TIME_RATIO: cfg.CHAPTER_TIME_RATIO ?? Math.pow(cfg.PACE?.lastMin / cfg.PACE?.firstMin ?? 40, 1 / ((cfg.PACE?.chapters ?? 14) - 1)),
+        REGION_XP: cfg.REGION_XP || {}, baseExp: cfg.baseExp || null,
         TRADE_FEE: cfg.ONLINE_TRADE?.FEE || [30000, 120000, 450000],
         TRADE_SHINY_FEE: cfg.ONLINE_TRADE?.SHINY_FEE ?? 5,
         ACC_CURVE: cfg.ACC_CURVE || [40, 150, 80],
@@ -1067,11 +1082,13 @@
     return out;
   }
 
-  /** The Pokémon that may join the team, projected at the chapter cap (evolutions included). */
-  function projectCandidates(eng, data, save, level) {
+  /** The Pokémon that may join the team, projected at the chapter cap (evolutions included).
+   *  opts.branches = false keeps one candidate per real mon (the chapter sim evolves them itself). */
+  function projectCandidates(eng, data, save, level, opts = {}) {
     const away = awayUids(save);
     const cands = save.mons.filter(m => !away.has(m.uid) && data.species[m.id] && canJoinTeam(save, m));
-    return cands.flatMap(c => evolvedBranches(data, save, c, level).map(sid => {
+    const branchesOf = opts.branches === false ? (c => [c.id]) : (c => evolvedBranches(data, save, c, level));
+    return cands.flatMap(c => branchesOf(c).map(sid => {
       const sp = data.species[sid];
       const base = { id: sp.id, shiny: c.shiny, status: c.status, types: sp.types };
       const proj = { ...base, level };
@@ -1223,6 +1240,504 @@
       if (best.mon.shiny) usedShiny.add(best.species.id);
     }
     return chosen;
+  }
+
+  /* ------------------------------------------------------------------ *
+   * 6c. Chapter simulation — the game's own battle rules, ported from
+   *     its bundle: move pick (OHKO / status 30% / best attack), status
+   *     gates and dots, initiative, stall rule, auto-switch order, XP
+   *     with mid-chapter level-ups and evolutions.
+   * ------------------------------------------------------------------ */
+  const ri = (a, b) => a + Math.floor(Math.random() * (b - a + 1));      // the game's rand int
+  const rpick = list => list[Math.floor(Math.random() * list.length)];
+  const statusCap = key => {
+    const sure = key === 'spore' || key === 'sacred-fire' || key === 'nuzzle' || key === 'zap-cannon' || key === 'inferno' || key === 'dynamic-punch';
+    const damaging = (state.data.moves[key]?.power || 0) > 0;
+    return sure ? 100 : damaging ? 30 : Math.min(state.data.moves[key]?.acc ?? 100, 70);
+  };
+  const statusOfMv = key => (state.data.statusMoves?.[key] || [])[0];
+  const STATUS_IMMUNE = { burn: ['fire'], poison: ['poison', 'steel'], freeze: ['ice'], paralysis: [], sleep: [], confusion: [] };
+  const effRaw = (atkType, defTypes) => (defTypes || []).reduce((m, t) => m * (state.chart[atkType]?.[t] ?? 1), 1);
+  const canStatus = (def, status) => !(STATUS_IMMUNE[status] || []).some(t => (def.types || []).includes(t));
+  const psStat = (mon, stat) => {
+    const st = state.data.cfg.STATUS_FX?.STAT?.[mon.status];
+    return st && st[0] === stat ? st[1] : 1;
+  };
+  const simStats = mon => state.engine.statsOf({ id: mon.id, level: mon.level, shiny: mon.shiny });
+  const simHp = mon => Math.floor(state.engine.maxHp({ id: mon.id, level: mon.level, shiny: mon.shiny, hpMult: mon.hpMult }));
+  const learnOfSim = mon => state.learnAll?.learnAll?.[mon.id] || [];
+  const hitPowersOf = key => {
+    const o = state.data.cfg.MULTI_HIT[key];
+    const base = state.data.moves[key]?.power || 0;
+    if (o == null) return null;
+    if (Array.isArray(o)) return [...o];
+    if (o === '2-5') {
+      let w = Math.random(), hits = 2;
+      for (let g = 0; g < (state.data.cfg.MULTI_HIT_ODDS || []).length && (w -= state.data.cfg.MULTI_HIT_ODDS[g]) > 0; g++) hits = g + 3;
+      return Array(hits).fill(base);
+    }
+    return Array(o).fill(base);
+  };
+  const minPowerOf = key => {
+    const o = state.data.cfg.MULTI_HIT[key];
+    const base = state.data.moves[key]?.power || 0;
+    if (o == null) return base;
+    if (Array.isArray(o)) return base * o[0];
+    return o === '2-5' ? 2 * base : base * o;
+  };
+  /** The game's damage (Ue) with the roll supplied by the caller. */
+  function simDamage(att, def, mv, eff, crit, roll) {
+    const A = simStats(att), D = simStats(def);
+    const phys = mv.cat === 'phys';
+    const atk = phys ? A.atk * psStat(att, 'atk') : A.spa * psStat(att, 'spa');
+    const defv = phys ? D.def * psStat(def, 'def') : D.spd * psStat(def, 'spd');
+    const sp = state.data.species[att.id];
+    const stab = sp && sp.types.includes(mv.type) ? 1.5 : 1;
+    const x = (2 * monLevel(att) / 5 + 2) * mv.power * atk / Math.max(1, defv) / 50 + 2;
+    const gap = Math.pow(state.data.cfg.LEVEL_GAP, monLevel(att) - monLevel(def));
+    return Math.max(1, Math.floor(x * stab * eff * gap * (crit ? state.data.cfg.CRIT_MULT : 1) * roll));
+  }
+  const monLevel = mon => mon.level;
+  /** The game's ot(): an OHKO-capable move, best accuracy wins. */
+  function simOhko(att, def, dMult) {
+    let best = null;
+    for (const [lv, key] of learnOfSim(att)) {
+      if (lv > att.level || state.data.cfg.MOVE_BLACKLIST.includes(key)) continue;
+      const mv = state.data.moves[key];
+      if (!mv) continue;
+      const power = state.engine.movePower(key);
+      if (power <= 0) continue;
+      const eff = effRaw(mv.type, def.types);
+      if (eff === 0) continue;
+      const cand = { key, type: mv.type, cat: mv.cat, power, acc: state.engine.moveAcc(key) };
+      const us = simDamage(att, def, { ...cand, power: minPowerOf(key) }, eff, false, .85);
+      if (us * dMult < def.hp) continue;
+      if (!best || cand.acc > best.acc || (cand.acc === best.acc && power > best.power)) best = cand;
+    }
+    return best;
+  }
+  /** The game's qa(): the status move it knows (the last qualifying one). */
+  function simStatusMove(att, def) {
+    let found = null;
+    for (const [lv, key] of learnOfSim(att)) {
+      if (lv > att.level) continue;
+      if ((state.data.moves[key]?.power || 0) > 0) continue;
+      const status = statusOfMv(key);
+      if (!status || !state.data.moves[key] || !canStatus(def, status)) continue;
+      found = { key, status, chance: Math.min(state.data.moves[key].acc || 70, statusCap(key)) };
+    }
+    return found;
+  }
+  /** The game's Ws(): the best attack, damage summed over the living foes. */
+  function simGeneric(att, foes) {
+    const living = foes.filter(f => f.hp > 0);
+    const sp = state.data.species[att.id];
+    const st = simStats(att);
+    const foeStats = living.map(f => {
+      const d = simStats(f);
+      return { types: f.types, def: d.def * psStat(f, 'def'), spd: d.spd * psStat(f, 'spd') };
+    });
+    let best = null, bestVal = 0, hasAttack = false;
+    for (const [lv, key] of learnOfSim(att)) {
+      if (lv > att.level || state.data.cfg.MOVE_BLACKLIST.includes(key)) continue;
+      const mv = state.data.moves[key];
+      if (!mv) continue;
+      const power = state.engine.movePower(key);
+      if (power <= 0) continue;
+      hasAttack = true;
+      const phys = mv.cat === 'phys';
+      const atkStat = phys ? st.atk * psStat(att, 'atk') : st.spa * psStat(att, 'spa');
+      const accTerm = state.engine.moveAcc(key) / 100 * (sp && sp.types.includes(mv.type) ? 1.5 : 1);
+      let val = 0;
+      for (const f of foeStats) val += ((2 * monLevel(att) / 5 + 2) * power * atkStat / Math.max(1, phys ? f.def : f.spd) / 50 + 2) * accTerm * effRaw(mv.type, f.types);
+      if (val > bestVal) { bestVal = val; best = key; }
+    }
+    if (!best) return hasAttack ? { key: 'struggle', type: 'normal', cat: 'phys', power: state.engine.movePower('struggle'), acc: 100, typeless: true } : null;
+    const mv = state.data.moves[best];
+    return { key: best, type: mv.type, cat: mv.cat, power: state.engine.movePower(best), acc: state.engine.moveAcc(best) };
+  }
+  function simInflict(mon, status) {
+    if (mon.status || !canStatus(mon, status)) return;
+    mon.status = status;
+    mon.bit = 0;
+    if (status === 'sleep') mon.sleepLeft = ri(1, 3);
+    if (status === 'confusion') mon.confused = ri(2, 5);
+  }
+  const simClear = mon => { delete mon.status; delete mon.bit; delete mon.sleepLeft; delete mon.confused; };
+  /** The game's Y(): the pre-turn gates (sleep, freeze, full-para, confusion). */
+  function simGate(mon) {
+    if (mon.status === 'sleep') {
+      if (mon.sleepLeft > 0) { mon.sleepLeft--; return true; }
+      simClear(mon); return false;
+    }
+    if (mon.status === 'freeze') {
+      if (Math.random() >= state.data.cfg.THAW_CHANCE) return true;
+      simClear(mon); return false;
+    }
+    if (mon.status === 'paralysis') {
+      mon.bit = (mon.bit || 0) + 1;
+      if (Math.random() < state.data.cfg.FULL_PARA_CHANCE) return true;
+    }
+    if (mon.confused) {
+      if (--mon.confused <= 0) delete mon.confused;
+      else if (Math.random() < state.data.cfg.CONFUSION_SELF_HIT) {
+        const st = simStats(mon);
+        const dmg = Math.max(1, Math.floor((2 * monLevel(mon) / 5 + 2) * 40 * st.atk / Math.max(1, st.def) / 50 + 2));
+        mon.hp = Math.max(0, mon.hp - dmg);
+        mon._dmg = (mon._dmg || 0) + dmg;
+        return true;
+      }
+    }
+    return false;
+  }
+  /** The game's oe(): the dot after acting and the status expiry. */
+  function simDot(mon) {
+    if (mon.status === 'paralysis') {
+      if ((mon.bit || 0) >= (state.data.cfg.STATUS_FX?.PARA_TURNS ?? 3)) simClear(mon);
+      return;
+    }
+    if (mon.status !== 'burn' && mon.status !== 'poison') return;
+    const dot = Math.max(1, Math.floor(simHp(mon) / 8));
+    mon.hp = Math.max(0, mon.hp - dot);
+    mon._dmg = (mon._dmg || 0) + dot;
+    mon.bit = (mon.bit || 0) + 1;
+    if ((mon.bit || 0) >= (state.data.cfg.STATUS_FX?.DOT_TURNS ?? 5) && mon.hp > 0) simClear(mon);
+  }
+  /** One actor's turn (the game's Ha). Returns the damage dealt. */
+  function simAct(att, def, foes, dMult) {
+    if (simGate(att)) return 0;
+    let dealt = 0;
+    const ohko = simOhko(att, def, dMult);
+    const statusMv = !ohko && simStatusMove(att, def);
+    const generic = simGeneric(att, foes);
+    if (statusMv && (Math.random() < state.data.cfg.STATUS_MOVE_CHANCE || (generic && generic.typeless))) {
+      if (Math.random() * 100 < statusMv.chance) { simInflict(def, statusMv.status); return 1; }
+      return 0;
+    }
+    const mv = ohko || generic;
+    if (!mv) return 0;
+    if (Math.random() * 100 > mv.acc) return 0;
+    const eff = mv.typeless ? 1 : effRaw(mv.type, def.types);
+    if (eff === 0) return 0;
+    const hits = hitPowersOf(mv.key);
+    let dmg = 0;
+    if (hits) for (const p of hits) dmg += simDamage(att, def, { ...mv, power: p }, eff, Math.random() < state.data.cfg.CRIT_CHANCE, .85 + Math.random() * .15);
+    else dmg = simDamage(att, def, mv, eff, Math.random() < state.data.cfg.CRIT_CHANCE, .85 + Math.random() * .15);
+    def.hp = Math.max(0, def.hp - dmg);
+    if (def.hp > 0) {
+      if (def.status === 'freeze' && mv.type === 'fire') simClear(def);
+      const status = statusOfMv(mv.key);
+      if (status && Math.random() * 100 < (state.data.statusMoves?.[mv.key]?.[1] || 0) && canStatus(def, status)) simInflict(def, status);
+    }
+    return dmg;
+  }
+
+  /** The game's Gt/Ks auto-switch ordering. */
+  function autoScore(mon, foes) {
+    const tp = state.data.cfg.TYPE_POWER;
+    const myTypes = state.data.species[mon.id]?.types || [];
+    let sum = 0;
+    for (const foe of foes) {
+      if (foe.hp <= 0) continue;
+      const foeTypes = state.data.species[foe.id]?.types || foe.types || [];
+      const bm = state.engine.bestMove({ id: mon.id, level: mon.level, shiny: mon.shiny }, foeTypes);
+      const off = bm ? effRaw(bm.type, foeTypes) : 1;
+      const def = Math.max(...foeTypes.map(t => effRaw(t, myTypes)), 1e-4);
+      sum += (off === 0 ? tp.immune : off > 1 ? tp.strong : off < 1 ? tp.weak : 0)
+        + (def > 1 ? tp.exposed : def < 1 ? tp.resists : 0)
+        + .01 * (Math.log2(Math.max(.125, off)) - Math.log2(Math.max(.125, def)));
+    }
+    return sum;
+  }
+  /** The ordered chapter steps from the nodes the game built (heal stops + battles). */
+  function chapterPlan(data, save) {
+    const nodes = save?.adv?.nodes || [];
+    const plan = [];
+    for (const node of nodes) {
+      if (node.type === 'heal') { plan.push({ kind: 'heal' }); continue; }
+      if (node.type === 'wild' || node.type === 'trainer') {
+        plan.push({
+          kind: 'battle', type: node.type, name: node.name,
+          pool: poolOfNode(node, data), lv: node.lv || null,
+          team: node.team || null, size: node.size ?? null,
+          index: plan.length,
+        });
+        continue;
+      }
+      if (node.type === 'gym' && node.gym?.team) {
+        const gym = node.gym;
+        const hpMult = data.cfg.GYM_HP_MULT * (gym.power || 1) * Math.max(1, data.cfg.TEAM_SIZE / Math.max(1, gym.team.length)) ** data.cfg.GYM_TEAM_EXP;
+        const foes = gym.team.map(([id, lv]) => ({ id, level: lv, hpMult, damageMult: data.cfg.GYM_DAMAGE * (gym.power || 1) }));
+        plan.push({ kind: 'battle', type: 'gym', name: gym.leader || gym.name, fixed: foes, power: gym.power || 1, index: plan.length });
+        continue;
+      }
+      if (node.type === 'static' && node.id != null) {
+        plan.push({ kind: 'battle', type: 'static', name: node.name, fixed: [{ id: node.id, level: node.level ?? 100 }], index: plan.length });
+      }
+      // item / other nodes pass
+    }
+    return plan;
+  }
+  /** The weighted species pool of a node (the game builds it live on some chapters). */
+  function poolOfNode(node, data) {
+    if (node.pool?.length) return node.pool;
+    const pool = new Map();
+    for (const area of node.areas || []) {
+      for (const e of data.enc[area] || []) {
+        const [id, min, max, pct, method] = e;
+        if (pct >= 100) continue;
+        const how = String(method || '');
+        if (!/walk|surf|rod|static|headbutt|rock-smash/.test(how)) continue;
+        let w = pct;
+        if (/rod/.test(how)) w *= 0.15;
+        else if (/surf/.test(how)) w *= 0.5;
+        else if (/headbutt|rock-smash/.test(how)) w *= 0.25;
+        const cur = pool.get(id) || { id, w: 0, min, max };
+        cur.w += w;
+        pool.set(id, cur);
+      }
+    }
+    return [...pool.values()];
+  }
+  const rollPool = pool => {
+    let total = pool.reduce((a, p) => a + (p.w || p[p.length - 1] || 1), 0);
+    let r = Math.random() * total;
+    for (const p of pool) {
+      r -= (p.w || 1);
+      if (r <= 0) return p;
+    }
+    return pool[pool.length - 1];
+  };
+  /** The foes of one battle instance (wild roll, random trainer roll, or fixed team). */
+  function rollBattleFoes(step, data, save, cap) {
+    const cfg = data.cfg;
+    if (step.fixed) {
+      return {
+        foes: step.fixed.map(f => simFoe(f.id, f.level, f.hpMult ?? 1, f.damageMult ?? dmgMultOf(step.type, cfg, f.power))),
+        slots: 1, dmgMult: dmgMultOf(step.type, cfg, step.power ?? 1), kind: step.type, index: step.index, xp: true,
+      };
+    }
+    const pool = (step.pool || []).filter(p => data.species[p.id]);
+    if (!pool.length) return null;
+    const wildLevel = e => {
+      const band = step.lv;
+      if (band) return ri(band[0], band[1]);
+      return e.level ?? ri(e.min ?? 30, e.max ?? 40);
+    };
+    if (step.type === 'wild') {
+      const e = rollPool(pool);
+      const level = wildLevel(e);
+      const foe = simFoe(e.id, level, 1, cfg.ENEMY_DAMAGE.wild ?? 1);
+      // the game: a diurnal wild can start asleep at night
+      if (new Date().getHours() >= 20 && (data.cfg.NIGHT_SLEEP ?? 0) > 0) {
+        const types = data.species[e.id]?.types || [];
+        const dayOnly = ['sun', 'day'].some(k => (data.cfg.WEATHER?.TYPES?.[types[0]]?.key || '').includes(k));
+        if (dayOnly && Math.random() < cfg.NIGHT_SLEEP) { foe.status = 'sleep'; foe.sleepLeft = ri(1, 3); }
+      }
+      return { foes: [foe], slots: 1, dmgMult: cfg.ENEMY_DAMAGE.wild ?? 1, kind: 'wild', index: step.index, xp: true };
+    }
+    // trainer: size + evolved rolls, exactly like the game's encounter builder
+    const chapter = save?.adv?.chapter ?? 0;
+    const regionKey = (data.chapters[chapter] || {}).reg || 'kanto';
+    const first = data.chapters.findIndex(c => (c.reg || 'kanto') === regionKey);
+    const size = step.size ?? 1 + ri(0, Math.min(2, Math.floor((chapter - first) / 2) + 1));
+    const foes = [];
+    for (let i = 0; i < size; i++) {
+      const e = rollPool(pool);
+      let level = Math.min(cfg.MAX_LEVEL, (data.aceOf ? 0 : 0) + (wildLevel(e) + ri(cfg.TRAINER_LEVEL_BONUS[0], cfg.TRAINER_LEVEL_BONUS[1])), cap);
+      let id = e.id;
+      if (level >= cfg.TRAINER_ITEM_EVO_LEVEL) {
+        // item-evolved variants once high enough
+        const itemEvo = (data.evo[id] || []).find(x => x.item && data.species[x.to]);
+        if (itemEvo) id = itemEvo.to;
+      } else if (Math.random() < cfg.TRAINER_EVOLVED_CHANCE) {
+        const chain = (data.evo[id] || []).filter(x => x.level != null && x.level <= level && data.species[x.to]);
+        if (chain.length) id = chain[chain.length - 1].to;
+      }
+      foes.push(simFoe(id, level, 1, cfg.ENEMY_DAMAGE.trainer ?? 1));
+    }
+    const doubles = foes.length >= 2 && Math.random() < (cfg.DOUBLE_CHANCE ?? .3);
+    const slots = doubles ? 2 : 1;
+    return { foes, slots, foeSlots: slots, dmgMult: cfg.ENEMY_DAMAGE.trainer ?? 1, kind: 'trainer', index: step.index, xp: true };
+  }
+  const dmgMultOf = (type, cfg, power) => type === 'gym'
+    ? cfg.GYM_DAMAGE * (power || 1)
+    : (cfg.ENEMY_DAMAGE[type] ?? 1) * (power || 1);
+  const simFoe = (id, level, hpMult, damageMult) => ({ id, level, types: state.data.species[id]?.types || [], hpMult: hpMult || 1, _damageMult: damageMult || 1, hp: 0 });
+  /** One run of the whole chapter. Returns the battles cleared and where it ended. */
+  function runChapter(mons, plan, cap) {
+    const cfg = state.data.cfg;
+    let cleared = 0, battles = 0, ended = null;
+    for (const mon of mons) { mon.hp = mon.hpStart; simClear(mon); }
+    for (const step of plan) {
+      if (step.kind === 'heal') {
+        for (const mon of mons) { mon.hp = simHp(mon); simClear(mon); }
+        continue;
+      }
+      const spec = rollBattleFoes(step, state.data, readSave(), cap);
+      if (!spec) continue;
+      battles++;
+      for (const f of spec.foes) f.hp = simHp(f);
+      const res = simBattle(mons, spec);
+      if (res.won) {
+        cleared++;
+        if (step.type === 'trainer' || step.type === 'gym') {
+          // the game marks it beaten; keep going
+        }
+      } else {
+        ended = step;
+        break;
+      }
+    }
+    return { cleared, battles, ended: ended ? ended.index : null, done: cleared === battles && battles > 0 };
+  }
+  /** Monte-Carlo the chapter for one team. */
+  function simulateChapter(cands, plan, cap, runs, onProgress) {
+    const team = cands.map(c => ({
+      uid: c.mon.uid, id: c.mon.id, level: c.mon.level, xp: c.mon.xp || 0, shiny: c.mon.shiny,
+      reg: c.mon.reg, hpStart: Math.max(1, c.mon.hp ?? simHp({ id: c.mon.id, level: c.mon.level, shiny: c.mon.shiny })),
+    }));
+    let wins = 0, clearedSum = 0, totalBattles = 0;
+    const wipeAt = {};
+    for (let i = 0; i < runs; i++) {
+      const st = team.map(m => ({ ...m }));
+      const res = runChapter(st, plan, cap);
+      totalBattles = Math.max(totalBattles, res.battles);
+      clearedSum += res.cleared;
+      if (res.done) wins++;
+      else if (res.ended != null) wipeAt[res.ended] = (wipeAt[res.ended] || 0) + 1;
+      if (onProgress && i % 4 === 0) onProgress(i + 1, runs);
+    }
+    return { wins, runs, rate: wins / Math.max(1, runs), avgCleared: clearedSum / Math.max(1, runs), totalBattles, wipeAt };
+  }
+
+  /** One battle (the game's ia/bs loop): slots, refills, stall, XP. */
+  function simBattle(mons, spec) {
+    const foes = spec.foes;
+    const slots = Math.max(1, Math.min(spec.slots || 1, 3));
+    const foeSlots = Math.max(1, Math.min(slots, 3));
+    const order = mons => [...mons].sort((a, b) => autoScore(b, foes) - autoScore(a, foes));
+    const queue = order(mons.filter(m => m.hp > 0));
+    let active = queue.splice(0, slots);
+    let foeActive = foes.slice(0, foeSlots);
+    let turn = 0, calm = 0;
+    const hpFrac = list => list.reduce((a, m) => a + m.hp, 0) / Math.max(1, list.reduce((a, m) => a + simHp(m), 0));
+    const xpTarget = spec.xp;
+    while (foeActive.some(f => f.hp > 0)) {
+      if (!active.some(m => m.hp > 0)) return { won: false, at: spec.index };
+      turn++;
+      if (calm > state.data.cfg.STALL_ROUNDS || turn > state.data.cfg.MAX_ROUNDS) {
+        if (hpFrac(active.filter(m => m.hp > 0)) > hpFrac(foes)) {
+          for (const f of foes) f.hp = 0;
+          if (xpTarget) awardXp(foes[foes.length - 1], active, mons, spec.kind, true);
+          return { won: true, stalled: true, at: spec.index };
+        }
+        if (spec.kind === 'gym' || spec.kind === 'static') return { won: false, at: spec.index };
+        return { won: true, fled: true, at: spec.index };   // wild/trainer: the game flees and the node passes
+      }
+      const actors = [
+        ...active.filter(m => m.hp > 0).map(m => ({ m, ally: true })),
+        ...foeActive.filter(f => f.hp > 0).map(f => ({ m: f, ally: false })),
+      ].map(x => ({ ...x, spe: simStats(x.m).spe * (x.m.status === 'paralysis' ? .25 : 1) }))
+        .sort((a, b) => b.spe - a.spe || Math.random() - .5);
+      let lostAlly = false, foeDown = false;
+      for (const { m: actor, ally } of actors) {
+        if (actor.hp <= 0) continue;
+        const opposing = (ally ? foeActive : active).filter(x => x.hp > 0);
+        if (!opposing.length) break;
+        // target: allies pick the best damage-to-hp ratio (the game's Dn), foes pick a random ally
+        const target = ally
+          ? (() => {
+            let best = null, bestScore = -1;
+            for (const f of opposing) {
+              const mv = simGeneric(actor, [f]);
+              if (!mv) continue;
+              const eff = mv.typeless ? 1 : effRaw(mv.type, f.types);
+              const score = Math.max(0, mv.power) * eff / Math.max(1, f.hp) * (.95 + Math.random() * .1);
+              if (!best || score > bestScore) { best = f; bestScore = score; }
+            }
+            return best || opposing[0];
+          })()
+          : rpick(opposing);
+        const dealt = simAct(actor, target, opposing.map(x => x), ally ? 1 : spec.dmgMult);
+        if (dealt) calm = 0;
+        const dot = (actor._dmg || 0); actor._dmg = 0;
+        if (dot) calm = 0;
+        simDot(actor);
+        if (actor._dmg) calm = 0;
+        if (target.hp <= 0 && ally) {
+          if (xpTarget) awardXp(target, active, mons, spec.kind, false);
+          const next = foes.find(f => f.hp > 0 && !foeActive.includes(f));
+          if (next) { const idx = foeActive.indexOf(target); foeActive[idx < 0 ? 0 : idx] = next; }
+          else foeDown = true;
+        }
+        if (actor.hp <= 0 && ally) lostAlly = true;
+      }
+      if (lostAlly) {
+        const next = queue.find(m => m.hp > 0 && !active.includes(m));
+        if (next) { const idx = active.findIndex(m => m.hp <= 0); active[idx < 0 ? 0 : idx] = next; }
+      }
+      calm++;
+    }
+    return { won: foes.every(f => f.hp <= 0), at: spec.index };
+  }
+  /** XP for one defeated foe, to the whole team, with mid-run level-ups. */
+  function awardXp(foe, active, mons, kind, stalled) {
+    const cfg = state.data.cfg;
+    const base = (cfg.baseExp?.[foe.id]) || cfg.XP_BASE_REF;
+    const trainerish = kind === 'trainer' || kind === 'gym';
+    const share = xpLevelShare(foe.level) / cfg.XP_WINS_PER_LEVEL * Math.sqrt(base / cfg.XP_BASE_REF) * (trainerish ? 1.5 : 1);
+    const cap = state.events?.cap ?? cfg.MAX_LEVEL;
+    for (const mon of mons) {
+      if (mon.level >= cap) continue;
+      const amount = share * (active.includes(mon) ? cfg.XP_ACTIVE_BONUS : 1);
+      mon.xp = (mon.xp || 0) + amount;
+      let guard = 0;
+      while (mon.level < cap && mon.xp >= xpForNext(mon) && guard++ < 120) {
+        mon.xp -= xpForNext(mon);
+        mon.level++;
+      }
+      // the game's pe: level evolutions with the daytime and party gates
+      let evo = 0;
+      while (evo++ < 4) {
+        const chain = (state.data.evo[mon.id] || []).filter(e => e.level != null && mon.level >= e.level
+          && daytimeMatches(state.data, readSave(), state.data.cfg.TIME_EVOLUTIONS?.[e.to])
+          && (!e.party || mons.some(t => t.id === e.party)));
+        const next = chain[0];
+        if (!next || !state.data.species[next.to]) break;
+        mon.id = next.to;
+      }
+    }
+  }
+  const xpBe = level => Math.floor(.8 * Math.pow(level, 2.4) + 10);
+  function xpGrowth(level) {
+    const cfg = state.data.cfg;
+    const ratio = cfg.CHAPTER_TIME_RATIO || 1;
+    const bands = [{ from: cfg.XP_GROWTH_FROM ?? 10, step: (state.data.regions[0]?.ace || [0, 8])[1] ?? 8 },
+      ...state.data.regions.filter(r => r.base != null).map(r => ({ from: r.base, step: (r.ace || [0, 8])[1] ?? 8 }))]
+      .sort((a, b) => a.from - b.from);
+    let g = 1;
+    for (let i = 0; i < bands.length; i++) {
+      const to = Math.min(level, bands[i + 1]?.from ?? Infinity);
+      if (to > bands[i].from) g *= Math.pow(Math.pow(ratio, 1 / bands[i].step) * (cfg.XP_GROWTH_EXTRA ?? 1), to - bands[i].from);
+    }
+    return g;
+  }
+  const xpForNext = mon => Math.floor(xpBe(mon.level) * xpGrowth(mon.level) * (state.data.cfg.XP_SCALE ?? 3) * (state.data.cfg.REGION_XP?.[mon.reg] ?? 1));
+  function xpLevelShare(level) {   // the game's levelXp: base × the "start" factor
+    const cfg = state.data.cfg;
+    const ratio = cfg.CHAPTER_TIME_RATIO || 1;
+    const bands = [{ from: cfg.XP_GROWTH_FROM ?? 10, step: (state.data.regions[0]?.ace || [0, 8])[1] ?? 8 },
+      ...state.data.regions.filter(r => r.base != null).map(r => ({ from: r.base, step: (r.ace || [0, 8])[1] ?? 8 }))]
+      .sort((a, b) => a.from - b.from);
+    let g = 1;
+    for (let i = 0; i < bands.length; i++) {
+      const to = Math.min(level, bands[i + 1]?.from ?? Infinity);
+      if (to > bands[i].from) g *= Math.pow(Math.pow(ratio, 1 / bands[i].step) * (cfg.XP_GROWTH_EXTRA ?? 1), to - bands[i].from);
+    }
+    const from = bands.find(b => level >= b.from);
+    const back = from && bands.indexOf(from) > 0 ? Math.pow(Math.pow(ratio, 1 / from.step) * (cfg.XP_GROWTH_EXTRA ?? 1), level - from.from) : 1;
+    return Math.floor(xpBe(level) * (g / (back || 1)));
   }
 
   /* ------------------------------------------------------------------ *
@@ -2016,6 +2531,7 @@
     return state.legTeam.map((s, i) => {
       const sp = s.species;
       const lv = s.mon.level < s.proj.level ? `Lv${s.mon.level} → ${s.proj.level}` : `Lv${s.mon.level}`;
+      const endForm = endFormAtCap(s.mon, cap);
       return `<div class="pcopt-mon"><div>${i + 1}. <b>${esc(displayName(sp.id))}</b> <span class="pcopt-mut">${lv}${s.proj.shiny ? ' ✨' : ''}</span>`
         + `<div class="pcopt-row">${sp.types.map(typeBadge).join('')}</div>`
         + `<div class="pcopt-mut">${s.hp} HP${s.proj.shiny ? ' · +10% stats' : ''}</div></div></div>`;
@@ -2029,18 +2545,43 @@
     <button data-preset="balanced" class="${state.preset === 'balanced' ? 'on' : ''}">Balanced</button></div>`;
 
   function renderTeam() {
+    const cap = state.events?.cap ?? state.data?.cfg?.MAX_LEVEL ?? 100;
     if (!state.team) return '<div class="pcopt-mut">run the optimizer to get a team</div>';
     if (!state.team.length) return '<div class="pcopt-mut">no candidate</div>';
     return state.team.map((s, i) => {
       const sp = s.species;
       const lv = s.mon.level < s.proj.level ? `Lv${s.mon.level} → ${s.proj.level}` : `Lv${s.mon.level}`;
-      return `<div class="pcopt-mon"><div>${i + 1}. <b>${esc(displayName(sp.id))}</b> <span class="pcopt-mut">${lv}${s.mon.shiny ? ' ✨' : ''}</span>`
+      const endForm = endFormAtCap(s.mon, cap);
+      return `<div class="pcopt-mon"><div>${i + 1}. <b>${esc(displayName(sp.id))}</b>${endForm && endForm !== sp.id ? ' → <b>' + esc(displayName(endForm)) + '</b>' : ''} <span class="pcopt-mut">${lv}${s.mon.shiny ? ' ✨' : ''}</span>`
         + `<div class="pcopt-row">${sp.types.map(typeBadge).join('')}</div>`
         + `<div class="pcopt-mut">${esc(s.bestMoveKey ? displayMove(s.bestMoveKey) : (s.bestMoveName || '—'))} · ${Math.round(s.avgDmg)} dmg · ${Math.round(s.avgRounds)} rounds${s.proj.shiny ? ' · +10% stats' : ''}</div>`
         + (s.hpCur != null && s.hpCur < s.hp ? `<div class="pcopt-mut">HP ${s.hpCur}/${s.hp}</div>` : '')
         + `<div class="pcopt-mut" data-info="${s.mon.uid}">${state.info[s.mon.uid] || ''}</div></div>`
         + `<div class="pcopt-row"><button class="btn small ghost" data-moves="${s.mon.uid}">moves</button><button class="btn small ghost" data-api="${s.mon.uid}">api</button></div></div>`;
     }).join('');
+  }
+
+  /** The simulation progress bar: updated in place so the panel never flickers. */
+  function updateProgress() {
+    const bar = document.getElementById('pcopt-simbar');
+    if (state.progress) {
+      if (!bar) { renderPanel(); return; }
+      bar.style.display = 'flex';
+      const fill = bar.firstElementChild.firstElementChild;
+      fill.style.width = Math.round((state.progress.pct || 0) * 100) + '%';
+      bar.lastElementChild.textContent = state.progress.label || '';
+    } else if (bar) bar.style.display = 'none';
+  }
+
+  /** What the mon becomes at the cap through level evolutions (display only). */
+  function endFormAtCap(mon, cap) {
+    let cur = mon.id;
+    for (let hop = 0; hop < 4; hop++) {
+      const next = (state.data.evo[cur] || []).find(e => e.level != null && e.level <= cap && state.data.species[e.to]);
+      if (!next) break;
+      cur = next.to;
+    }
+    return cur;
   }
 
   /** Only rebuild the panel when something actually changed (the game ticks every second). */
@@ -2055,7 +2596,9 @@
       odds: state.legOdds ? [state.legOdds.winChance, state.legOdds.rounds, state.legOdds.attempts, state.legOdds.totalMs].join('|') : '',
       fails: state.watcher?.fails.length, busy: state.busy,
       errors: state.errors.join('|'), waiting: state.waiting,
-      update: state.update?.repo || '', data: state.data ? Object.keys(state.data.species).length : 0,
+      update: state.update?.repo || '',
+      sim: state.sim ? [state.sim.rate, state.sim.avgCleared].join('|') : '',
+      progress: state.progress ? state.progress.label : '', data: state.data ? Object.keys(state.data.species).length : 0,
       legends: state.legends?.zones.length ?? 0,
       info: Object.keys(state.info).map(k => k + ':' + state.info[k]).join(',')
     };
@@ -2152,6 +2695,7 @@
     body.innerHTML = `
       <section>
         <div class="pcopt-row"><b>Chapter ${adv?.chapter ?? '-'}</b><span class="pcopt-mut">${esc(state.events?.name || '')}</span></div>
+        ${state.sim ? `<div class="pcopt-mut">chapter sim: win ${Math.round(state.sim.rate * 100)}% · clears ${state.sim.avgCleared}/${state.sim.battles} battles · ${state.sim.evaluated} teams in ${(state.sim.ms / 1000).toFixed(1)}s${Object.keys(state.sim.wipeAt || {}).length ? ' · wipe at step ' + Object.entries(state.sim.wipeAt).sort((a, b) => b[1] - a[1]).slice(0, 2).map(([i, n]) => '#' + i + '×' + n).join(', ') : ''}</div>` : ''}
         <div class="pcopt-mut">step ${adv?.node ?? '-'} / ${(adv?.nodes || []).length} · ${esc(node?.name || '-')}${node?.lv ? ' · Lv ' + node.lv.join('-') : ''}</div>
         <div class="pcopt-mut">level cap ${state.events?.cap ?? '-'} · type chart: ${esc(state.chartSource || '-')}</div>
         <div class="pcopt-mut">data: ${state.data ? Object.keys(state.data.species).length + ' species · ' + (state.legends?.zones.length ?? 0) + ' legend zones' : 'not loaded'}
@@ -2194,7 +2738,8 @@
       <section>
         <div class="pcopt-row" style="margin-top:8px">
           ${presetSeg()}
-          <button class="btn small" id="pcopt-run" ${state.busy ? 'disabled' : ''}>${state.busy ? 'working…' : 'optimize'}</button>
+          <button class="btn small" id="pcopt-run" ${state.busy ? 'disabled' : ''}>${state.busy ? 'working…' : 'simulate'}</button>
+          <div id="pcopt-simbar" style="display:none;flex:1 1 120px;height:10px;border-radius:5px;background:var(--line);overflow:hidden"><div style="height:100%;width:0%;background:var(--c);transition:width .2s"></div><span class="pcopt-mut" style="padding:0 6px;font-size:11px"></span></div>
           <button class="btn small ghost" id="pcopt-apply" ${state.team && state.team.length && !state.busy ? '' : 'disabled'}>apply to team</button>
         </div>
         <div id="pcopt-team">${renderTeam()}</div>
@@ -2265,7 +2810,7 @@
     state.loading = (async () => {
       const url = bundleUrl();
       if (!url) { state.errors = ['game bundle not loaded yet']; log('warn', 'data: the game bundle is not on the page yet'); return; }
-      const cacheKey = 'bundle:v8:' + url;
+      const cacheKey = 'bundle:v9:' + url;
       let data = store.get(cacheKey, null);
       if (data && !dataLooksValid(data)) {
         log('warn', 'data: the cached tables are invalid, parsing the bundle again');
@@ -2354,6 +2899,81 @@
     state.eligible = save.mons.filter(m => !away.has(m.uid) && state.data.species[m.id] && canJoinTeam(save, m)).length;
   }
 
+  /** Search the chapter's best team by Monte-Carlo simulation of the whole run. */
+  async function searchChapterTeam(save, info, cap, budgetMs) {
+    const plan = chapterPlan(state.data, save);
+    if (!plan.some(p => p.kind === 'battle')) return { error: 'no battles in this chapter' };
+    const away = awayUids(save);
+    const cands = projectCandidates(state.engine, state.data, save, cap, { branches: false });
+    if (!cands.length) return { error: 'no candidate found in the PC' };
+    // quick individual ranking to build the search pool
+    const foes = chapterEnemies(state.data, info, save.adv.nodes);
+    const scored = scoreCandidates(state.engine, state.data, foes, cands, cap, state.league);
+    const preset = state.preset;
+    scored.sort((a, b) => scoreFor(b, preset) - scoreFor(a, preset));
+    const pool = scored.slice(0, 26);
+    const byUid = new Map(pool.map(c => [c.mon.uid, c]));
+    const evalTeam = async (team, runs) => {
+      const res = simulateChapter(team, plan, cap, runs);
+      await sleep(0);
+      return res;
+    };
+    const key = team => team.map(c => c.mon.uid).sort().join('|');
+    const score = res => (res.rate * 1e6) + res.avgCleared * 10;
+    const deadline = Date.now() + budgetMs;
+    // seed: greedy by individual score
+    let best = [];
+    for (const c of pool) {
+      if (best.length >= 6) break;
+      if (best.some(x => x.mon.uid === c.mon.uid)) continue;
+      best.push(c);
+    }
+    let bestRes = await evalTeam(best.map(c => byUid.get(c.mon.uid)), 12);
+    let evaluated = 1;
+    // hill climb: swap one slot at a time
+    const tryTeams = [];
+    while (Date.now() < deadline) {
+      let improved = false;
+      for (let slot = 0; slot < best.length && Date.now() < deadline; slot++) {
+        for (const cand of pool) {
+          if (Date.now() >= deadline) break;
+          if (best.some(x => x.mon.uid === cand.mon.uid)) continue;
+          const trial = best.slice();
+          trial[slot] = cand;
+          if (tryTeams.includes(key(trial))) continue;
+          tryTeams.push(key(trial));
+          const res = await evalTeam(trial, 10);
+          evaluated++;
+          if (score(res) > score(bestRes) + 1e-9) { best = trial; bestRes = res; improved = true; }
+          state.progress = { pct: Math.min(.98, (Date.now() - (deadline - budgetMs)) / budgetMs), label: `simulating ${evaluated} teams…` };
+          updateProgress();
+        }
+      }
+      if (!improved) break;
+    }
+    // final: the top few by re-evaluation with more runs
+    const finalRounds = Math.max(30, Math.floor((budgetMs / 2) / 40));
+    const finalists = [best];
+    for (let slot = 0; slot < best.length; slot++) {
+      for (const cand of pool) {
+        if (finalists.length >= 4) break;
+        const trial = best.slice(); trial[slot] = cand;
+        if (finalists.some(f => key(f) === key(trial))) continue;
+        finalists.push(trial);
+      }
+    }
+    let winner = best, winnerRes = bestRes;
+    for (const t of finalists) {
+      if (Date.now() > deadline + budgetMs / 3) break;
+      const res = await evalTeam(t, finalRounds);
+      evaluated++;
+      if (score(res) > score(winnerRes)) { winner = t; winnerRes = res; }
+      state.progress = { pct: Math.min(.99, .8 + .2 * evaluated / (finalists.length + 1)), label: 'final check…' };
+      updateProgress();
+    }
+    return { team: winner, res: winnerRes, plan, evaluated };
+  }
+
   async function runOptimizer() {
     state.busy = true; state.errors = []; renderPanel();
     log('info', 'optimizer: start', { preset: state.preset });
@@ -2370,30 +2990,30 @@
       state.leagueInfo = league.length
         ? `League: ${league.map(i => (state.data.chapters[i].steps.find(st => st.kind === 'gym')?.leader) || '?').join(' → ')} · a wipe rewinds to the first`
         : null;
-      state.enemies = chapterEnemies(state.data, info, save.adv.nodes);
-      const away = awayUids(save);
-      const candidates = save.mons.filter(m => !away.has(m.uid) && state.data.species[m.id] && canJoinTeam(save, m));
-      state.eligible = candidates.length;
-      state.scored = scoreCandidates(state.engine, state.data, state.enemies,
-        projectCandidates(state.engine, state.data, save, info.cap), info.cap, state.league);
-      state.enemies = state.enemies.map(e => {
+      state.enemies = chapterEnemies(state.data, info, save.adv.nodes).map(e => {
         const types = state.data.species[e.id]?.types || [];
         const proj = { id: e.id, level: e.level, types };
         return { ...e, proj, types, hp: state.engine.maxHp(proj) };
       });
-      state.team = pickTeam(state.scored, state.enemies, state.engine, state.data, state.preset, 6, state.league);
-      if (!state.team.length) state.errors = ['no candidate found in the PC'];
+      const started = Date.now();
+      const out = await searchChapterTeam(save, info, info.cap, 15000);
+      state.progress = null;
+      if (out.error) { state.errors = [out.error]; state.busy = false; renderPanel(); return; }
+      state.team = out.team;
+      state.sim = { rate: out.res.rate, avgCleared: out.res.avgCleared, battles: out.res.totalBattles, wipeAt: out.res.wipeAt, ms: Date.now() - started, evaluated: out.evaluated };
       log('info', 'optimizer: done', {
-        chapter: info.index, name: info.name, cap: info.cap, foes: state.enemies.length,
-        eligible: state.eligible, league: state.league,
+        chapter: info.index, name: info.name, cap: info.cap, league: state.league,
+        winRate: +(out.res.rate * 100).toFixed(1) + '%', cleared: out.res.avgCleared,
+        of: out.res.totalBattles, evaluated: out.evaluated, ms: state.sim.ms,
         team: state.team.map(t => displayName(t.species.id)),
       });
     } catch (e) {
       logError('optimizer: failed', e);
       state.errors = ['optimizer error: ' + e.message];
     }
+    state.progress = null;
     state.busy = false;
-    renderPanel();
+    renderPanel(true);
   }
 
   /** Compare the game learnset with the canonical PokéAPI one (the game is freer). */
