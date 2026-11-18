@@ -3134,6 +3134,6 @@
     parseLegends, legendBoss, simulateLegend, pickLegendTeam, evaluateLegendTeam, runLegendOptimizer,
     legendFightOnce, legendOdds, logs,
     projectCandidates, evolvedBranches, refreshChapter,
-    chapterPlan, simulateChapter, searchChapterTeam
+    chapterPlan, simulateChapter, searchChapterTeam, rollBattleFoes, simBattle, simAct, simOhko, simGeneric, autoScore
   };
 })();
