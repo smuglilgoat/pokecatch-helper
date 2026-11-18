@@ -10,7 +10,9 @@ A Tampermonkey helper for [Poke'Catch](https://pokecatch-online.netlify.app/) th
 - **watches the team** and records where a wipe happens,
 - and **applies** a team to the game by dragging mons into the real slots, like a player.
 
-All Pokémon and move names are **English** (the game ships an English pack in every language).
+All Pokémon and move names are **English** — when the page runs in another language, the script
+reads `/boot.js`, finds the English pack (`bundle/lang-en.<hash>.js`) and loads it for its own
+labels.
 
 ## Install
 
@@ -26,7 +28,7 @@ All Pokémon and move names are **English** (the game ships an English pack in e
 | Game screen | What the helper adds there |
 |---|---|
 | **Progress** | Run monitor: chapter, step and cap; data source and bundle; eligible count; league info; errors and the update notice; the chapter's events with the type chips; the **wipe watcher** with its log. |
-| **Team/PC** | The **chapter optimizer** above the PC list: presets, **simulate** with the progress bar, the simulation result, the team with each mon's move and a `moves`/`api` button, **apply to team**. |
+| **Team/PC** | The **chapter optimizer** above the PC list: presets, **simulate** with the progress bar, the simulation result, the team with each mon's move and a `moves`/`api` button, **apply to team**, and **prepare segments** (one team per stretch between Pokémon Centers, stored in the game's free team templates). |
 | **Legendary team picker** (any legend zone) | The **legendary optimizer**: the boss with its HP and damage, the odds line, presets, **✨ Optimize (mine)**, the team and **apply to team**. |
 | **Raid team picker** ("Raid vs boss") | The **raid optimizer**: **⚡ Fastest clear**, the DPS line and an `atk` badge on every pick/ally suggestion. |
 
@@ -55,6 +57,16 @@ score:
 - the search is a hill climb over the strongest pool (Monte-Carlo runs per team, one mon per
   species), scored by completion rate. The result line reads like
   `chapter sim: win 62% · clears 19/24 battles · 121 teams in 1.1s · wipe at step #7×3`.
+
+### Segment teams (one per Pokémon Center)
+
+A chapter is split at its **heal nodes**; each stretch is simulated on its own (starting from a
+healed team, which is what a Pokémon Center gives you). **prepare segments** computes a team for
+each stretch and stores it in a **free** team template of the game (`#team-sets`) — your own
+templates are never overwritten. While the run is in a chapter that has prepared segments, the
+script watches the node: when the run moves into a new segment (i.e. after a Pokémon Center) and
+**no battle is running**, it switches to that segment's template. The block lists the prepared
+segments as `#slot team…`.
 
 ## Legendary battles
 
@@ -136,7 +148,7 @@ release; the panel header shows the running version). Tampermonkey checks on its
 updates*). GitHub raw caches for ~5 minutes.
 
 The script also checks once per page load and shows
-`update 1.3.3 is on GitHub (installed 1.3.2) — Tampermonkey → Check for updates` as soon as a
+`update 1.4.1 is on GitHub (installed 1.4.0) — Tampermonkey → Check for updates` as soon as a
 newer version exists, and it removes the previous version's floating panel and quick-optimize
 rows from the page, so after an update only the blocks' controls remain (reload the page once
 after installing). For truly instant updates, install from a **local clone** instead:
@@ -144,9 +156,10 @@ Tampermonkey re-reads a `file://` script when it changes (needs *Allow access to
 
 ## Notes and limits
 
-- **Level cap projection.** The team is evaluated at the cap the game currently allows (its own
-  formula: the next gym you still owe, ace + margin), written as `Lv74 → cap`, because that is the
-  team you will field.
+- **Level cap projection.** The team is evaluated at the cap the game currently allows: the next
+  gym you still owe in any **open** region (travel list, region-link destination, unlocked
+  chapters), ace + margin — so a mid-region chapter gives its own cap (48 on *Badge Jet*) rather
+  than the max level. The team rows read `Lv48 → cap`.
 - **Shiny** Pokémon get the game's +10 % stat bonus and are marked ✨.
 - **Eligibility.** Only mons the game accepts join an adventure team (region link, one per species);
   the **raid** picker accepts any PC mon.
