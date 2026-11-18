@@ -2921,6 +2921,7 @@
     const key = team => team.map(c => c.mon.uid).sort().join('|');
     const score = res => (res.rate * 1e6) + res.avgCleared * 10;
     const deadline = Date.now() + budgetMs;
+    log('debug', 'search: start', { budgetMs, cands: pool.length, planBattles: plan.filter(p => p.kind === 'battle').length });
     // seed: greedy by individual score
     let best = [];
     for (const c of pool) {
@@ -2971,6 +2972,7 @@
       state.progress = { pct: Math.min(.99, .8 + .2 * evaluated / (finalists.length + 1)), label: 'final check…' };
       updateProgress();
     }
+    log('debug', 'search: done', { evaluated, ms: Date.now() - (deadline - budgetMs), rate: winnerRes.rate, cleared: winnerRes.avgCleared });
     return { team: winner, res: winnerRes, plan, evaluated };
   }
 
