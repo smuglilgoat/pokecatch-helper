@@ -2936,10 +2936,12 @@
     const deadline = Date.now() + budgetMs;
     log('debug', 'search: start', { budgetMs, cands: pool.length, planBattles: plan.filter(p => p.kind === 'battle').length });
     // seed: greedy by individual score
+    const distinct = team => team.every((c, i) => team.findIndex(x => x.mon.uid === c.mon.uid) === i)
+      && team.every((c, i) => team.findIndex(x => x.species.id === c.species.id) === i);
     let best = [];
     for (const c of pool) {
       if (best.length >= 6) break;
-      if (best.some(x => x.mon.uid === c.mon.uid)) continue;
+      if (best.some(x => x.mon.uid === c.mon.uid || x.species.id === c.species.id)) continue;
       best.push(c);
     }
     let bestRes = await evalTeam(best.map(c => byUid.get(c.mon.uid)), 12);
@@ -2954,7 +2956,7 @@
           if (best.some(x => x.mon.uid === cand.mon.uid)) continue;
           const trial = best.slice();
           trial[slot] = cand;
-          if (tryTeams.includes(key(trial))) continue;
+          if (tryTeams.includes(key(trial)) || !distinct(trial)) continue;
           tryTeams.push(key(trial));
           const res = await evalTeam(trial, 10);
           evaluated++;
@@ -2972,7 +2974,7 @@
       for (const cand of pool) {
         if (finalists.length >= 4) break;
         const trial = best.slice(); trial[slot] = cand;
-        if (finalists.some(f => key(f) === key(trial))) continue;
+        if (finalists.some(f => key(f) === key(trial)) || !distinct(trial)) continue;
         finalists.push(trial);
       }
     }
