@@ -326,6 +326,7 @@
         LEGEND_ZONE: cfg.LEGEND_ZONE, ELITE: cfg.ELITE, RANK_STAT: cfg.UNDERGROUND?.RANK_STAT ?? 1,
         CAPTURE_BONUS: cfg.CAPTURE_BONUS, CAPTURE_MAX: cfg.CAPTURE_MAX,
         LEGENDARY_CAPTURE_RATE: cfg.LEGENDARY_CAPTURE_RATE,
+        RAID: cfg.RAID || null,
         RAID_PITY: cfg.RAID?.PITY ?? 150, RAID_CATCH: cfg.RAID?.CATCH ?? null,
         BUFF_BERRIES: cfg.BUFF_BERRIES, OFFLINE_MAX_LEVELS: cfg.OFFLINE_MAX_LEVELS
       }
@@ -2209,6 +2210,123 @@
   }
 
   /* ------------------------------------------------------------------ *
+   * 8b. Shiny raids: boss, DPS scores, fastest clear
+   * ------------------------------------------------------------------ */
+  /** The raid boss of the picker header ("Raid vs X" / FR "Raid contre X"). */
+  function raidContext() {
+    const head = document.querySelector('#evt-pick-head h2');
+    if (!head || !state.data?.cfg?.RAID) return null;
+    const txt = head.textContent.replace(/\s+/g, ' ').trim();
+    if (!/^raid\b/i.test(txt) && !/raid/i.test(txt)) return null;
+    const m = txt.match(/\b(?:vs|contre)\s+(.+)$/i);
+    if (!m) return null;
+    const id = speciesIdByName(m[1].trim());
+    if (id == null || !state.data.species[id]) return null;
+    return { id, name: m[1].trim() };
+  }
+  /** The boss as a sim mon: level 100, shiny, with the raid HP/power knobs. */
+  function raidBoss(rc) {
+    const cfg = state.data.cfg;
+    const raid = cfg.RAID || {};
+    const boss = raid.BOSS || { HP: 3.3, POWER: .7, BST_REF: 500, HP_EXP: 1.8, POWER_EXP: 1 };
+    const sp = state.data.species[rc.id];
+    const mon = { id: rc.id, level: raid.LEVEL ?? 100, shiny: true, types: sp.types };
+    const bst = Object.values(sp.stats).reduce((a, b) => a + b, 0);
+    const scale = boss.BST_REF / bst;
+    const adj = boss.ADJ?.[rc.id] ?? 1;
+    const hpPower = (raid.hpPower ?? boss.HP) * Math.pow(scale, boss.HP_EXP) * adj;
+    const dmgMult = (raid.power ?? boss.POWER) * Math.pow(scale, boss.POWER_EXP) * adj;
+    return { mon, hpPower, dmgMult, maxHp: Math.floor(state.engine.maxHp(mon) * (1 + (cfg.ENEMY_HP_PER_ALLY ?? .7) * ((cfg.RAID?.MINE ?? 2) * (1 + (cfg.RAID?.ALLIES ?? 2)) - 1)) * hpPower) };
+  }
+  /** Damage per round a mon puts into the raid boss (expected, accuracy-weighted). */
+  function raidDps(mon, boss) {
+    const mv = state.engine.bestMove(mon, boss.mon.types);
+    if (!mv) return 0;
+    const eff = effRaw(mv.type, boss.mon.types);
+    return state.engine.damage(mon, boss.mon, mv, eff) * (state.engine.moveAcc(mv.key) / 100);
+  }
+  const raidDpsCache = new Map();
+  function raidDpsCached(mon) {
+    const key = mon.uid + ':' + mon.level + ':' + (mon.shiny ? 1 : 0);
+    if (!raidDpsCache.has(key)) {
+      const boss = state.raidBoss;
+      raidDpsCache.set(key, boss ? raidDps(mon, boss) : 0);
+    }
+    return raidDpsCache.get(key);
+  }
+  /** Annotate my pick suggestions and ally suggestions with their DPS. */
+  function annotateRaidSuggestions() {
+    const boss = state.raidBoss;
+    if (!boss) return;
+    // my picks: the picker grid
+    document.querySelectorAll('#evt-pc .pc-cell[data-uid]').forEach(cell => {
+      if (cell.querySelector('.pcopt-atk')) return;
+      const mon = monByUid(readSave(), cell.dataset.uid);
+      if (!mon) return;
+      const dps = raidDpsCached(mon);
+      const tag = document.createElement('span');
+      tag.className = 'pcopt-atk';
+      tag.textContent = 'atk ' + (dps >= 1000 ? (dps / 1000).toFixed(1) + 'k' : Math.round(dps));
+      tag.style.cssText = 'position:absolute;left:2px;top:2px;font-size:10px;padding:1px 4px;border-radius:4px;background:color-mix(in srgb,var(--c) 70%,#000a);color:#fff;z-index:2';
+      cell.style.position = 'relative';
+      cell.prepend(tag);
+    });
+    // allies: the modal rows
+    document.querySelectorAll('.modal-root.open .raid-pick').forEach(row => {
+      if (row.querySelector('.pcopt-atk')) return;
+      const mons = [...row.querySelectorAll('.rt-mon')].map(m => {
+        const img = m.querySelector('img[data-id]');
+        const lvTxt = m.querySelector('.rt-lv')?.textContent || '100';
+        const level = parseInt((lvTxt.match(/\d+/) || [100])[0], 10) || 100;
+        const id = parseInt(img?.dataset.id, 10);
+        return id && state.data.species[id] ? { id, level, shiny: /shiny/.test(img?.src || '') } : null;
+      }).filter(Boolean);
+      if (!mons.length) return;
+      const dps = mons.reduce((a, m) => a + raidDps(m, boss), 0);
+      const tag = document.createElement('span');
+      tag.className = 'pcopt-atk';
+      tag.textContent = 'atk ' + (dps >= 1000 ? (dps / 1000).toFixed(1) + 'k' : Math.round(dps));
+      tag.style.cssText = 'font-size:11px;padding:2px 6px;border-radius:5px;background:color-mix(in srgb,var(--c) 70%,#000a);color:#fff;margin-right:4px';
+      row.prepend(tag);
+      row.dataset.pcoptDps = String(Math.round(dps));
+    });
+  }
+  /** The fastest clear: my best 2 picks + the 2 best allies, applied through the game's UI. */
+  async function fastestClear(rc) {
+    const boss = state.raidBoss;
+    const save = readSave();
+    const away = awayUids(save);
+    const mine = save.mons
+      .filter(m => !away.has(m.uid) && state.data.species[m.id] && canJoinTeam(save, m))
+      .map(m => ({ mon: m, dps: raidDps({ id: m.id, level: Math.min(m.level, state.events?.cap ?? 100), shiny: m.shiny }, boss) }))
+      .sort((a, b) => b.dps - a.dps);
+    const team = mine.slice(0, 2).map(x => ({ mon: x.mon, species: state.data.species[x.mon.id], proj: { id: x.mon.id, level: x.mon.level, shiny: x.mon.shiny }, base: { id: x.mon.id }, hp: 0 }));
+    const myDps = team.reduce((a, t) => a + t.dps, 0);
+    state.evtOdds = { key: 'raid:' + rc.id, text: `team dps ${myDps >= 1000 ? (myDps / 1000).toFixed(1) + 'k' : Math.round(myDps)} · ${displayName(rc.id)} ${Math.round(boss.maxHp / Math.max(1, myDps))} rounds` };
+    log('info', 'raid: fastest clear', { boss: displayName(rc.id), picks: team.map(t => displayName(t.mon.id) + ' ' + Math.round(t.dps || 0)) });
+    await applyToEventPicker(team);
+    // allies: walk the game's ally slots and take the best row of each modal
+    const grpButtons = [...document.querySelectorAll('#screen-raid .rc-grp')];
+    for (const grp of grpButtons.slice(1)) {
+      grp.click();
+      let modal = null;
+      for (let i = 0; i < 20; i++) { await sleep(250); modal = document.querySelector('.modal-root.open'); if (modal?.querySelector('.raid-pick')) break; }
+      if (!modal) break;
+      annotateRaidSuggestions();
+      await sleep(300);
+      const rows = [...modal.querySelectorAll('.raid-pick')]
+        .map(row => ({ row, dps: parseFloat(row.dataset.pcoptDps || '0') }))
+        .sort((a, b) => b.dps - a.dps);
+      if (!rows.length) break;
+      log('info', 'raid: ally picked', { dps: rows[0].dps });
+      rows[0].row.click();
+      await sleep(600);
+      modal.querySelector('.dc-x')?.click();
+      await sleep(500);
+    }
+  }
+
+  /* ------------------------------------------------------------------ *
    * 8c. Inside the game: my controls next to its own "Optimize" button
    * ------------------------------------------------------------------ */
   function speciesIdByName(name) {
@@ -2276,12 +2394,19 @@
     return done;
   }
 
-  /** Add my controls beside the game's own "Optimize" button, inside its team picker. */
+  /** Add my controls beside the game's own "Optimize" button, inside its team picker.
+   *  Raids get the fastest-clear button + DPS badges; legend zones keep the odds line. */
   async function injectPickerUi() {
     const head = document.querySelector('#evt-pick-head');
     if (!head || head.querySelector('#pcopt-evt')) return;
     if (!state.engine) { try { await ensureData(); } catch { return; } }
     if (!head.isConnected || head.querySelector('#pcopt-evt')) return;
+    const rc = raidContext();
+    if (rc) {
+      state.raidBoss = raidBoss(rc);
+      injectRaidUi(head, rc);
+      return;
+    }
     const ctx = pickerContext();
     if (!ctx) return;
     const box = document.createElement('div');
@@ -2331,6 +2456,40 @@
       btn.disabled = false;
     };
     box.querySelector('#pcopt-evt-run').onclick = run;
+  }
+
+  /** My row inside the game's raid picker: fastest clear + the catch line. */
+  function injectRaidUi(head, rc) {
+    if (!head.isConnected || head.querySelector('#pcopt-evt')) return;
+    const boss = state.raidBoss;
+    const cfg = state.data.cfg;
+    const catchRate = cfg.RAID?.CATCH ?? .01;
+    const pity = cfg.RAID_PITY ?? 150;
+    const saved = state.evtOdds && state.evtOdds.key === 'raid:' + rc.id ? state.evtOdds.text : '';
+    const box = document.createElement('div');
+    box.id = 'pcopt-evt';
+    box.className = 'pcopt-row';
+    box.style.marginLeft = '8px';
+    box.innerHTML = `<button class="btn small" id="pcopt-raid-run">⚡ Fastest clear</button>
+      <span class="pcopt-mut" id="pcopt-evt-info">${esc(saved)}</span>`;
+    head.appendChild(box);
+    log('info', 'raid ui: injected', { boss: displayName(rc.id), hp: boss.maxHp });
+    box.querySelector('#pcopt-raid-run').onclick = async () => {
+      const btn = box.querySelector('#pcopt-raid-run');
+      const info = box.querySelector('#pcopt-evt-info');
+      btn.disabled = true;
+      info.textContent = 'working…';
+      try {
+        await fastestClear(rc);
+        const dpsText = state.evtOdds?.key === 'raid:' + rc.id ? state.evtOdds.text : '';
+        info.textContent = dpsText;
+      } catch (e) {
+        logError('raid: fastest clear', e);
+        info.textContent = 'error: ' + e.message;
+      }
+      btn.disabled = false;
+    };
+    annotateRaidSuggestions();
   }
 
   /** One line on what the chapter optimizer is aiming at. */
@@ -2823,7 +2982,7 @@
     state.loading = (async () => {
       const url = bundleUrl();
       if (!url) { state.errors = ['game bundle not loaded yet']; log('warn', 'data: the game bundle is not on the page yet'); return; }
-      const cacheKey = 'bundle:v9:' + url;
+      const cacheKey = 'bundle:v10:' + url;
       let data = store.get(cacheKey, null);
       if (data && !dataLooksValid(data)) {
         log('warn', 'data: the cached tables are invalid, parsing the bundle again');
@@ -3111,8 +3270,10 @@
       requestAnimationFrame(() => {
         pending = false;
         try {
-          if (document.querySelector('#evt-pick-head')) injectPickerUi().catch(e => logError('picker ui: inject', e));
+          if (!document.querySelector('#evt-pick-head')) state.raidBoss = null;
+        if (document.querySelector('#evt-pick-head')) injectPickerUi().catch(e => logError('picker ui: inject', e));
           if (document.querySelector('#screen-team .team-panel .map-head')) injectTeamUi().catch(e => logError('team ui: inject', e));
+          if (state.raidBoss) annotateRaidSuggestions();
         } catch (e) { logError('ui: observer', e); }
       });
     }).observe(document.body, { childList: true, subtree: true });
