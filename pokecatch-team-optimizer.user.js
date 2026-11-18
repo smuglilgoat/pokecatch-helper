@@ -790,13 +790,18 @@
     ) ?? null;
   }
 
-  /** The level the player may reach right now (the game's levelCap). */
-  function levelCap(data, adv) {
+  /** The level the player may reach right now (the game's levelCap).
+   *  Open regions are the travel list, the region link destination and any
+   *  region whose first chapter is already unlocked. */
+  function levelCap(data, save) {
+    const adv = save?.adv;
     const max = data.cfg.MAX_LEVEL;
     let m = 0;
-    const open = new Set(['kanto', ...(adv?.travel?.to || [])]);
+    const open = new Set(['kanto', ...(adv?.travel?.to || []), save?.link?.to].filter(Boolean));
+    const firstChapter = key => data.chapters.findIndex(c => (c.reg || 'kanto') === key);
     for (const region of data.regions) {
-      if (!region || !region.ace || !region.key || !open.has(region.key)) continue;
+      if (!region || !region.ace || !region.key) continue;
+      if (!open.has(region.key) && !(adv?.unlocked >= firstChapter(region.key))) continue;
       const next = nextGymOf(data, region.key, adv);
       if (next != null) return Math.min(max, capOf(data, next));
       for (const ch of chaptersOf(data, region.key)) if (aceOf(data, ch) != null) m = Math.max(m, capOf(data, ch));
@@ -804,12 +809,12 @@
     return Math.min(max, m ? Math.max(m, data.cfg.LEAGUE_DONE_CAP ?? 100) : max);
   }
 
-  function chapterInfo(data, chapterIndex, adv) {
+  function chapterInfo(data, chapterIndex, save) {
     const ch = data.chapters[chapterIndex];
     if (!ch) return null;
     return {
       index: chapterIndex, name: ch.name, region: ch.reg || 'kanto', ace: aceOf(data, chapterIndex), steps: ch.steps,
-      cap: levelCap(data, adv)
+      cap: levelCap(data, save)
     };
   }
 
@@ -2953,7 +2958,7 @@
   function refreshChapter() {
     const save = readSave();
     if (!save || !save.adv || !state.data) return;
-    const info = chapterInfo(state.data, save.adv.chapter, save.adv);
+    const info = chapterInfo(state.data, save.adv.chapter, save);
     if (!info) return;
     state.events = info;
     const league = leagueChapters(state.data, info.index);
@@ -3057,7 +3062,7 @@
       if (!state.data) { state.busy = false; refreshUi(); return; }
       const save = readSave();
       if (!save) { state.errors = ['no save found']; state.busy = false; refreshUi(); return; }
-      const info = chapterInfo(state.data, save.adv.chapter, save.adv);
+      const info = chapterInfo(state.data, save.adv.chapter, save);
       if (!info) { state.errors = ['chapter not found']; state.busy = false; refreshUi(); return; }
       state.events = info;
       const league = leagueChapters(state.data, info.index);
