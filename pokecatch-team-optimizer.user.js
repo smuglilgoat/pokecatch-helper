@@ -2347,10 +2347,18 @@
       modal.querySelector('.dc-x')?.click();
       await sleep(500);
     }
-    const total = myDps + allyDps.reduce((a, b) => a + b, 0);
-    state.evtOdds = { key: 'raid:' + rc.id, text: `team dps ${total >= 1000 ? (total / 1000).toFixed(1) + 'k' : Math.round(total)} (mine ${Math.round(myDps)} + allies ${Math.round(allyDps.reduce((a, b) => a + b, 0))}) · ${displayName(rc.id)} ${Math.round(boss.maxHp / Math.max(1, total))} rounds to break` };
-    const info2 = document.querySelector('#pcopt-evt-info');
-    if (info2) info2.textContent = state.evtOdds.text;
+    const slotDps = () => [...document.querySelectorAll('#screen-raid .rc-grp')].slice(1).reduce((sum, grp) =>
+      sum + [...grp.querySelectorAll('.rt-mon')].map(m => {
+        const img = m.querySelector('img[data-id]');
+        const lv = parseInt(((m.querySelector('.rt-lv')?.textContent || '100').match(/\d+/) || [100])[0], 10) || 100;
+        const id = parseInt(img?.dataset.id, 10);
+        return id && state.data.species[id] ? { id, level: lv, shiny: /shiny/.test(img?.src || '') } : null;
+      }).filter(Boolean).reduce((a, mon) => a + raidDps(mon, boss), 0), 0);
+    const walkDps = allyDps.reduce((a, b) => a + b, 0);
+    const allyTotal = Math.max(walkDps, slotDps());
+    const total = myDps + allyTotal;
+    state.evtOdds = { key: 'raid:' + rc.id, text: `team dps ${total >= 1000 ? (total / 1000).toFixed(1) + 'k' : Math.round(total)} (mine ${Math.round(myDps)} + allies ${Math.round(allyTotal)}) · ${displayName(rc.id)} ${Math.round(boss.maxHp / Math.max(1, total))} rounds to break` };
+    refreshUi();
   }
 
   /* ------------------------------------------------------------------ *
