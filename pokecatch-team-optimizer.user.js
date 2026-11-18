@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Poke'Catch Team Optimizer
 // @namespace    pokecatch-helper
-// @version      1.3.3
+// @version      1.4.0
 // @description  Reads the current chapter events, watches for team wipes (and where they happen), then builds an optimal team of 6 from the PC with Defense / Offense / Balanced presets.
 // @author       GrumpyOwl
 // @match        https://pokecatch-online.netlify.app/*
@@ -26,7 +26,7 @@
    * 0. Small helpers
    * ------------------------------------------------------------------ */
   const SAVE_KEY = 'gachamon-save-v1';
-  const VERSION = '1.3.3';
+  const VERSION = '1.4.0';
   const UPDATE_URL = 'https://raw.githubusercontent.com/smuglilgoat/pokecatch-helper/main/pokecatch-team-optimizer.user.js';
   const $ = (sel, root = document) => root.querySelector(sel);
   const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
@@ -2490,15 +2490,26 @@
   }
   async function ensureEnglish() {
     if (englishData()) return true;
-    const src = document.querySelector('script[src*="lang-en"]')?.src;
-    if (!src) { log('warn', 'names: the English pack is not on the page'); return false; }
-    try {
-      const code = await httpGet(src);
+    const load = async url => {
+      const code = await httpGet(url);
       const tag = document.createElement('script');
       tag.textContent = code;
       document.head.appendChild(tag);
       tag.remove();
-      log('info', 'names: English pack loaded', src.split('/').pop());
+      return url;
+    };
+    try {
+      // the page may already carry the pack, else the boot manifest lists every language bundle
+      const onPage = document.querySelector('script[src*="lang-en"]')?.src;
+      if (onPage) await load(onPage);
+      else {
+        const base = bundleUrl() || location.href;
+        const boot = await httpGet(new URL('/boot.js', base).href);
+        const m = boot.match(/bundle\/(lang-en\.[0-9a-z]+\.js)/);
+        if (!m) { log('warn', 'names: no English pack in the boot manifest'); return false; }
+        await load(new URL('/bundle/' + m[1], base).href);
+      }
+      log('info', 'names: English pack loaded');
     } catch (e) { logError('names: English pack', e); }
     if (englishData()) { refreshUi(); return true; }
     return false;
@@ -2623,6 +2634,93 @@
         + `<div class="pcopt-mut" data-info="${s.mon.uid}">${state.info[s.mon.uid] || ''}</div></div>`
         + `<div class="pcopt-row"><button class="btn small ghost" data-moves="${s.mon.uid}">moves</button><button class="btn small ghost" data-api="${s.mon.uid}">api</button></div></div>`;
     }).join('');
+  }
+
+  /* ---- segment teams: one team per stretch between Pokémon Centers ---- */
+  /** Split the chapter plan at heal nodes (each segment starts from a healed team). */
+  function segmentPlans(plan) {
+    const segs = [];
+    let cur = [];
+    for (const step of plan) {
+      if (step.kind === 'heal') {
+        if (cur.length) segs.push({ plan: cur });
+        cur = [];
+        continue;
+      }
+      cur.push(step);
+    }
+    if (cur.length) segs.push({ plan: cur });
+    return segs;
+  }
+
+  /** Prepare a team per segment and store it in the game's free team templates. */
+  async function prepareSegments() {
+    const save = readSave();
+    if (!save?.adv || !state.data || !state.engine) return;
+    const info = state.events && state.events.index != null ? state.events : chapterInfo(state.data, save.adv.chapter, save);
+    if (!info) return;
+    const segs = segmentPlans(chapterPlan(state.data, save));
+    if (segs.length < 2) { state.errors = ['this chapter has a single segment — nothing to switch']; refreshUi(); return; }
+    const slots = (save.teamSets?.list || []);
+    const free = [];
+    for (let i = 0; i < 5; i++) if (!slots[i] || !slots[i].length) free.push(i);
+    if (!free.length) { state.errors = ['all team templates are used — clear one to prepare segments']; refreshUi(); return; }
+    const count = Math.min(segs.length, free.length);
+    state.busy = true; state.errors = []; refreshUi();
+    log('info', 'segments: preparing', { segments: segs.length, prepared: count, slots: free.slice(0, count) });
+    const out = [];
+    try {
+      if (!await gotoTeamScreen()) throw new Error('team screen not available');
+      for (let i = 0; i < count; i++) {
+        state.progress = { pct: (i + 0.15) / count, label: `segment ${i + 1}/${count}…` };
+        updateProgress();
+        const r = await searchChapterTeam(save, info, info.cap, Math.max(6000, Math.round(30000 / count)), segs[i].plan);
+        if (r.error) { log('warn', 'segments: search failed', r.error); continue; }
+        // pick the free template, then let applyTeam fill it (the game syncs the active set)
+        document.querySelector(`#team-sets button[data-set="${free[i]}"]`)?.click();
+        await sleep(500);
+        const applied = await applyTeam(r.team);
+        await sleep(700);
+        out.push({ slot: free[i], team: r.team.map(t => t.mon.uid), names: r.team.map(t => displayName(t.species.id)), res: r.res, applied: applied.done, battles: segs[i].plan.length });
+        log('info', 'segments: prepared', { slot: free[i], team: r.team.map(t => displayName(t.species.id)), winRate: r.res && r.res.rate });
+        state.progress = { pct: (i + 1) / count, label: `segment ${i + 1}/${count} ready` };
+        updateProgress();
+      }
+    } catch (e) {
+      logError('segments: prepare', e);
+      state.errors = ['segments: ' + e.message];
+    }
+    state.segments = out.length ? { chapter: info.index, at: Date.now(), list: out, total: segs.length } : null;
+    state.segOn = null;
+    state.busy = false; state.progress = null;
+    refreshUi();
+  }
+
+  /** The current segment index of the running chapter (heal nodes split it). */
+  function segmentIndex(save) {
+    const adv = save?.adv;
+    const nodes = adv?.nodes || [];
+    if (!state.segments || adv?.chapter !== state.segments.chapter) return null;
+    let idx = 0;
+    for (let i = 0; i < Math.min(adv.node ?? 0, nodes.length); i++) if (nodes[i]?.type === 'heal') idx++;
+    if (nodes[adv.node]?.type === 'heal') idx++;
+    return idx;
+  }
+
+  /** Switch to the prepared template of the segment the run is in (never mid-battle). */
+  function switchSegment() {
+    const save = readSave();
+    const idx = segmentIndex(save);
+    if (idx == null || !state.segments?.list?.length) return;
+    if (save?.adv?.battle) return;
+    const target = state.segments.list[Math.min(idx, state.segments.list.length - 1)];
+    if (!target || target.slot === state.segOn) return;
+    const btn = document.querySelector(`#team-sets button[data-set="${target.slot}"]`);
+    if (!btn) return;
+    btn.click();
+    state.segOn = target.slot;
+    log('info', 'segments: switched to template', { slot: target.slot, node: save.adv.node, segment: idx + 1 });
+    refreshUi();
   }
 
   /** The simulation progress bar: updated in place so the panel never flickers. */
@@ -2760,12 +2858,15 @@
         <button class="btn small" data-act="run" ${state.busy ? 'disabled' : ''}>${state.busy ? 'working…' : 'simulate'}</button>
         <div id="pcopt-simbar" style="display:none;flex:1 1 160px;align-items:center;gap:6px"><div style="flex:1;height:10px;border-radius:5px;background:var(--line);overflow:hidden"><div style="height:100%;width:0%;background:var(--c);transition:width .15s"></div></div><span class="pcopt-mut" style="font-size:11px;white-space:nowrap"></span></div>
         <button class="btn small ghost" data-act="apply" ${state.team && state.team.length && !state.busy ? '' : 'disabled'}>apply to team</button>
+        <button class="btn small ghost" data-act="segments" ${state.busy ? 'disabled' : ''}>prepare segments</button>
       </div>
+      ${state.segments ? `<div class="pcopt-mut">segments: ${state.segments.list.map((s, i) => '#' + (s.slot + 1) + ' ' + esc(s.names.join(', ').slice(0, 60))).join(' · ')}${state.segments.total > state.segments.list.length ? ' · ' + (state.segments.total - state.segments.list.length) + ' over the template limit' : ''}</div>` : ''}
       <div data-team>${renderTeam()}</div>
       ${state.waiting ? `<div class="pcopt-mut">${esc(state.waiting)}</div>` : ''}
       ${errLine()}`;
     const sig = JSON.stringify([state.preset, state.busy, state.team && state.team.map(t => t.mon.uid + ':' + t.hpCur).join(','),
-      sim && [sim.rate, sim.avgCleared, sim.evaluated, sim.ms], state.errors, state.waiting, state.events?.index, cap]);
+      sim && [sim.rate, sim.avgCleared, sim.evaluated, sim.ms], state.errors, state.waiting, state.events?.index, cap,
+      state.segments && state.segments.list.map(s => s.slot).join(',')]);
     mountBlock(host, 'chapter', sig, html, el => {
       el.querySelectorAll('[data-preset]').forEach(b => b.onclick = () => {
         state.preset = b.dataset.preset;
@@ -2774,6 +2875,7 @@
       });
       el.querySelector('[data-act="run"]').onclick = () => runOptimizer();
       el.querySelector('[data-act="apply"]').onclick = () => applyTeamFromPanel();
+      el.querySelector('[data-act="segments"]').onclick = () => prepareSegments();
       el.querySelectorAll('[data-moves]').forEach(b => b.onclick = () => {
         b.textContent = '…';
         showMovesPanel(b.dataset.moves).then(() => { b.textContent = 'moves'; });
@@ -2976,8 +3078,8 @@
   }
 
   /** Search the chapter's best team by Monte-Carlo simulation of the whole run. */
-  async function searchChapterTeam(save, info, cap, budgetMs) {
-    const plan = chapterPlan(state.data, save);
+  async function searchChapterTeam(save, info, cap, budgetMs, planOverride = null) {
+    const plan = planOverride || chapterPlan(state.data, save);
     if (!plan.some(p => p.kind === 'battle')) return { error: 'no battles in this chapter' };
     const away = awayUids(save);
     const cands = projectCandidates(state.engine, state.data, save, cap, { branches: false });
@@ -3194,6 +3296,8 @@
         errors: state.errors,
       });
     }).catch(e => logError('boot: data', e));
+    // segment teams: switch the prepared template when the run reaches a Pokémon Center
+    setInterval(() => { try { switchSegment(); } catch (e) { logError('segments: switch', e); } }, 700);
     // the game keeps playing in the background: keep the panel in sync
     setInterval(() => {
       if (state.busy) return;
@@ -3213,7 +3317,7 @@
     parseLegends, legendBoss, simulateLegend, pickLegendTeam, evaluateLegendTeam, runLegendOptimizer,
     legendFightOnce, legendOdds, logs,
     projectCandidates, evolvedBranches, refreshChapter,
-    chapterPlan, simulateChapter, searchChapterTeam, rollBattleFoes, simBattle, simAct, simOhko, simGeneric, autoScore,
+    chapterPlan, segmentPlans, prepareSegments, switchSegment, simulateChapter, searchChapterTeam, rollBattleFoes, simBattle, simAct, simOhko, simGeneric, autoScore,
     raidDps, raidBoss, annotateRaidSuggestions
   };
 })();
