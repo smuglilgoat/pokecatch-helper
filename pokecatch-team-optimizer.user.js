@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Poke'Catch Team Optimizer
 // @namespace    pokecatch-helper
-// @version      1.5.4
+// @version      1.5.5
 // @description  Reads the current chapter events, watches for team wipes (and where they happen), then builds an optimal team of 6 from the PC with Defense / Offense / Balanced presets.
 // @author       GrumpyOwl
 // @match        https://pokecatch-online.netlify.app/*
@@ -26,7 +26,7 @@
    * 0. Small helpers
    * ------------------------------------------------------------------ */
   const SAVE_KEY = 'gachamon-save-v1';
-  const VERSION = '1.5.4';
+  const VERSION = '1.5.5';
   const UPDATE_URL = 'https://raw.githubusercontent.com/smuglilgoat/pokecatch-helper/main/pokecatch-team-optimizer.user.js';
   const $ = (sel, root = document) => root.querySelector(sel);
   const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
@@ -2960,7 +2960,7 @@
       ${errLine()}`;
     const sig = JSON.stringify([state.preset, state.busy, state.team && state.team.map(t => t.mon.uid + ':' + t.hpCur).join(','),
       sim && [sim.rate, sim.avgCleared, sim.evaluated, sim.ms], state.errors, state.waiting, state.events?.index, cap,
-      state.segments && state.segments.list.map(s => s.slot).join(','), state.reuseAll]);
+      state.segments && state.segments.list.map(s => s.slot + ':' + s.names.join('/')).join(','), state.segments && state.segments.total, state.reuseAll]);
     mountBlock(host, 'chapter', sig, html, el => {
       el.querySelectorAll('[data-preset]').forEach(b => b.onclick = () => {
         state.preset = b.dataset.preset;
