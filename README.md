@@ -81,6 +81,19 @@ Under the boss the line tells you what the fight costs:
 * **~N runs ≈ total time** — the expected attempts and wall-clock time to catch it, capped by the
   raid pity (150 tries).
 
+### Shiny raid optimization
+
+The game's raid picker ("Raid vs *boss*") gets my row with a **⚡ Fastest clear** button:
+
+* every suggestion — the community species cards in the picker and each ally row in the
+  "Pick an ally" list — carries an **atk** badge: the expected damage per round against the
+  raid boss (the game's own raid knobs: `BOSS.HP/POWER × (BST_REF/BST)^exp × ADJ`, shiny
+  boss, the 6-slot HP scaling), accuracy-weighted;
+* the button fills your two pick slots with the highest-DPS mons (any PC mon is allowed,
+  one per species, capped at the raid level), then walks the ally slots and picks the two
+  best allies by the same score;
+* the line reports the total team DPS (mine + allies) and the rounds needed to break the boss.
+
 ### Inside the game: beside its own "Optimize" button
 
 The game has its own **Optimize** button in the team picker it opens for a legendary zone, a raid
