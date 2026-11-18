@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Poke'Catch Team Optimizer
 // @namespace    pokecatch-helper
-// @version      1.6.1
+// @version      1.6.2
 // @description  Reads the current chapter events, watches for team wipes (and where they happen), then builds an optimal team of 6 from the PC with Defense / Offense / Balanced presets.
 // @author       GrumpyOwl
 // @match        https://pokecatch-online.netlify.app/*
@@ -26,7 +26,7 @@
    * 0. Small helpers
    * ------------------------------------------------------------------ */
   const SAVE_KEY = 'gachamon-save-v1';
-  const VERSION = '1.6.1';
+  const VERSION = '1.6.2';
   const UPDATE_URL = 'https://raw.githubusercontent.com/smuglilgoat/pokecatch-helper/main/pokecatch-team-optimizer.user.js';
   const $ = (sel, root = document) => root.querySelector(sel);
   const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
@@ -2941,11 +2941,16 @@
         + `<span class="bag-tip ts-tip" role="tooltip"><b>Team ${i + 1}${on ? ' · in use' : ''}</b>`
         + `<small>${esc(names.slice(0, 6).join(', ') || 'empty')}</small></span></button>`;
     }).join('');
-    const sig = sourceHtml || ('fallback:' + (sets.on ?? '') + ':' + (sets.list || []).map(x => (x || []).join('.')).join('|'));
-    if (el.dataset.sig === sig) return;
-    el.dataset.sig = sig;
-    el.innerHTML = sourceHtml || fallback;
+    const sig = (sourceHtml || ('fallback:' + (sets.list || []).map(x => (x || []).join('.')).join('|'))) + '|' + (sets.on ?? '');
+    if (el.dataset.sig !== sig) {
+      el.dataset.sig = sig;
+      el.innerHTML = sourceHtml || fallback;
+    }
+    // the game's bar is only re-rendered on the Team/PC screen, so set the active state from the save
     el.querySelectorAll('button[data-set]').forEach(b => {
+      const on = +b.dataset.set === sets.on;
+      b.classList.toggle('on', on);
+      b.setAttribute('aria-pressed', String(on));
       b.onclick = e => { e.preventDefault(); e.stopPropagation(); switchTemplate(+b.dataset.set); };
     });
   }
