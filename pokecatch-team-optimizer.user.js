@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Poke'Catch Team Optimizer
 // @namespace    pokecatch-helper
-// @version      1.4.2
+// @version      1.5.0
 // @description  Reads the current chapter events, watches for team wipes (and where they happen), then builds an optimal team of 6 from the PC with Defense / Offense / Balanced presets.
 // @author       GrumpyOwl
 // @match        https://pokecatch-online.netlify.app/*
@@ -26,7 +26,7 @@
    * 0. Small helpers
    * ------------------------------------------------------------------ */
   const SAVE_KEY = 'gachamon-save-v1';
-  const VERSION = '1.4.2';
+  const VERSION = '1.5.0';
   const UPDATE_URL = 'https://raw.githubusercontent.com/smuglilgoat/pokecatch-helper/main/pokecatch-team-optimizer.user.js';
   const $ = (sel, root = document) => root.querySelector(sel);
   const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
@@ -2465,7 +2465,8 @@
     preset: 'balanced', errors: [], busy: false, watcher: null, eligible: 0,
     apiCache: {}, info: {}, legends: null, legBoss: null, legTier: 0, legTeam: null, waiting: null,
     evtOdds: null, loading: null,
-    league: false, leagueInfo: null, legOdds: null
+    league: false, leagueInfo: null, legOdds: null,
+    segments: null, segOn: null, reuseAll: false
   };
 
   const TYPE_COLORS = {
@@ -2664,7 +2665,9 @@
     const slots = (save.teamSets?.list || []);
     const free = [];
     for (let i = 0; i < 5; i++) if (!slots[i] || !slots[i].length) free.push(i);
-    if (!free.length) { state.errors = ['all team templates are used — clear one to prepare segments']; refreshUi(); return; }
+    // 'free all templates' lets the plan overwrite every template (the game has no delete)
+    if (state.reuseAll) for (let i = 0; i < 5; i++) if (!free.includes(i)) free.push(i);
+    if (!free.length) { state.errors = ['all team templates are used — use free all templates']; refreshUi(); return; }
     const count = Math.min(segs.length, free.length);
     state.busy = true; state.errors = []; refreshUi();
     log('info', 'segments: preparing', { segments: segs.length, prepared: count, slots: free.slice(0, count) });
@@ -2692,8 +2695,39 @@
     }
     state.segments = out.length ? { chapter: info.index, at: Date.now(), list: out, total: segs.length } : null;
     store.set('segments', state.segments);
+    state.reuseAll = false; store.set('reuseTemplates', false);
     state.segOn = null;
     state.busy = false; state.progress = null;
+    refreshUi();
+  }
+
+  /** Free every template for the segment planner: the next prepare may overwrite all of them
+   *  (the game itself has no delete, so this cannot empty them). */
+  function freeTemplates() {
+    if (state.busy) return;
+    const save = readSave();
+    const used = (save?.teamSets?.list || []).filter(x => x && x.length).length;
+    if (used && !confirm(`The next 'prepare segments' will overwrite all ${used} filled team template(s). Continue?`)) return;
+    state.segments = null; store.set('segments', null);
+    state.reuseAll = true; store.set('reuseTemplates', true);
+    state.segOn = null;
+    log('info', 'templates: all reusable', { filled: used });
+    refreshUi();
+  }
+
+  /** Manual template switch (Progress screen). The watcher leaves it alone until the next segment. */
+  async function switchTemplate(slot) {
+    if (state.busy) return;
+    let btn = document.querySelector(`#team-sets button[data-set="${slot}"]`);
+    if (!btn) {
+      if (!await gotoTeamScreen()) { state.errors = ['team screen not reachable']; refreshUi(); return; }
+      await sleep(400);
+      btn = document.querySelector(`#team-sets button[data-set="${slot}"]`);
+    }
+    if (!btn) { state.errors = ['team template ' + (slot + 1) + ' not found']; refreshUi(); return; }
+    btn.click();
+    state.segOn = segmentIndex(readSave());
+    log('info', 'templates: manual switch', { slot, segment: state.segOn });
     refreshUi();
   }
 
@@ -2846,6 +2880,40 @@
     }, { prepend: true });
   }
 
+  /** The Progress screen: the game's team templates, for a manual switch under the timeline. */
+  function mountTemplates() {
+    const host = document.querySelector('#screen-map .mp-list');
+    if (!host) return;
+    const save = readSave();
+    const sets = save?.teamSets;
+    if (!sets || !Array.isArray(sets.list)) return;
+    const plan = state.segments && state.segments.chapter === save.adv?.chapter ? state.segments : null;
+    const segOf = slot => plan ? plan.list.findIndex(x => x.slot === slot) : -1;
+    const rows = [0, 1, 2, 3, 4].map(i => {
+      const uids = sets.list[i] || [];
+      const names = uids.map(u => monByUid(save, u)).filter(Boolean).map(m => displayName(m.id));
+      const seg = segOf(i);
+      const active = sets.on === i;
+      const label = '#' + (i + 1) + (seg >= 0 ? ' · segment ' + (seg + 1) : '') + ' · ' + (names.length ? names.join(', ') : 'free');
+      return `<div class="pcopt-row" style="justify-content:space-between;gap:8px;border-bottom:1px solid var(--line);padding:4px 0">`
+        + `<span class="pcopt-mut" style="flex:1 1 140px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${esc(label)}">${esc(label)}</span>`
+        + `<button class="btn small ${active ? '' : 'ghost'}" data-switch="${i}" ${active || !names.length ? 'disabled' : ''}>${active ? 'active' : 'use'}</button></div>`;
+    }).join('');
+    const cur = plan ? segmentIndex(save) : null;
+    const html = `
+      <div class="pcopt-title" style="margin-top:10px"><span>Team templates</span>
+        <span class="pcopt-mut">${sets.on != null ? '#' + (sets.on + 1) + ' active' : 'none active'}${cur != null ? ' · segment ' + (cur + 1) + '/' + plan.total : ''}</span></div>
+      ${rows}
+      <div class="pcopt-mut">${plan ? `segment plan for chapter ${plan.chapter} — the watcher switches at each Pokémon Center` : 'no segment plan for this chapter — prepare it in Team/PC'}</div>
+      ${state.reuseAll ? '<div class="pcopt-mut">all templates freed for the next prepare</div>' : ''}
+      ${errLine()}`;
+    const sig = JSON.stringify([sets.on, (sets.list || []).map(x => x && x.length), (sets.list || []).map(x => (x || []).join('.')),
+      plan && plan.chapter, plan && plan.list.map(x => x.slot), cur, state.reuseAll, state.errors, state.busy]);
+    mountBlock(host, 'templates', sig, html, el => {
+      el.querySelectorAll('[data-switch]').forEach(b => b.onclick = () => switchTemplate(+b.dataset.switch));
+    });
+  }
+
   /** The Team/PC screen: the chapter optimizer with its progress bar and the current team. */
   function mountChapter() {
     const host = document.querySelector('#screen-team');
@@ -2862,14 +2930,16 @@
         <div id="pcopt-simbar" style="display:none;flex:1 1 160px;align-items:center;gap:6px"><div style="flex:1;height:10px;border-radius:5px;background:var(--line);overflow:hidden"><div style="height:100%;width:0%;background:var(--c);transition:width .15s"></div></div><span class="pcopt-mut" style="font-size:11px;white-space:nowrap"></span></div>
         <button class="btn small ghost" data-act="apply" ${state.team && state.team.length && !state.busy ? '' : 'disabled'}>apply to team</button>
         <button class="btn small ghost" data-act="segments" ${state.busy ? 'disabled' : ''}>prepare segments</button>
+        <button class="btn small ghost" data-act="free" ${state.busy ? 'disabled' : ''}>free all templates</button>
       </div>
-      ${state.segments ? `<div class="pcopt-mut">segments: ${state.segments.list.map((s, i) => '#' + (s.slot + 1) + ' ' + esc(s.names.join(', ').slice(0, 60))).join(' · ')}${state.segments.total > state.segments.list.length ? ' · ' + (state.segments.total - state.segments.list.length) + ' over the template limit' : ''}</div>` : ''}
+      ${state.segments ? `<div class="pcopt-mut">segments: ${state.segments.list.map((s, i) => '#' + (s.slot + 1) + ' ' + esc(s.names.join(', ').slice(0, 60))).join(' · ')}${state.segments.total > state.segments.list.length ? ' · ' + (state.segments.total - state.segments.list.length) + ' over the limit — use free all templates' : ''}</div>` : ''}
+      ${state.reuseAll ? `<div class="pcopt-mut">all templates freed — the next prepare overwrites them</div>` : ''}
       <div data-team>${renderTeam()}</div>
       ${state.waiting ? `<div class="pcopt-mut">${esc(state.waiting)}</div>` : ''}
       ${errLine()}`;
     const sig = JSON.stringify([state.preset, state.busy, state.team && state.team.map(t => t.mon.uid + ':' + t.hpCur).join(','),
       sim && [sim.rate, sim.avgCleared, sim.evaluated, sim.ms], state.errors, state.waiting, state.events?.index, cap,
-      state.segments && state.segments.list.map(s => s.slot).join(',')]);
+      state.segments && state.segments.list.map(s => s.slot).join(','), state.reuseAll]);
     mountBlock(host, 'chapter', sig, html, el => {
       el.querySelectorAll('[data-preset]').forEach(b => b.onclick = () => {
         state.preset = b.dataset.preset;
@@ -2879,6 +2949,7 @@
       el.querySelector('[data-act="run"]').onclick = () => runOptimizer();
       el.querySelector('[data-act="apply"]').onclick = () => applyTeamFromPanel();
       el.querySelector('[data-act="segments"]').onclick = () => prepareSegments();
+      el.querySelector('[data-act="free"]').onclick = () => freeTemplates();
       el.querySelectorAll('[data-moves]').forEach(b => b.onclick = () => {
         b.textContent = '…';
         showMovesPanel(b.dataset.moves).then(() => { b.textContent = 'moves'; });
@@ -2972,6 +3043,7 @@
     try {
       cleanupLegacy();
       mountMonitor();
+      mountTemplates();
       mountChapter();
       if (document.querySelector('#evt-pick-head')) injectPickerUi().catch(e => logError('picker ui: inject', e));
       else state.raidBoss = null;
@@ -3272,6 +3344,7 @@
     // a prepared segment plan survives a reload (the templates live in the save)
     state.segments = store.get('segments', null);
     if (state.segments && !Array.isArray(state.segments.list)) state.segments = null;
+    state.reuseAll = store.get('reuseTemplates', false) === true;
     // a previous version's floating panel / quick rows: gone, the blocks replace them
     cleanupLegacy();
     ensureEnglish().catch(e => logError('names: English pack', e));
@@ -3323,7 +3396,7 @@
     parseLegends, legendBoss, simulateLegend, pickLegendTeam, evaluateLegendTeam, runLegendOptimizer,
     legendFightOnce, legendOdds, logs,
     projectCandidates, evolvedBranches, refreshChapter,
-    chapterPlan, segmentPlans, prepareSegments, switchSegment, simulateChapter, searchChapterTeam, rollBattleFoes, simBattle, simAct, simOhko, simGeneric, autoScore, ensureEnglish,
+    chapterPlan, segmentPlans, prepareSegments, switchSegment, freeTemplates, switchTemplate, simulateChapter, searchChapterTeam, rollBattleFoes, simBattle, simAct, simOhko, simGeneric, autoScore, ensureEnglish,
     raidDps, raidBoss, annotateRaidSuggestions
   };
 })();
