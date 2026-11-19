@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Poke'Catch Team Optimizer
 // @namespace    pokecatch-helper
-// @version      1.6.3
+// @version      1.6.4
 // @description  Reads the current chapter events, watches for team wipes (and where they happen), then builds an optimal team of 6 from the PC with Defense / Offense / Balanced presets.
 // @author       GrumpyOwl
 // @match        https://pokecatch-online.netlify.app/*
@@ -26,7 +26,7 @@
    * 0. Small helpers
    * ------------------------------------------------------------------ */
   const SAVE_KEY = 'gachamon-save-v1';
-  const VERSION = '1.6.3';
+  const VERSION = '1.6.4';
   const UPDATE_URL = 'https://raw.githubusercontent.com/smuglilgoat/pokecatch-helper/main/pokecatch-team-optimizer.user.js';
   const $ = (sel, root = document) => root.querySelector(sel);
   const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
@@ -2218,15 +2218,16 @@
    * ------------------------------------------------------------------ */
   /** The raid boss of the picker header ("Raid vs X" / FR "Raid contre X"). */
   function raidContext() {
-    const head = document.querySelector('#evt-pick-head h2');
+    const headEl = document.querySelector('#evt-pick-head');
+    const head = headEl?.querySelector('h2');
     if (!head || !state.data?.cfg?.RAID) return null;
     const txt = head.textContent.replace(/\s+/g, ' ').trim();
-    if (!/^raid\b/i.test(txt) && !/raid/i.test(txt)) return null;
+    if (!/raid/i.test(txt)) return null;
+    // the boss sprite in the header carries its dex id — the h2 name is localized, the id is not
     const m = txt.match(/\b(?:vs|contre)\s+(.+)$/i);
-    if (!m) return null;
-    const id = speciesIdByName(m[1].trim());
-    if (id == null || !state.data.species[id]) return null;
-    return { id, name: m[1].trim() };
+    const id = +(headEl.querySelector('img[data-id]')?.dataset.id || 0) || (m ? speciesIdByName(m[1].trim()) : null);
+    if (!id || !state.data.species[id]) return null;
+    return { id, name: state.data.species[id].name };
   }
   /** The boss as a sim mon: level 100, shiny, with the raid HP/power knobs. */
   function raidBoss(rc) {
@@ -2382,12 +2383,13 @@
 
   /** What the game's team picker is open for (the boss and the elite tier, from its header). */
   function pickerContext() {
-    const head = document.querySelector('#evt-pick-head h2');
+    const headEl = document.querySelector('#evt-pick-head');
+    const head = headEl?.querySelector('h2');
     if (!head || !state.legends || !state.data) return null;
     const txt = head.textContent.replace(/\s+/g, ' ').trim();
     const m = txt.match(/\b(?:contre|vs\.?)\s+(.+)$/i);
-    if (!m) return null;
-    const id = speciesIdByName(m[1].trim());
+    // same as raids: the header sprite carries the boss id, the name is localized
+    const id = +(headEl.querySelector('img[data-id]')?.dataset.id || 0) || (m ? speciesIdByName(m[1].trim()) : null);
     if (id == null) return null;
     const zone = state.legends.zones.find(z => z.id === id);
     if (!zone) return null;
@@ -2493,10 +2495,9 @@
     if (englishData()) return true;
     const load = async url => {
       const code = await httpGet(url);
-      const tag = document.createElement('script');
-      tag.textContent = code;
-      document.head.appendChild(tag);
-      tag.remove();
+      // eval in this scope: the pack sets window.I18N_DATA, which the Tampermonkey sandbox
+      // cannot read back from the page — a page <script> would make the names unreachable
+      (0, eval)(code);
       return url;
     };
     try {
