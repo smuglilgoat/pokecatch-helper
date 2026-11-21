@@ -135,7 +135,8 @@ left. Pick one and press **Hunt**: the script keeps checking the timer and place
 roamer's chapter with the game's own **Recommencer** / **Refaire le chapitre** button until the run
 reaches the marked node, waits for the roamer fight and its single automatic capture ball, and
 starts over when the ball fails. **Stop** ends it. The loop lives in the page: keep the game tab
-open, and a reload ends the hunt.
+open, and a reload ends the hunt. A reload also forgets which loops the hunt turned on, so if one
+is still on, turn it off on the chapter row on the map.
 
 The hunt also turns on the chapter's own **loop** switch, so a pass that ends without reaching the
 roamer restarts itself instead of waiting for the panel. A loop restart does not check the roamer's

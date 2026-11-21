@@ -2075,6 +2075,8 @@
    * 7b. Roamer hunt: restart the roaming legendary's chapter until caught
    * ------------------------------------------------------------------ */
   const HUNT_GRACE_MS = 4000;
+  /** Chapters whose loop switch this script turned on (in-memory; the save itself holds the loop). */
+  const HUNT_LOOPS = new Set();
 
   /** Pure placement re-check: gone | stop-timer | retarget | ok. Used at every restart and stale pass. */
   function huntPlacement(save, hunt, now = Date.now()) {
@@ -2131,19 +2133,31 @@
   };
 
   /** Open the game's Progress (map) screen; never mid-battle, never while an optimizer drives the UI. */
-  async function gotoMapScreen(tries = 30) {
+  async function gotoMapScreen(tries = 30, alive = null) {
     const ready = () => !!document.querySelector('#screen-map.active') && !!document.querySelector('#screen-map .map-body');
+    const dead = () => !!alive && !alive();
     log('debug', 'hunt: opening the map screen');
     for (let i = 0; i < tries; i++) {
+      if (dead()) return false;
       if (ready()) { state.waiting = null; return true; }
       if (state.busy) { await sleep(500); continue; }
       const cont = [...document.querySelectorAll('button')].find(b => b.textContent.trim() === 'CONTINUE');
-      if (cont) { cont.click(); await sleep(500); continue; }
+      if (cont) {
+        if (dead()) return false;
+        cont.click();
+        await sleep(500);
+        continue;
+      }
       const save = readSave();
       if (save?.adv?.battle) { state.waiting = 'hunt: waiting for the current battle to end…'; await sleep(1000); continue; }
       const btn = document.querySelector('#side [data-screen="map"]') || document.querySelector('#chapter-btn');
-      if (btn) { btn.click(); await sleep(500); } else await sleep(300);
+      if (btn) {
+        if (dead()) return false;
+        btn.click();
+        await sleep(500);
+      } else await sleep(300);
     }
+    if (dead()) return false;
     state.waiting = null;
     const ok = ready();
     log(ok ? 'debug' : 'warn', 'hunt: map screen ' + (ok ? 'open' : 'not reachable'));
@@ -2151,21 +2165,26 @@
   }
 
   /** The map shows one region at a time: switch to the chapter's region so its row exists. */
-  async function openChapterRow(ch) {
+  async function openChapterRow(ch, alive = null) {
     const rowAt = () => document.querySelector(`.mp-row[data-ch="${ch}"]`);
+    const dead = () => !!alive && !alive();
     let row = null;
     for (let i = 0; i < 8 && !row; i++) {
+      if (dead()) return null;
       row = rowAt();
       if (!row) await sleep(300);
     }
     if (row) return row;
     const reg = state.data ? (state.data.chapters?.[ch]?.reg || 'kanto') : null;
     for (const key of reg ? [reg] : ['kanto', 'johto', 'hoenn', 'sinnoh', 'unova']) {
+      if (dead()) return null;
       const rg = document.querySelector(`.rg.open[data-rg="${key}"]`);
       if (!rg) continue;
       log('debug', 'hunt: opening region on the map', { region: key });
+      if (dead()) return null;
       rg.click();
       await sleep(500);
+      if (dead()) return null;
       row = rowAt();
       if (row) return row;
     }
@@ -2173,19 +2192,26 @@
   }
 
   /** Turn on the chapter's own loop switch; report only what the save confirms. */
-  async function ensureChapterLoop(ch, row) {
+  async function ensureChapterLoop(ch, row, alive = null) {
+    const dead = () => !!alive && !alive();
+    if (dead()) return { loopSet: null, loopWas: false, clicked: false, aborted: true };
     const save = readSave();
     if (!save?.adv) return { loopSet: null, loopWas: false, clicked: false };
     if (save.adv.loops?.includes(ch)) return { loopSet: null, loopWas: true, clicked: false };
     const sw = row?.querySelector('.pg-loop[data-loop]');
     if (!sw) { log('warn', 'hunt: no loop switch on the chapter row', { ch }); return { loopSet: null, loopWas: false, clicked: false }; }
+    if (dead()) return { loopSet: null, loopWas: false, clicked: false, aborted: true };
     sw.click();
+    // the click is the toggle the game will save; keep the ownership even if we are stopped now
+    HUNT_LOOPS.add(ch);
     await sleep(500);
+    if (dead()) return { loopSet: null, loopWas: false, clicked: true, aborted: true };
     const after = readSave();
     if (after?.adv?.loops?.includes(ch)) {
       log('info', 'hunt: chapter loop on', { ch });
       return { loopSet: ch, loopWas: false, clicked: true };
     }
+    HUNT_LOOPS.delete(ch);
     log('warn', 'hunt: the chapter loop did not turn on', { ch });
     return { loopSet: null, loopWas: false, clicked: true };
   }
@@ -2194,22 +2220,34 @@
    * Open chapter `ch` on the map screen and rebuild it from node 0.
    * The roamer placement is checked once more just before the click: the game
    * re-rolls it lazily when `until` passes, so a stale placement must not be hunted.
+   * `alive()` is the generation check: a stale chain never clicks or writes state.
    */
-  async function restartChapterViaMap(ch, id) {
-    if (!await gotoMapScreen()) return { ok: false, why: 'map', loopSet: null, loopWas: false };
-    let row = await openChapterRow(ch);
-    if (!row) { log('warn', 'hunt: chapter row not on the map', { ch }); return { ok: false, why: 'row', loopSet: null, loopWas: false }; }
-    const { clicked, ...loop } = await ensureChapterLoop(ch, row);
+  async function restartChapterViaMap(ch, id, alive = null) {
+    const dead = () => !!alive && !alive();
+    let loop = { loopSet: null, loopWas: false };
+    if (dead()) return { ok: false, why: 'aborted', ...loop };
+    if (!await gotoMapScreen(30, alive)) return { ok: false, why: dead() ? 'aborted' : 'map', ...loop };
+    if (dead()) return { ok: false, why: 'aborted', ...loop };
+    let row = await openChapterRow(ch, alive);
+    if (dead()) return { ok: false, why: 'aborted', ...loop };
+    if (!row) { log('warn', 'hunt: chapter row not on the map', { ch }); return { ok: false, why: 'row', ...loop }; }
+    const ensured = await ensureChapterLoop(ch, row, alive);
+    loop = { loopSet: ensured.loopSet, loopWas: ensured.loopWas };
+    if (dead()) return { ok: false, why: 'aborted', ...loop };
     // toggling the switch re-renders the map body, so every previously queried row is stale
-    if (clicked) row = await openChapterRow(ch);
+    if (ensured.clicked) row = await openChapterRow(ch, alive);
+    if (dead()) return { ok: false, why: 'aborted', ...loop };
     if (!row) { log('warn', 'hunt: chapter row lost after the loop toggle', { ch }); return { ok: false, why: 'row', ...loop }; }
+    if (dead()) return { ok: false, why: 'aborted', ...loop };
     row.click();
     let btn = null;
     for (let i = 0; i < 12 && !btn; i++) {
+      if (dead()) return { ok: false, why: 'aborted', ...loop };
       btn = document.querySelector(`.mp-restart[data-restart="${ch}"]`)
         || document.querySelector(`.mp-go[data-go="${ch}"]:not([disabled])`);
       if (!btn) await sleep(400);
     }
+    if (dead()) return { ok: false, why: 'aborted', ...loop };
     if (!btn) { log('warn', 'hunt: no restart button for the chapter', { ch }); return { ok: false, why: 'button', ...loop }; }
     const save = readSave();
     const at = save?.roam?.at?.[id];
@@ -2220,10 +2258,12 @@
     if (!save.adv) return { ok: false, why: 'map', ...loop };
     if (save.adv.event || save.adv.zone || save.adv.league || save.adv.tower) return { ok: false, why: 'event', ...loop };
     if (save.adv.battle) return { ok: false, why: 'battle', ...loop };
+    if (dead()) return { ok: false, why: 'aborted', ...loop };
     log('info', 'hunt: restarting chapter', { ch, id, button: btn.classList.contains('mp-restart') ? 'restart' : 'go' });
     btn.click();
     for (let i = 0; i < 12; i++) {
       await sleep(500);
+      if (dead()) return { ok: false, why: 'aborted', ...loop };
       const s = readSave();
       if (s?.adv?.chapter === ch && s.adv.node === 0) {
         state.waiting = null;
@@ -2246,6 +2286,7 @@
       this.loopOn = null;
       this.lastRuns = 0;
       this.lastNode = 0;
+      this.gen = 0;
       this.status = 'idle';
       this.last = '';
       this.working = false;
@@ -2253,32 +2294,54 @@
     }
     start(id, ch) {
       if (this.running) return;
+      const gen = ++this.gen;
       Object.assign(this, {
         id: +id, ch: +ch, running: true, attempts: 0, sawFight: false, graceAt: 0,
         loopOn: null, lastRuns: 0, lastNode: 0,
         status: 'restarting', last: 'starting', working: true
       });
+      const own = this.ch;
+      const save = readSave();
+      if (save?.adv) {
+        for (const old of [...HUNT_LOOPS]) {
+          if (old !== own && !save.adv.loops?.includes(old)) HUNT_LOOPS.delete(old);
+        }
+        // a loop this script set on this chapter survives the hunt that set it
+        if (save.adv.loops?.includes(own) && HUNT_LOOPS.has(own)) this.loopOn = own;
+      }
       log('info', 'hunt: started', { id: this.id, ch: this.ch });
       refreshUi();
       this.timer = setInterval(() => { this.poll().catch(e => logError('hunt: poll', e)); }, 700);
-      // restarting is what makes the game mark a roamer node in the chapter
-      this.restart(this.ch, true).finally(() => { this.working = false; });
+      // leftover loops from a previous hunt are drained before this hunt drives the map
+      const stale = [...HUNT_LOOPS].filter(old => old !== own);
+      this.drainOwned(stale, gen)
+        .then(stuck => this.restart(this.ch, true, gen).then(() => { if (stuck != null) this.warnLoopStuck(gen); }))
+        .catch(e => logError('hunt: start', e))
+        .finally(() => { if (gen === this.gen) this.working = false; });
     }
     stop(why = 'stopped', status = 'stopped') {
       if (!this.running) return;
+      const gen = ++this.gen;
       this.running = false;
+      this.working = false;
       if (this.timer) clearInterval(this.timer);
       this.timer = null;
       this.status = status;
       this.last = why;
-      const loop = this.loopOn;
+      const owned = new Set(HUNT_LOOPS);
+      if (this.loopOn != null) owned.add(this.loopOn);
       this.loopOn = null;
       log('info', 'hunt: stopped', { why, id: this.id, attempts: this.attempts });
       refreshUi();
-      if (loop != null) this.dropLoop(loop, true).catch(e => logError('hunt: loop cleanup', e));
+      if (owned.size) {
+        this.drainOwned([...owned], gen)
+          .then(stuck => { if (stuck != null) this.warnLoopStuck(gen); })
+          .catch(e => logError('hunt: loop cleanup', e));
+      }
     }
     async poll() {
       if (!this.running || this.working || state.busy) return;
+      const gen = this.gen;
       const save = readSave();
       if (!save?.adv) return;
       const now = Date.now();
@@ -2313,7 +2376,9 @@
           log('info', 'hunt: missed, restarting', { id: this.id, attempts: this.attempts });
           refreshUi();
           this.working = true;
-          this.restart(this.ch).finally(() => { this.working = false; });
+          this.restart(this.ch, false, gen)
+            .catch(e => logError('hunt: restart', e))
+            .finally(() => { if (gen === this.gen) this.working = false; });
           break;
         case 'retarget': {
           const old = this.loopOn;
@@ -2326,14 +2391,16 @@
           refreshUi();
           this.working = true;
           const go = old != null && old !== d.ch
-            ? this.dropLoop(old).then(() => this.restart(d.ch))
-            : this.restart(d.ch);
-          go.finally(() => { this.working = false; });
+            ? this.dropLoop(old, gen).then(ok => this.restart(d.ch, false, gen).then(() => { if (!ok) this.warnLoopStuck(gen); }))
+            : this.restart(d.ch, false, gen);
+          go.catch(e => logError('hunt: retarget', e)).finally(() => { if (gen === this.gen) this.working = false; });
           break;
         }
         case 'restart':
           this.working = true;
-          this.restart(this.ch).finally(() => { this.working = false; });
+          this.restart(this.ch, false, gen)
+            .catch(e => logError('hunt: restart', e))
+            .finally(() => { if (gen === this.gen) this.working = false; });
           break;
         default:
           if (d.why === 'stale-pass') {
@@ -2355,19 +2422,16 @@
       }
     }
     /** Rebuild the hunt's chapter; stop when the placement says the hunt is over. */
-    async restart(ch, first = false) {
-      if (!this.running) return;
+    async restart(ch, first = false, gen = this.gen) {
+      if (!this.running || gen !== this.gen) return;
       this.status = 'restarting';
       this.last = `restarting chapter ${ch}`;
       refreshUi();
-      const res = await restartChapterViaMap(ch, this.id);
-      if (!this.running) {
-        // stopped while the map was open: do not leave the loop we just turned on behind
-        if (res?.loopSet != null) this.dropLoop(res.loopSet, true).catch(e => logError('hunt: loop cleanup', e));
-        return;
-      }
-      // only claim a loop the toggle actually set and the save confirmed
+      const res = await restartChapterViaMap(ch, this.id, () => gen === this.gen);
+      if (gen !== this.gen) return;
+      // only claim a loop the toggle actually set and the save confirmed (or a leftover of this script)
       if (res.loopSet != null) this.loopOn = res.loopSet;
+      else if (res.loopWas && HUNT_LOOPS.has(ch)) this.loopOn = ch;
       if (res.ok) {
         this.sawFight = false;
         this.graceAt = 0;
@@ -2389,8 +2453,8 @@
         log('info', 'hunt: roamer moved, following', { id: this.id, ch: res.ch });
         refreshUi();
         const go = this.loopOn != null && this.loopOn !== res.ch
-          ? this.dropLoop(ch).then(() => this.restart(res.ch))
-          : this.restart(res.ch);
+          ? this.dropLoop(ch, gen).then(ok => this.restart(res.ch, false, gen).then(() => { if (!ok) this.warnLoopStuck(gen); }))
+          : this.restart(res.ch, false, gen);
         return go;
       }
       if (res.why === 'button' || res.why === 'row') {
@@ -2404,35 +2468,65 @@
       log('warn', 'hunt: restart failed, retrying', { ch, why: res.why });
       refreshUi();
     }
-    /** Turn the chapter's loop off, but only if it is still the loop this hunt turned on. */
-    async dropLoop(ch, onlyIfStopped = false) {
-      if (ch == null) return true;
-      if (this.loopOn === ch) this.loopOn = null;
+    /** Sequential, generation-guarded cleanup; resolves to the first chapter it could not turn off. */
+    async drainOwned(loops, gen) {
+      let stuck = null;
+      for (const ch of loops) {
+        if (gen !== this.gen) return null;
+        if (!await this.dropLoop(ch, gen)) {
+          if (gen !== this.gen) return null;
+          stuck = stuck == null ? ch : stuck;
+        }
+      }
+      return stuck;
+    }
+    warnLoopStuck(gen) {
+      if (gen !== this.gen) return;
+      this.last = 'loop still on — turn it off on the map';
+      refreshUi();
+    }
+    /** Turn a script-set chapter loop off; returns false when it stays on (or the chain is stale). */
+    async dropLoop(ch, gen) {
+      if (ch == null || gen !== this.gen) return false;
       const save = readSave();
-      if (!save?.adv?.loops?.includes(ch)) return true;
+      if (!save?.adv) return false;
+      if (!save.adv.loops?.includes(ch)) {
+        HUNT_LOOPS.delete(ch);
+        if (this.loopOn === ch) this.loopOn = null;
+        return true;
+      }
       for (let i = 0; i < 3; i++) {
-        // a new hunt started while the old cleanup was waiting: it owns the loop now
-        if (onlyIfStopped && this.running) return true;
-        if (!await gotoMapScreen()) break;
-        const row = await openChapterRow(ch);
-        const sw = row?.querySelector('.pg-loop[data-loop]');
+        if (gen !== this.gen) return false;
+        if (!await gotoMapScreen(30, () => gen === this.gen)) {
+          if (gen === this.gen) log('warn', 'hunt: map screen unavailable for loop cleanup', { ch });
+          return false;
+        }
+        if (gen !== this.gen) return false;
+        const row = await openChapterRow(ch, () => gen === this.gen);
+        if (gen !== this.gen) return false;
+        if (!row) { log('warn', 'hunt: chapter row unavailable for loop cleanup', { ch }); return false; }
+        const sw = row.querySelector('.pg-loop[data-loop]');
         if (!sw) break;
         const before = readSave();
-        if (!before?.adv?.loops?.includes(ch)) return true;
-        if (onlyIfStopped && this.running) return true;
+        if (!before?.adv) return false;
+        if (!before.adv.loops?.includes(ch)) {
+          HUNT_LOOPS.delete(ch);
+          if (this.loopOn === ch) this.loopOn = null;
+          return true;
+        }
+        if (gen !== this.gen) return false;
         sw.click();
+        if (this.loopOn === ch) this.loopOn = null;
         await sleep(500);
+        if (gen !== this.gen) return false;
         const after = readSave();
         if (!after?.adv?.loops?.includes(ch)) {
+          HUNT_LOOPS.delete(ch);
           log('info', 'hunt: chapter loop off', { ch });
           return true;
         }
       }
       log('warn', 'hunt: could not turn the hunt loop off', { ch });
-      if (!(onlyIfStopped && this.running)) {
-        this.last = 'loop still on — turn it off on the map';
-        refreshUi();
-      }
       return false;
     }
   }
