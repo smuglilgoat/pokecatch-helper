@@ -137,11 +137,17 @@ reaches the marked node, waits for the roamer fight and its single automatic cap
 starts over when the ball fails. **Stop** ends it. The loop lives in the page: keep the game tab
 open, and a reload ends the hunt.
 
+The hunt also turns on the chapter's own **loop** switch, so a pass that ends without reaching the
+roamer restarts itself instead of waiting for the panel. A loop restart does not check the roamer's
+placement, so the hunt re-checks it on every same-chapter rebuild and stops or follows the roamer
+when it moved. **Stop** turns that loop back off — unless you had already turned it on yourself; if
+it cannot be turned off, the status line says so and the switch stays on the map.
+
 Limits, from the game's own rules:
 
-- the placement is re-checked before every restart: when the 15-minute window closes, or the game
-  re-rolls the roamer to another chapter, the hunt stops or follows it instead of hunting a stale
-  chapter;
+- the placement is re-checked before every restart and on every loop rebuild: when the 15-minute
+  window closes, or the game re-rolls the roamer to another chapter, the hunt stops or follows it
+  instead of hunting a stale chapter;
 - each attempt has one capture roll at 4 % × the capture-berry buff. A **master ball in the bag**
   makes that roll 100 % and is consumed automatically — the hunt then stops on the capture;
 - the adventure must keep running: a paused adventure stays paused, and a wipe auto-restarts the
