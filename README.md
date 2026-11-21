@@ -27,7 +27,7 @@ labels.
 
 | Game screen | What the helper adds there |
 |---|---|
-| **Progress** | Run monitor: chapter, step and cap; data source and bundle; eligible count; league info; errors and the update notice; the chapter's events with the type chips; the **wipe watcher** with its log. |
+| **Progress** | Run monitor: chapter, step and cap; data source and bundle; eligible count; league info; errors and the update notice; the chapter's events with the type chips; the **wipe watcher** with its log; the **roamer hunt** (roaming legendaries out now, with a Hunt/Stop button). |
 | **Adventure** | Between the route timeline and the arena, the game's **team-template bar** (same markup, sprites and active state): one click fields that template, which the segment watcher then leaves alone until the next center. |
 | **Team/PC** | The **chapter optimizer** above the PC list: presets, **simulate** with the progress bar, the simulation result, the team with each mon's move and a `moves`/`api` button, **apply to team**, **prepare segments** (one team per stretch between Pokémon Centers, stored in the game's free team templates) and **free all templates** (let the planner reuse every template; the game has no delete, so the next prepare overwrites them). |
 | **Legendary team picker** (any legend zone) | The **legendary optimizer**: the boss with its HP and damage, the odds line, presets, **✨ Optimize (mine)**, the team and **apply to team**. |
@@ -122,6 +122,33 @@ watcher reads the game's own counters instead: `adv.deaths[chapter]` for a norma
 `adv.league.tries` for a league run and `adv.zone.tries` for an elite legend zone (the 2026-11
 update stopped counting league and elite wipes in `deaths`). Each record holds the step the team
 fell on, the foes, your team and the wipe mode (chapter / league / elite zone).
+
+## Roamer hunt
+
+The roaming legendaries (Raikou, Entei, Suicune, Latias, Latios, Cresselia, Tornadus, Thundurus)
+are not fixed to a route: the game keeps each one on a random chapter of its region for 15 minutes
+(30 with a rowap berry), then re-rolls it. Only while it is out and uncaught does the chapter's
+build mark one random outdoor wild with a roamer fight.
+
+The Progress screen lists the roamers currently out (`save.roam.at`) with their chapter and time
+left. Pick one and press **Hunt**: the script keeps checking the timer and placement, rebuilds the
+roamer's chapter with the game's own **Recommencer** / **Refaire le chapitre** button until the run
+reaches the marked node, waits for the roamer fight and its single automatic capture ball, and
+starts over when the ball fails. **Stop** ends it. The loop lives in the page: keep the game tab
+open, and a reload ends the hunt.
+
+Limits, from the game's own rules:
+
+- the placement is re-checked before every restart: when the 15-minute window closes, or the game
+  re-rolls the roamer to another chapter, the hunt stops or follows it instead of hunting a stale
+  chapter;
+- each attempt has one capture roll at 4 % × the capture-berry buff. A **master ball in the bag**
+  makes that roll 100 % and is consumed automatically — the hunt then stops on the capture;
+- the adventure must keep running: a paused adventure stays paused, and a wipe auto-restarts the
+  chapter by itself (the hunt just keeps waiting);
+- the hunt refuses to start during an event, a legendary zone, a league run or the Battle Tower (the
+  map does not offer a restart then), and stops if one starts mid-hunt;
+- one roamer at a time, no team optimization for its fight, and no re-roll of the placement itself.
 
 ## Where the data comes from
 

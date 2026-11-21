@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Poke'Catch Team Optimizer
 // @namespace    pokecatch-helper
-// @version      1.6.4
+// @version      1.6.5
 // @description  Reads the current chapter events, watches for team wipes (and where they happen), then builds an optimal team of 6 from the PC with Defense / Offense / Balanced presets.
 // @author       GrumpyOwl
 // @match        https://pokecatch-online.netlify.app/*
@@ -26,7 +26,7 @@
    * 0. Small helpers
    * ------------------------------------------------------------------ */
   const SAVE_KEY = 'gachamon-save-v1';
-  const VERSION = '1.6.4';
+  const VERSION = '1.6.5';
   const UPDATE_URL = 'https://raw.githubusercontent.com/smuglilgoat/pokecatch-helper/main/pokecatch-team-optimizer.user.js';
   const $ = (sel, root = document) => root.querySelector(sel);
   const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
@@ -2072,6 +2072,270 @@
   }
 
   /* ------------------------------------------------------------------ *
+   * 7b. Roamer hunt: restart the roaming legendary's chapter until caught
+   * ------------------------------------------------------------------ */
+  const HUNT_GRACE_MS = 4000;
+
+  /**
+   * Pure hunt state machine. `hunt` is {id, ch, sawFight, graceAt}; it is never mutated here.
+   * Acts: stop-caught | stop-gone | stop-timer | stop-event | retarget | restart | fight | resolve | wait
+   */
+  function huntDecision(save, hunt, now = Date.now()) {
+    const adv = save?.adv;
+    if (!adv || !hunt || hunt.id == null) return { act: 'wait', why: 'no save' };
+    const roam = save.roam || {};
+    const caught = Array.isArray(roam.caught) ? roam.caught : [];
+    if (caught.includes(hunt.id) || caught.includes(+hunt.id)) return { act: 'stop-caught' };
+    if (adv.event || adv.zone || adv.league || adv.tower) return { act: 'stop-event', why: 'event / zone / league / tower active' };
+    const battleRoam = adv.battle?.roam;
+    if (battleRoam != null && +battleRoam === +hunt.id) return { act: 'fight' };
+    // the one capture roll is written a moment after the battle flag clears
+    if (hunt.sawFight) {
+      if (!hunt.graceAt || now - hunt.graceAt < HUNT_GRACE_MS) return { act: 'wait', why: 'grace' };
+      return { act: 'resolve' };
+    }
+    if (adv.chapter !== hunt.ch) {
+      const at = roam.at?.[hunt.id];
+      if (!at) return { act: 'stop-gone' };
+      if (+at.until <= now) return { act: 'stop-timer' };
+      if (+at.ch !== hunt.ch) return { act: 'retarget', ch: +at.ch };
+      return { act: 'restart', ch: hunt.ch };
+    }
+    return { act: 'wait' };
+  }
+
+  /** The roamers currently out (`save.roam.at`); hunting-expired placements last. */
+  function roamList(save, now = Date.now()) {
+    const at = save?.roam?.at || {};
+    return Object.entries(at)
+      .map(([id, r]) => ({ id: +id, ch: +r.ch, until: +r.until }))
+      .filter(r => Number.isFinite(r.id) && Number.isFinite(r.ch) && Number.isFinite(r.until))
+      .sort((a, b) => (a.until > now ? 0 : 1) - (b.until > now ? 0 : 1) || a.id - b.id);
+  }
+
+  const mmss = ms => {
+    const s = Math.max(0, Math.floor(ms / 1000));
+    return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0');
+  };
+
+  /** Open the game's Progress (map) screen; never mid-battle, never while an optimizer drives the UI. */
+  async function gotoMapScreen(tries = 30) {
+    const ready = () => !!document.querySelector('#screen-map.active') && !!document.querySelector('#screen-map .map-body');
+    log('debug', 'hunt: opening the map screen');
+    for (let i = 0; i < tries; i++) {
+      if (ready()) { state.waiting = null; return true; }
+      if (state.busy) { await sleep(500); continue; }
+      const cont = [...document.querySelectorAll('button')].find(b => b.textContent.trim() === 'CONTINUE');
+      if (cont) { cont.click(); await sleep(500); continue; }
+      const save = readSave();
+      if (save?.adv?.battle) { state.waiting = 'hunt: waiting for the current battle to end…'; await sleep(1000); continue; }
+      const btn = document.querySelector('#side [data-screen="map"]') || document.querySelector('#chapter-btn');
+      if (btn) { btn.click(); await sleep(500); } else await sleep(300);
+    }
+    state.waiting = null;
+    const ok = ready();
+    log(ok ? 'debug' : 'warn', 'hunt: map screen ' + (ok ? 'open' : 'not reachable'));
+    return ok;
+  }
+
+  /** The map shows one region at a time: switch to the chapter's region so its row exists. */
+  async function openChapterRow(ch) {
+    const rowAt = () => document.querySelector(`.mp-row[data-ch="${ch}"]`);
+    let row = null;
+    for (let i = 0; i < 8 && !row; i++) {
+      row = rowAt();
+      if (!row) await sleep(300);
+    }
+    if (row) return row;
+    const reg = state.data ? (state.data.chapters?.[ch]?.reg || 'kanto') : null;
+    for (const key of reg ? [reg] : ['kanto', 'johto', 'hoenn', 'sinnoh', 'unova']) {
+      const rg = document.querySelector(`.rg.open[data-rg="${key}"]`);
+      if (!rg) continue;
+      log('debug', 'hunt: opening region on the map', { region: key });
+      rg.click();
+      await sleep(500);
+      row = rowAt();
+      if (row) return row;
+    }
+    return null;
+  }
+
+  /**
+   * Open chapter `ch` on the map screen and rebuild it from node 0.
+   * The roamer placement is checked once more just before the click: the game
+   * re-rolls it lazily when `until` passes, so a stale placement must not be hunted.
+   */
+  async function restartChapterViaMap(ch, id) {
+    if (!await gotoMapScreen()) return { ok: false, why: 'map' };
+    const row = await openChapterRow(ch);
+    if (!row) { log('warn', 'hunt: chapter row not on the map', { ch }); return { ok: false, why: 'row' }; }
+    row.click();
+    let btn = null;
+    for (let i = 0; i < 12 && !btn; i++) {
+      btn = document.querySelector(`.mp-restart[data-restart="${ch}"]`)
+        || document.querySelector(`.mp-go[data-go="${ch}"]:not([disabled])`);
+      if (!btn) await sleep(400);
+    }
+    if (!btn) { log('warn', 'hunt: no restart button for the chapter', { ch }); return { ok: false, why: 'button' }; }
+    const save = readSave();
+    const at = save?.roam?.at?.[id];
+    const now = Date.now();
+    if (!at) return { ok: false, why: 'gone' };
+    if (+at.until <= now) return { ok: false, why: 'timer' };
+    if (+at.ch !== ch) return { ok: false, why: 'moved', ch: +at.ch };
+    if (!save.adv) return { ok: false, why: 'map' };
+    if (save.adv.event || save.adv.zone || save.adv.league || save.adv.tower) return { ok: false, why: 'event' };
+    if (save.adv.battle) return { ok: false, why: 'battle' };
+    log('info', 'hunt: restarting chapter', { ch, id, button: btn.classList.contains('mp-restart') ? 'restart' : 'go' });
+    btn.click();
+    for (let i = 0; i < 12; i++) {
+      await sleep(500);
+      const s = readSave();
+      if (s?.adv?.chapter === ch && s.adv.node === 0) { state.waiting = null; return { ok: true, ch }; }
+    }
+    log('warn', 'hunt: the chapter did not restart', { ch });
+    return { ok: false, why: 'verify' };
+  }
+
+  /** 700 ms poll: decide, then drive the map screen. One hunt at a time, never persisted. */
+  class RoamerHunt {
+    constructor() {
+      this.id = null;
+      this.ch = null;
+      this.running = false;
+      this.attempts = 0;
+      this.sawFight = false;
+      this.graceAt = 0;
+      this.status = 'idle';
+      this.last = '';
+      this.working = false;
+      this.timer = null;
+    }
+    start(id, ch) {
+      if (this.running) return;
+      Object.assign(this, {
+        id: +id, ch: +ch, running: true, attempts: 0, sawFight: false, graceAt: 0,
+        status: 'restarting', last: 'starting', working: true
+      });
+      log('info', 'hunt: started', { id: this.id, ch: this.ch });
+      refreshUi();
+      this.timer = setInterval(() => { this.poll().catch(e => logError('hunt: poll', e)); }, 700);
+      // restarting is what makes the game mark a roamer node in the chapter
+      this.restart(this.ch, true).finally(() => { this.working = false; });
+    }
+    stop(why = 'stopped', status = 'stopped') {
+      if (!this.running) return;
+      this.running = false;
+      if (this.timer) clearInterval(this.timer);
+      this.timer = null;
+      this.status = status;
+      this.last = why;
+      log('info', 'hunt: stopped', { why, id: this.id, attempts: this.attempts });
+      refreshUi();
+    }
+    async poll() {
+      if (!this.running || this.working || state.busy) return;
+      const save = readSave();
+      if (!save?.adv) return;
+      const now = Date.now();
+      const active = save.adv.battle?.roam != null && +save.adv.battle.roam === this.id;
+      if (this.sawFight && !active && !this.graceAt) this.graceAt = now;
+      const d = huntDecision(save, this, now);
+      switch (d.act) {
+        case 'stop-caught':
+          this.stop('caught!', 'caught'); return;
+        case 'stop-gone':
+          this.stop('the roamer is no longer out'); return;
+        case 'stop-timer':
+          this.stop('the placement timer is over'); return;
+        case 'stop-event':
+          this.stop('event / legend zone / league / tower active'); return;
+        case 'fight':
+          if (!this.sawFight) {
+            this.sawFight = true;
+            this.graceAt = 0;
+            this.status = 'fighting';
+            this.last = 'roamer fight';
+            log('info', 'hunt: roamer fight started', { id: this.id });
+            refreshUi();
+          }
+          return;
+        case 'resolve':
+          this.attempts++;
+          this.sawFight = false;
+          this.graceAt = 0;
+          this.status = 'missed';
+          this.last = `missed (attempt ${this.attempts})`;
+          log('info', 'hunt: missed, restarting', { id: this.id, attempts: this.attempts });
+          refreshUi();
+          this.working = true;
+          this.restart(this.ch).finally(() => { this.working = false; });
+          return;
+        case 'retarget':
+          this.ch = d.ch;
+          this.sawFight = false;
+          this.graceAt = 0;
+          this.status = 'retarget';
+          this.last = `roamer moved to chapter ${d.ch}`;
+          log('info', 'hunt: roamer moved, following', { id: this.id, ch: d.ch });
+          refreshUi();
+          this.working = true;
+          this.restart(d.ch).finally(() => { this.working = false; });
+          return;
+        case 'restart':
+          this.working = true;
+          this.restart(this.ch).finally(() => { this.working = false; });
+          return;
+        default:
+          if (this.status !== 'waiting') {
+            this.status = 'waiting';
+            this.last = 'waiting for the roamer encounter';
+            log('info', 'hunt: waiting for the roamer encounter', { id: this.id, ch: this.ch });
+            refreshUi();
+          }
+      }
+    }
+    /** Rebuild the hunt's chapter; stop when the placement says the hunt is over. */
+    async restart(ch, first = false) {
+      if (!this.running) return;
+      this.status = 'restarting';
+      this.last = `restarting chapter ${ch}`;
+      refreshUi();
+      const res = await restartChapterViaMap(ch, this.id);
+      if (!this.running) return;
+      if (res.ok) {
+        this.sawFight = false;
+        this.graceAt = 0;
+        this.status = 'waiting';
+        this.last = `chapter ${ch} restarted`;
+        refreshUi();
+        return;
+      }
+      if (res.why === 'timer') { this.stop('the placement timer is over'); return; }
+      if (res.why === 'gone') { this.stop('the roamer is no longer out'); return; }
+      if (res.why === 'event') { this.stop('event / legend zone / league / tower active'); return; }
+      if (res.why === 'moved' && res.ch != null && res.ch !== ch) {
+        this.ch = res.ch;
+        this.status = 'retarget';
+        this.last = `roamer moved to chapter ${res.ch}`;
+        log('info', 'hunt: roamer moved, following', { id: this.id, ch: res.ch });
+        refreshUi();
+        return this.restart(res.ch);
+      }
+      if (res.why === 'button' || res.why === 'row') {
+        this.stop('chapter not reachable on the map');
+        return;
+      }
+      // transient (map/battle/verify): force the next poll down the restart path again
+      this.ch = null;
+      this.status = 'waiting';
+      this.last = first ? 'restart failed; retrying' : 'waiting to retry the restart';
+      log('warn', 'hunt: restart failed, retrying', { ch, why: res.why });
+      refreshUi();
+    }
+  }
+
+  /* ------------------------------------------------------------------ *
    * 8. Team editing (drag & drop, the way the game does it)
    * ------------------------------------------------------------------ */
   /** Open the Team/PC screen (resuming the game first, and waiting out a running battle). */
@@ -2468,7 +2732,8 @@
     apiCache: {}, info: {}, legends: null, legBoss: null, legTier: 0, legTeam: null, waiting: null,
     evtOdds: null, loading: null,
     league: false, leagueInfo: null, legOdds: null,
-    segments: null, segOn: null, reuseAll: false, switching: false, selfClick: false, manual: null
+    segments: null, segOn: null, reuseAll: false, switching: false, selfClick: false, manual: null,
+    hunt: null, huntSel: null
   };
 
   const TYPE_COLORS = {
@@ -2871,6 +3136,39 @@
   const updateLine = () => state.update
     ? `<div class="pcopt-err">update ${esc(state.update.repo)} is on GitHub (installed ${esc(state.update.installed)}) — Tampermonkey → Check for updates</div>` : '';
 
+  function startRoamerHunt(value) {
+    if (!state.hunt) state.hunt = new RoamerHunt();
+    const save = readSave();
+    const id = value == null || value === '' ? null : +value;
+    const at = id != null ? save?.roam?.at?.[id] : null;
+    let why = null;
+    if (!save?.adv) why = 'no save';
+    else if (!at) why = 'no roamer out';
+    else if (+at.until <= Date.now()) why = 'the placement timer is over, wait for the game to re-roll it';
+    else if (save.adv.event || save.adv.zone || save.adv.league || save.adv.tower) why = 'event / legend zone / league / tower run active';
+    if (why) {
+      state.hunt.last = 'not started: ' + why;
+      log('warn', 'hunt: not started', { why, id });
+      refreshUi();
+      return;
+    }
+    state.huntSel = id;
+    state.hunt.start(id, +at.ch);
+  }
+
+  /** Keep the roam dropdown's countdown fresh without rebuilding the whole block every tick. */
+  function refreshHuntSelect(el, save, now) {
+    const sel = el?.querySelector('[data-act="roamer"]');
+    if (!sel || sel === document.activeElement) return;
+    const roam = roamList(save, now);
+    const options = roam.length
+      ? roam.map(r => `<option value="${r.id}">${esc(displayName(r.id))} · ch ${r.ch} ${esc(state.data?.chapters?.[r.ch]?.name || '')} · ${mmss(r.until - now)}${save?.roam?.at?.[r.id]?.x2 ? ' ×2' : ''}</option>`).join('')
+      : '<option value="">no roamer out right now</option>';
+    if (sel.dataset.sig !== options) { sel.dataset.sig = options; sel.innerHTML = options; }
+    const pick = state.huntSel;
+    sel.value = roam.some(r => r.id === pick) ? String(pick) : (roam[0] ? String(roam[0].id) : '');
+  }
+
   /** The Progress screen: what the game is doing right now, the wipes, the data status. */
   function mountMonitor() {
     const body = document.querySelector('#screen-map .map-body');
@@ -2880,6 +3178,15 @@
     const node = adv?.nodes?.[adv.node];
     const fails = state.watcher?.fails || [];
     const last = fails[0];
+    const now = Date.now();
+    const roam = roamList(save, now);
+    const hunt = state.hunt;
+    const huntOptions = roam.length
+      ? roam.map(r => `<option value="${r.id}"${r.id === state.huntSel ? ' selected' : ''}>${esc(displayName(r.id))} · ch ${r.ch} ${esc(state.data?.chapters?.[r.ch]?.name || '')} · ${mmss(r.until - now)}${save?.roam?.at?.[r.id]?.x2 ? ' ×2' : ''}</option>`).join('')
+      : '<option value="">no roamer out right now</option>';
+    const huntLine = hunt?.running
+      ? `${esc(hunt.status)} · attempt ${hunt.attempts}${hunt.last ? ' · ' + esc(hunt.last) : ''}`
+      : esc(hunt?.last || 'pick a roamer, then Hunt');
     const html = `
       <div class="pcopt-title"><span>Run monitor <small>v${VERSION}</small></span>
         <span class="pcopt-mut">${esc(state.events?.name || '')} · step ${adv?.node ?? '-'} / ${(adv?.nodes || []).length}</span></div>
@@ -2898,16 +3205,35 @@
         <button class="btn small ghost" data-act="watch">${state.watcher.running ? '● watching' : 'watch for wipes'}</button>
         <button class="btn small ghost" data-act="clear">clear log</button>
       </div>
+      <div class="pcopt-title" style="margin-top:10px"><span>Roamer hunt</span>
+        <span class="pcopt-mut">${hunt?.running ? esc(hunt.status) : ''}</span></div>
+      <div class="pcopt-row">
+        <select data-act="roamer" aria-label="Roaming legendary" ${roam.length ? '' : 'disabled'}>${huntOptions}</select>
+        <button class="btn small ${hunt?.running ? '' : 'ghost'}" data-act="hunt">${hunt?.running ? 'Stop' : 'Hunt'}</button>
+      </div>
+      <div class="pcopt-mut">${huntLine}${adv?.paused ? ' · adventure paused' : ''}</div>
       <div class="pcopt-log">${renderFails()}</div>`;
     const sig = JSON.stringify([adv?.chapter, adv?.node, node?.name, state.enemies?.length, fails.length, state.watcher.running,
-      state.eligible, state.chartSource, state.errors, state.update?.repo, state.leagueInfo, state.waiting]);
-    mountBlock(body, 'monitor', sig, html, el => {
+      state.eligible, state.chartSource, state.errors, state.update?.repo, state.leagueInfo, state.waiting, adv?.paused,
+      hunt?.running, hunt?.id, hunt?.ch, hunt?.attempts, hunt?.status, hunt?.last, state.huntSel,
+      roam.map(r => r.id + ':' + r.ch).join(',')]);
+    const el = mountBlock(body, 'monitor', sig, html, el => {
       el.querySelector('[data-act="watch"]').onclick = () => {
         if (state.watcher.running) state.watcher.stop(); else state.watcher.start();
         refreshUi();
       };
       el.querySelector('[data-act="clear"]').onclick = () => { state.watcher.clear(); refreshUi(); };
+      const sel = el.querySelector('[data-act="roamer"]');
+      if (sel) sel.onchange = () => {
+        state.huntSel = sel.value === '' ? null : +sel.value;
+        refreshUi();
+      };
+      el.querySelector('[data-act="hunt"]').onclick = () => {
+        if (state.hunt?.running) { state.hunt.stop('stopped by hand'); return; }
+        startRoamerHunt(sel ? sel.value : null);
+      };
     }, { prepend: true });
+    refreshHuntSelect(el, save, now);
   }
 
   /** The Adventure screen: the game's own team-template bar, between the route timeline and the arena.
@@ -3424,6 +3750,7 @@
         runOptimizer();
       }
     });
+    state.hunt = new RoamerHunt();
     refreshUi();
     ensureData().then(() => {
       refreshUi();
@@ -3455,6 +3782,6 @@
     legendFightOnce, legendOdds, logs,
     projectCandidates, evolvedBranches, refreshChapter,
     chapterPlan, segmentPlans, prepareSegments, switchSegment, freeTemplates, switchTemplate, simulateChapter, searchChapterTeam, rollBattleFoes, simBattle, simAct, simOhko, simGeneric, autoScore, ensureEnglish,
-    raidDps, raidBoss, annotateRaidSuggestions
+    raidDps, raidBoss, annotateRaidSuggestions, huntDecision, roamList
   };
 })();
