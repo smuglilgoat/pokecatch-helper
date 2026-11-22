@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Poke'Catch Team Optimizer
 // @namespace    pokecatch-helper
-// @version      1.6.6
+// @version      1.6.7
 // @description  Reads the current chapter events, watches for team wipes (and where they happen), then builds an optimal team of 6 from the PC with Defense / Offense / Balanced presets.
 // @author       GrumpyOwl
 // @match        https://pokecatch-online.netlify.app/*
@@ -26,7 +26,7 @@
    * 0. Small helpers
    * ------------------------------------------------------------------ */
   const SAVE_KEY = 'gachamon-save-v1';
-  const VERSION = '1.6.6';
+  const VERSION = '1.6.7';
   const UPDATE_URL = 'https://raw.githubusercontent.com/smuglilgoat/pokecatch-helper/main/pokecatch-team-optimizer.user.js';
   const $ = (sel, root = document) => root.querySelector(sel);
   const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
@@ -2077,6 +2077,48 @@
   const HUNT_GRACE_MS = 4000;
   /** Chapters whose loop switch this script turned on (in-memory; the save itself holds the loop). */
   const HUNT_LOOPS = new Set();
+  const HUNT_RESTART_WINDOW_MS = 12000;      // 8-16 s window, re-drawn at every gate
+  const HUNT_RESTARTS_PER_HOUR = 120;
+  const HUNT_REST_MS = 10 * 60 * 1000;
+
+  /**
+   * Server-polite restart pacing: one restart per 8-16 s and at most 120 per rolling hour.
+   * `canRestart` consumes a slot when it answers yes, so two immediate checks answer yes then no.
+   * `restUntil` pauses only the restart acts; the poll and the UI keep running.
+   */
+  const huntPacing = {
+    lastRestartAt: 0,
+    restarts: [],
+    restUntil: 0,
+    canRestart(now = Date.now()) {
+      if (this.restUntil) {
+        if (now < this.restUntil) return { ok: false, why: 'rest', until: this.restUntil };
+        // the 10-minute break is over: start a fresh window so the hunt actually resumes
+        this.restUntil = 0;
+        this.restarts = [];
+      }
+      this.restarts = this.restarts.filter(t => now - t < 3600000);
+      if (this.restarts.length >= HUNT_RESTARTS_PER_HOUR) {
+        this.restUntil = now + HUNT_REST_MS;
+        return { ok: false, why: 'rest', until: this.restUntil };
+      }
+      const gap = HUNT_RESTART_WINDOW_MS + (Math.random() * 8000 - 4000);
+      const since = now - this.lastRestartAt;
+      if (since < gap) return { ok: false, why: 'gap', waitMs: Math.ceil(gap - since) };
+      this.lastRestartAt = now;
+      this.restarts.push(now);
+      return { ok: true, gap };
+    },
+    state(now = Date.now()) {
+      this.restarts = this.restarts.filter(t => now - t < 3600000);
+      return {
+        lastRestartAt: this.lastRestartAt,
+        restartsLastHour: this.restarts.length,
+        resting: this.restUntil > now,
+        restUntil: this.restUntil > now ? this.restUntil : 0,
+      };
+    },
+  };
 
   /** Pure placement re-check: gone | stop-timer | retarget | ok. Used at every restart and stale pass. */
   function huntPlacement(save, hunt, now = Date.now()) {
@@ -2367,7 +2409,9 @@
             refreshUi();
           }
           break;
-        case 'resolve':
+        case 'resolve': {
+          const pace = huntPacing.canRestart(now);
+          if (!pace.ok) { this.paced(pace); break; }
           this.attempts++;
           this.sawFight = false;
           this.graceAt = 0;
@@ -2376,11 +2420,14 @@
           log('info', 'hunt: missed, restarting', { id: this.id, attempts: this.attempts });
           refreshUi();
           this.working = true;
-          this.restart(this.ch, false, gen)
+          this.restart(this.ch, false, gen, true)
             .catch(e => logError('hunt: restart', e))
             .finally(() => { if (gen === this.gen) this.working = false; });
           break;
+        }
         case 'retarget': {
+          const pace = huntPacing.canRestart(now);
+          if (!pace.ok) { this.paced(pace); break; }
           const old = this.loopOn;
           this.ch = d.ch;
           this.sawFight = false;
@@ -2391,23 +2438,28 @@
           refreshUi();
           this.working = true;
           const go = old != null && old !== d.ch
-            ? this.dropLoop(old, gen).then(ok => this.restart(d.ch, false, gen).then(() => { if (!ok) this.warnLoopStuck(gen); }))
-            : this.restart(d.ch, false, gen);
+            ? this.dropLoop(old, gen).then(ok => this.restart(d.ch, false, gen, true).then(() => { if (!ok) this.warnLoopStuck(gen); }))
+            : this.restart(d.ch, false, gen, true);
           go.catch(e => logError('hunt: retarget', e)).finally(() => { if (gen === this.gen) this.working = false; });
           break;
         }
-        case 'restart':
+        case 'restart': {
+          const pace = huntPacing.canRestart(now);
+          if (!pace.ok) { this.paced(pace); break; }
           this.working = true;
-          this.restart(this.ch, false, gen)
+          this.restart(this.ch, false, gen, true)
             .catch(e => logError('hunt: restart', e))
             .finally(() => { if (gen === this.gen) this.working = false; });
           break;
+        }
         default:
           if (d.why === 'stale-pass') {
             this.status = 'waiting';
             this.last = 'pass restarted; roamer still there';
             log('info', 'hunt: pass restarted, roamer still on the chapter', { id: this.id, ch: this.ch });
             refreshUi();
+          } else if (huntPacing.state(now).resting) {
+            this.paced({ why: 'rest' });
           } else if (this.status !== 'waiting') {
             this.status = 'waiting';
             this.last = 'waiting for the roamer encounter';
@@ -2421,9 +2473,24 @@
         this.lastNode = save.adv.node ?? 0;
       }
     }
+    /** Show a server-pacing pause without touching the hunt state machine. */
+    paced(pace) {
+      const resting = pace.why === 'rest';
+      const status = resting ? 'resting (server pacing)' : 'waiting';
+      const last = resting ? 'auto-resume after 10 min' : 'waiting for the server pacing window';
+      if (this.status === status && this.last === last) return;
+      this.status = status;
+      this.last = last;
+      log('info', resting ? 'hunt: resting (server pacing)' : 'hunt: waiting for the server pacing window', { id: this.id });
+      refreshUi();
+    }
     /** Rebuild the hunt's chapter; stop when the placement says the hunt is over. */
-    async restart(ch, first = false, gen = this.gen) {
+    async restart(ch, first = false, gen = this.gen, paced = false) {
       if (!this.running || gen !== this.gen) return;
+      if (!paced) {
+        const pace = huntPacing.canRestart();
+        if (!pace.ok) { this.paced(pace); return; }
+      }
       this.status = 'restarting';
       this.last = `restarting chapter ${ch}`;
       refreshUi();
@@ -2962,15 +3029,27 @@
       return url;
     };
     try {
-      // the page may already carry the pack, else the boot manifest lists every language bundle
+      // the page may already carry the pack, else a cached URL, else the boot manifest lists every language bundle
       const onPage = document.querySelector('script[src*="lang-en"]')?.src;
       if (onPage) await load(onPage);
       else {
-        const base = bundleUrl() || location.href;
-        const boot = await httpGet(new URL('/boot.js', base).href);
-        const m = boot.match(/bundle\/(lang-en\.[0-9a-z]+\.js)/);
-        if (!m) { log('warn', 'names: no English pack in the boot manifest'); return false; }
-        await load(new URL('/bundle/' + m[1], base).href);
+        const bundle = bundleUrl();
+        const base = bundle || location.href;
+        const cacheKey = 'enPack:' + bundle;
+        let loaded = false;
+        const cached = store.get(cacheKey, null);
+        if (cached) {
+          try { await load(cached); loaded = !!englishData(); } catch { loaded = false; }
+          if (!loaded) store.set(cacheKey, null);
+        }
+        if (!loaded) {
+          const boot = await httpGet(new URL('/boot.js', base).href);
+          const m = boot.match(/bundle\/(lang-en\.[0-9a-z]+\.js)/);
+          if (!m) { log('warn', 'names: no English pack in the boot manifest'); return false; }
+          const url = new URL('/bundle/' + m[1], base).href;
+          await load(url);
+          store.set(cacheKey, url);
+        }
       }
       log('info', 'names: English pack loaded');
     } catch (e) { logError('names: English pack', e); }
@@ -3219,6 +3298,10 @@
     return Math.max(0, Math.min(idx, state.segments.list.length - 1));
   }
 
+  /** Auto-switch is a background click: keep at least this long between template clicks. */
+  const SEGMENT_CLICK_GAP_MS = 5000;
+  let lastSegmentClickAt = 0;
+
   /** Switch to the prepared template of the segment the run is in (never mid-battle). */
   async function switchSegment() {
     if (state.switching) return;
@@ -3233,6 +3316,8 @@
     if (save.teamSets?.on === target.slot) { state.segOn = idx; return; }
     const btn = document.querySelector(`#team-sets button[data-set="${target.slot}"]`);
     if (!btn) return;
+    if (Date.now() - lastSegmentClickAt < SEGMENT_CLICK_GAP_MS) return;
+    lastSegmentClickAt = Date.now();
     state.switching = true;
     try {
       state.selfClick = true;
@@ -3978,6 +4063,6 @@
     legendFightOnce, legendOdds, logs,
     projectCandidates, evolvedBranches, refreshChapter,
     chapterPlan, segmentPlans, prepareSegments, switchSegment, freeTemplates, switchTemplate, simulateChapter, searchChapterTeam, rollBattleFoes, simBattle, simAct, simOhko, simGeneric, autoScore, ensureEnglish,
-    raidDps, raidBoss, annotateRaidSuggestions, huntDecision, huntPlacement, roamList
+    raidDps, raidBoss, annotateRaidSuggestions, huntDecision, huntPlacement, roamList, huntPacing
   };
 })();
