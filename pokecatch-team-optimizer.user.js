@@ -2868,9 +2868,9 @@
       card.style.position = 'relative';
       card.prepend(tag);
     });
-    // the ally modal rows
+    // the ally modal rows: total-DPS badge on the ally's avatar, never inside the row flow
     document.querySelectorAll('.modal-root.open .raid-pick').forEach(row => {
-      if (row.querySelector('.pcopt-atk')) return;
+      if (row.dataset.pcoptDps) return;
       const mons = [...row.querySelectorAll('.rt-mon')].map(m => {
         const img = m.querySelector('img[data-id]');
         const lvTxt = m.querySelector('.rt-lv')?.textContent || '100';
@@ -2880,12 +2880,14 @@
       }).filter(Boolean);
       if (!mons.length) return;
       const dps = mons.reduce((a, m) => a + raidDps(m, boss), 0);
+      row.dataset.pcoptDps = String(Math.round(dps));
       const tag = document.createElement('span');
       tag.className = 'pcopt-atk';
       tag.textContent = 'atk ' + (dps >= 1000 ? (dps / 1000).toFixed(1) + 'k' : Math.round(dps));
-      tag.style.cssText = 'font-size:11px;padding:2px 6px;border-radius:5px;background:color-mix(in srgb,var(--c) 72%,#000c);color:#fff;margin-right:4px';
-      row.prepend(tag);
-      row.dataset.pcoptDps = String(Math.round(dps));
+      tag.style.cssText = 'position:absolute;right:-3px;bottom:-3px;font-size:10px;padding:1px 4px;border-radius:4px;background:color-mix(in srgb,var(--c) 72%,#000c);color:#fff;z-index:2;pointer-events:none';
+      const port = row.querySelector('.ra-port') || row;
+      port.style.position = 'relative';
+      port.appendChild(tag);
     });
   }
   /** The two survival-weighted raid picks: provisional by raw DPS, then dps × min(alive rounds, R).
@@ -3083,14 +3085,15 @@
     const rc = raidContext();
     if (rc) {
       state.raidBoss = raidBoss(rc);
-      mountRaidBox(head, rc);
+      mountRaidBox(rc);
       annotateRaidSuggestions();
+      markRecommended();
       return;
     }
     const ctx = pickerContext();
-    if (ctx) { mountLegendBox(head, ctx); return; }
+    if (ctx) { mountLegendBox(ctx); markRecommended(); return; }
     const ug = undergroundContext();
-    if (ug) mountUndergroundBox(head, ug);
+    if (ug) { mountUndergroundBox(ug); markRecommended(); }
   }
 
 
@@ -3106,7 +3109,7 @@
     apiCache: {}, info: {}, legends: null, legBoss: null, legTier: 0, legTeam: null, waiting: null,
     evtOdds: null, loading: null,
     league: false, leagueInfo: null, legOdds: null,
-    segments: null, segOn: null, reuseAll: false, switching: false, selfClick: false, manual: null,
+    segments: null, segOn: null, switching: false, selfClick: false, manual: null,
     hunt: null, huntSel: null
   };
 
@@ -3213,18 +3216,26 @@
 
 
 
+  /** The boss line of the open picker. Memoized per (zone, tier, save): the picker's
+   *  mutation observer calls this on every DOM change, and the projection is not cheap. */
+  let legendInfoCache = { key: '', html: '' };
   function legendInfo() {
     const zone = legendZone();
     if (!zone || !state.engine) return '';
+    const key = zone.id + '|' + state.legTier + '|' + (lastRaw || '');
+    if (legendInfoCache.key === key) return legendInfoCache.html;
+    const started = Date.now();
     const save = readSave();
-    const cands = save ? projectCandidates(state.engine, state.data, save, state.events?.cap ?? 100) : [];
+    const cands = save ? projectCandidates(state.engine, state.data, save, state.events?.cap ?? 100, { anyRegion: true }) : [];
     const boss = legendBoss(zone, state.legTier, cands, state.engine, state.data);
     if (!boss) return '';
     const dmg = cands.length ? Math.round(cands.reduce((a, c) => a + boss.damageTo(c.proj), 0) / cands.length) : 0;
-    const mv = state.engine.bestMove(boss.mon, cands[0]?.proj.types || boss.types);
-    return `${esc(displayName(zone.id))} · ${boss.types.join('/')} · ${Math.round(boss.hp).toLocaleString('en-US')} HP · ~${dmg} dmg/round`
+    const html = `${esc(displayName(zone.id))} · ${boss.types.join('/')} · ${Math.round(boss.hp).toLocaleString('en-US')} HP · ~${dmg} dmg/round`
       + (zone.burst ? ` · ${esc(displayMove(zone.burst))}` : '')
       + (state.legTier ? ` · elite ${state.legTier}` : '');
+    legendInfoCache = { key, html };
+    log('debug', 'legend info: computed', { ms: Date.now() - started, pool: cands.length });
+    return html;
   }
 
   const fmtTime = ms => {
@@ -3236,24 +3247,29 @@
     return (Math.round(m / 60 * 10) / 10) + ' h';
   };
 
-  /** Victory chance, run time and the odds to catch the boss. */
+  /** Victory chance, run time and the odds to catch the boss (only for the open zone/tier). */
   function legendOddsLine() {
-    return oddsText(state.legOdds);
+    const o = state.legOdds;
+    if (!o) return '';
+    if (o.key && o.key !== state.legBoss + ':' + state.legTier) return '';
+    return oddsText(o);
   }
 
-  function renderLegendTeam() {
-    const cap = state.events?.cap ?? state.data?.cfg?.MAX_LEVEL ?? 100;
-    if (!state.legTeam) return '<div class="pcopt-mut">pick a boss and run the optimizer</div>';
-    if (!state.legTeam.length) return '<div class="pcopt-mut">no candidate</div>';
-    return state.legTeam.map((s, i) => {
-      const sp = s.species;
-      const lv = s.mon.level < s.proj.level ? `Lv${s.mon.level} → ${s.proj.level}` : `Lv${s.mon.level}`;
-      const endForm = endFormAtCap(s.mon, cap);
-      return `<div class="pcopt-mon"><div>${i + 1}. <b>${esc(displayName(sp.id))}</b> <span class="pcopt-mut">${lv}${s.proj.shiny ? ' ✨' : ''}</span>`
-        + `<div class="pcopt-row">${sp.types.map(typeBadge).join('')}</div>`
-        + `<div class="pcopt-mut">${s.hp} HP${s.proj.shiny ? ' · +10% stats' : ''}</div></div></div>`;
+  function renderLegendTeam(team = state.legTeam) {
+    if (!team) return '<div class="pcopt-mut">run the optimizer to get a team</div>';
+    if (!team.length) return '<div class="pcopt-mut">no level-100 candidate</div>';
+    const zone = legendZone();
+    const boss = zone && state.engine ? legendBoss(zone, state.legTier, team, state.engine, state.data) : null;
+    return team.map(s => {
+      const p = boss ? legendParts(s, boss, state.legTier, state.engine, state.data) : null;
+      return `<div class="pcopt-mon">${sprOf(s.species.id)}<div style="flex:1"><b>${esc(displayName(s.species.id))}</b>${s.proj.shiny ? ' ✨' : ''} <span class="pcopt-mut">Nv. ${s.proj.level}</span></div>`
+        + `${pcoptBadge('atk', p?.dps)}${pcoptBadge('def', p?.alive)}</div>`;
     }).join('');
   }
+
+  /** The picker's community host: "Les plus choisis" sits on the side only for 2-slot pickers. */
+  const pickerHost = size => (size <= 2 ? document.querySelector('#evt-pop-side') : document.querySelector('#evt-pop'))
+    || document.querySelector('#evt-pick-head');
 
   /** The Defense / Offense / Balanced switch (same preset for both optimizers). */
   const presetSeg = () => `<div class="seg" data-presets>
@@ -3261,20 +3277,33 @@
     <button data-preset="offense" class="${state.preset === 'offense' ? 'on' : ''}">Offense</button>
     <button data-preset="balanced" class="${state.preset === 'balanced' ? 'on' : ''}">Balanced</button></div>`;
 
+  /** The game's sprite box, so the rows read as native (assets/pokemon/{id}.png). */
+  const sprOf = (id, h = 36) => `<div class="sprbox" style="height:${h}px;width:${h}px;flex:0 0 auto"><img src="assets/pokemon/${id}.png" alt="" data-id="${id}" style="width:100%;height:100%;object-fit:contain"></div>`;
+  const teamSprites = (uids, save) => (uids || []).slice(0, 6).map(uid => {
+    const m = monByUid(save, uid);
+    return m ? sprOf(m.id, 34) : '<div class="sprbox" style="height:34px;width:34px"></div>';
+  }).join('');
+  const pcoptBadge = (label, v) => `<span class="pcopt-badge">${label} ${Math.round(v || 0)}</span>`;
+
+  /** The prepared segment templates as icon rows; a click switches to that template. */
+  function segmentRows() {
+    if (!state.segments?.list?.length) return '';
+    const save = readSave();
+    return `<div class="pcopt-segs">${state.segments.list.map(seg => `
+      <button type="button" class="pcopt-segrow" data-seg="${seg.slot}" title="switch to Template ${seg.slot + 1}">
+        <b>T${seg.slot + 1}</b>${teamSprites(seg.team, save)}
+        <span class="pcopt-mut">${seg.res ? Math.round(seg.res.rate * 100) + '%' : '—'} · ${seg.battles} fights</span>
+      </button>`).join('')}</div>`;
+  }
+
   function renderTeam() {
-    const cap = state.events?.cap ?? state.data?.cfg?.MAX_LEVEL ?? 100;
     if (!state.team) return '<div class="pcopt-mut">run the optimizer to get a team</div>';
     if (!state.team.length) return '<div class="pcopt-mut">no candidate</div>';
     return state.team.map((s, i) => {
       const sp = s.species;
-      const lv = s.mon.level < s.proj.level ? `Lv${s.mon.level} → ${s.proj.level}` : `Lv${s.mon.level}`;
-      const endForm = endFormAtCap(s.mon, cap);
-      return `<div class="pcopt-mon"><div>${i + 1}. <b>${esc(displayName(sp.id))}</b>${endForm && endForm !== sp.id ? ' → <b>' + esc(displayName(endForm)) + '</b>' : ''} <span class="pcopt-mut">${lv}${s.mon.shiny ? ' ✨' : ''}</span>`
-        + `<div class="pcopt-row">${sp.types.map(typeBadge).join('')}</div>`
-        + `<div class="pcopt-mut">${esc(s.bestMoveKey ? displayMove(s.bestMoveKey) : (s.bestMoveName || '—'))} · ${Math.round(s.avgDmg)} dmg · ${Math.round(s.avgRounds)} rounds${s.proj.shiny ? ' · +10% stats' : ''}</div>`
-        + (s.hpCur != null && s.hpCur < s.hp ? `<div class="pcopt-mut">HP ${s.hpCur}/${s.hp}</div>` : '')
-        + `<div class="pcopt-mut" data-info="${s.mon.uid}">${state.info[s.mon.uid] || ''}</div></div>`
-        + `<div class="pcopt-row"><button class="btn small ghost" data-moves="${s.mon.uid}">moves</button><button class="btn small ghost" data-api="${s.mon.uid}">api</button></div></div>`;
+      const lv = s.mon.level < s.proj.level ? `${s.mon.level}→${s.proj.level}` : s.mon.level;
+      return `<div class="pcopt-mon">${sprOf(sp.id)}<div style="flex:1"><b>${esc(displayName(sp.id))}</b>${s.proj.shiny ? ' ✨' : ''} <span class="pcopt-mut">Nv. ${lv}</span></div>`
+        + `${pcoptBadge('atk', s.avgDmg)}${pcoptBadge('def', s.avgRounds)}</div>`;
     }).join('');
   }
 
@@ -3295,7 +3324,8 @@
     return segs;
   }
 
-  /** Prepare a team per segment and store it in the game's free team templates. */
+  /** Prepare a team per segment and store it in the game's team templates: segment i always
+   *  lands in Template i+1, overwriting whatever was there. */
   async function prepareSegments() {
     const save = readSave();
     if (!save?.adv || !state.data || !state.engine) return;
@@ -3307,15 +3337,9 @@
     let lead = 0;
     while (lead < plan.length && plan[lead].kind === 'heal') lead++;
     if (segs.length < 2) { state.errors = ['this chapter has a single segment — nothing to switch']; refreshUi(); return; }
-    const slots = (save.teamSets?.list || []);
-    const free = [];
-    for (let i = 0; i < 5; i++) if (!slots[i] || !slots[i].length) free.push(i);
-    // 'free all templates' lets the plan overwrite every template (the game has no delete)
-    if (state.reuseAll) for (let i = 0; i < 5; i++) if (!free.includes(i)) free.push(i);
-    if (!free.length) { state.errors = ['all team templates are used — use free all templates']; refreshUi(); return; }
-    const count = Math.min(segs.length, free.length);
+    const count = Math.min(segs.length, 5);
     state.busy = true; state.errors = []; refreshUi();
-    log('info', 'segments: preparing', { segments: segs.length, prepared: count, slots: free.slice(0, count) });
+    log('info', 'segments: preparing', { segments: segs.length, prepared: count });
     const out = [];
     try {
       if (!await gotoTeamScreen()) throw new Error('team screen not available');
@@ -3324,16 +3348,16 @@
         updateProgress();
         const r = await searchChapterTeam(save, info, info.cap, Math.max(6000, Math.round(30000 / count)), segs[i].plan);
         if (r.error) { log('warn', 'segments: search failed', r.error); continue; }
-        // pick the free template, then let applyTeam fill it (the game syncs the active set)
+        // select Template i+1, then let applyTeam fill it (the game syncs the active set)
         // selfClick: the pick is the script's, not the player's — it must not shield the segment
         state.selfClick = true;
-        try { document.querySelector(`#team-sets button[data-set="${free[i]}"]`)?.click(); }
+        try { document.querySelector(`#team-sets button[data-set="${i}"]`)?.click(); }
         finally { state.selfClick = false; }
         await sleep(500);
         const applied = await applyTeam(r.team);
         await sleep(700);
-        out.push({ slot: free[i], team: r.team.map(t => t.mon.uid), names: r.team.map(t => displayName(t.species.id)), res: r.res, applied: applied.done, battles: segs[i].plan.length });
-        log('info', 'segments: prepared', { slot: free[i], team: r.team.map(t => displayName(t.species.id)), winRate: r.res && r.res.rate });
+        out.push({ slot: i, team: r.team.map(t => t.mon.uid), names: r.team.map(t => displayName(t.species.id)), res: r.res, applied: applied.done, battles: segs[i].plan.length });
+        log('info', 'segments: prepared', { slot: i, team: r.team.map(t => displayName(t.species.id)), winRate: r.res && r.res.rate });
         state.progress = { pct: (i + 1) / count, label: `segment ${i + 1}/${count} ready` };
         updateProgress();
       }
@@ -3343,23 +3367,50 @@
     }
     state.segments = out.length ? { chapter: info.index, at: Date.now(), list: out, total: segs.length, lead } : null;
     store.set('segments', state.segments);
-    state.reuseAll = false; store.set('reuseTemplates', false);
     state.segOn = null; state.manual = null;
     state.busy = false; state.progress = null;
     refreshUi();
   }
 
-  /** Free every template for the segment planner: the next prepare may overwrite all of them
-   *  (the game itself has no delete, so this cannot empty them). */
-  function freeTemplates() {
+  /** Empty every filled template through the game's own UI (it has no delete): select the
+   *  template, then drag each member out to the PC. Never writes the save. */
+  async function freeTemplates() {
     if (state.busy) return;
     const save = readSave();
-    const used = (save?.teamSets?.list || []).filter(x => x && x.length).length;
-    if (used && !confirm(`The next 'prepare segments' will overwrite all ${used} filled team template(s). Continue?`)) return;
-    state.segments = null; store.set('segments', null);
-    state.reuseAll = true; store.set('reuseTemplates', true);
-    state.segOn = null;
-    log('info', 'templates: all reusable', { filled: used });
+    const filled = (save?.teamSets?.list || []).map((x, i) => (x && x.length ? i : -1)).filter(i => i >= 0);
+    if (!filled.length) { log('info', 'templates: every template is already empty'); return; }
+    if (!confirm(`Empty the ${filled.length} filled team template(s)? Their Pokémon go back to the PC.`)) return;
+    state.busy = true; state.errors = []; refreshUi();
+    const summary = [];
+    try {
+      if (!await gotoTeamScreen()) throw new Error('team screen not available');
+      for (const slot of filled) {
+        state.selfClick = true;
+        try { document.querySelector(`#team-sets button[data-set="${slot}"]`)?.click(); }
+        finally { state.selfClick = false; }
+        await sleep(500);
+        let left = (readSave()?.teamSets?.list?.[slot] || []).filter(Boolean);
+        let guard = 0;
+        while (left.length && guard++ < 8) {
+          const uid = left[0];
+          const member = $$('#team-slots .slot').find(s => s.dataset.uid === uid);
+          const pc = document.querySelector('#pc-grid');
+          if (!member || !pc) { log('warn', 'templates: member cannot be dragged out', { slot, uid }); break; }
+          dragToSlot(member, pc);
+          await sleep(700);
+          left = (readSave()?.teamSets?.list?.[slot] || []).filter(Boolean);
+        }
+        if (left.length) log('warn', 'templates: template not fully emptied', { slot, left: left.length });
+        summary.push({ slot, left: left.length });
+      }
+      state.segments = null; store.set('segments', null);
+      state.segOn = null;
+      log('info', 'templates: emptied', summary);
+    } catch (e) {
+      logError('templates: empty', e);
+      state.errors = ['templates: ' + e.message];
+    }
+    state.busy = false;
     refreshUi();
   }
 
@@ -3447,17 +3498,6 @@
     } else if (bar) bar.style.display = 'none';
   }
 
-  /** What the mon becomes at the cap through level evolutions (display only). */
-  function endFormAtCap(mon, cap) {
-    let cur = mon.id;
-    for (let hop = 0; hop < 4; hop++) {
-      const next = (state.data.evo[cur] || []).find(e => e.level != null && e.level <= cap && state.data.species[e.to]);
-      if (!next) break;
-      cur = next.to;
-    }
-    return cur;
-  }
-
   /* ------------------------------------------------------------------ *
    * 9b. UI — every block lives inside the game's own screens
    *     Progress: run monitor (chapter, events, status)
@@ -3472,17 +3512,25 @@
     st.textContent = `
       .pcopt-block{margin:10px;padding:10px 14px;border-radius:12px;border:2px solid var(--line);
         background:color-mix(in srgb,var(--panel) 92%,transparent);color:var(--text)}
-      #evt-pick-head .pcopt-block{flex:1 1 100%;margin:6px 0 0}
+      #evt-pop .pcopt-block,#evt-pop-side .pcopt-block{margin:8px 0 0}
       .pcopt-block .pcopt-row{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
       .pcopt-block .pcopt-mut{color:var(--muted);font-size:13px;line-height:1.5}
-      .pcopt-block .pcopt-mon{display:flex;justify-content:space-between;gap:8px;padding:6px 0;border-bottom:1px solid var(--line)}
+      .pcopt-block .pcopt-mon{display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--line)}
       .pcopt-block .pcopt-mon:last-child{border-bottom:0}
-      .pcopt-block .pcopt-log{max-height:150px;overflow:auto}
+      .pcopt-block .pcopt-badge{font-size:11px;padding:1px 6px;border-radius:5px;background:color-mix(in srgb,var(--line) 55%,transparent);white-space:nowrap}
+      .pcopt-block .pcopt-segrow{display:flex;align-items:center;gap:4px;width:100%;text-align:left;padding:4px 6px;
+        border:1px solid var(--line);border-radius:8px;background:transparent;color:inherit;cursor:pointer}
+      .pcopt-segs{display:flex;flex-direction:column;gap:4px;margin:6px 0}
+      .pcopt-segrow:hover{border-color:var(--c)}
+      .pcopt-segrow>b{font-size:12px;min-width:24px}
       .pcopt-block .pcopt-err{color:var(--red)}
       .pcopt-block .btn.small{font-size:13px;padding:5px 10px}
       .pcopt-block .seg button{font-size:13px;padding:5px 9px}
       .pcopt-block select{font-size:13px;padding:4px 8px;max-width:100%}
       .pcopt-block .type.sm{font-size:11px}
+      .pcopt-rec{position:absolute;right:2px;top:2px;z-index:3;font-size:10px;line-height:14px;padding:0 4px;
+        border-radius:4px;background:#2f6fe4;color:#fff;pointer-events:none}
+      .pcopt-rec.both{background:#e0a800;color:#111}
       .pcopt-templates{margin:8px 10px 2px;flex-wrap:wrap}
       .pcopt-title{font-weight:700;font-size:15px;margin:0 0 6px;display:flex;justify-content:space-between;
         align-items:center;gap:8px;flex-wrap:wrap}
@@ -3502,6 +3550,10 @@
       el.dataset.pcopt = key;
       const before = place.before ? host.querySelector(place.before) : null;
       if (before) host.insertBefore(el, before);
+      else if (place.after) {
+        const at = host.querySelector(place.after);
+        if (at) at.insertAdjacentElement('afterend', el); else host.appendChild(el);
+      }
       else if (place.prepend) host.prepend(el);
       else host.appendChild(el);
     }
@@ -3550,10 +3602,11 @@
     sel.value = roam.some(r => r.id === pick) ? String(pick) : (roam[0] ? String(roam[0].id) : '');
   }
 
-  /** The Progress screen: what the game is doing right now and the data status. */
-  function mountMonitor() {
-    const body = document.querySelector('#screen-map .map-body');
-    if (!body) return;
+  /** The Progress screen dashboard: chapter, data, quick actions, segments and the roamer hunt.
+   *  Mounted above #map-root so the game's own map render never replaces it. */
+  function mountDashboard() {
+    const host = document.querySelector('#screen-map');
+    if (!host || !document.querySelector('#map-root')) return;
     const save = readSave();
     const adv = save?.adv;
     const node = adv?.nodes?.[adv.node];
@@ -3567,19 +3620,25 @@
       ? `${esc(hunt.status)} · attempt ${hunt.attempts}${hunt.last ? ' · ' + esc(hunt.last) : ''}`
       : esc(hunt?.last || 'pick a roamer, then Hunt');
     const html = `
-      <div class="pcopt-title"><span>Run monitor <small>v${VERSION}</small></span>
-        <span class="pcopt-mut">${esc(state.events?.name || '')} · step ${adv?.node ?? '-'} / ${(adv?.nodes || []).length}</span></div>
-      <div class="pcopt-mut">chapter ${adv?.chapter ?? '-'} · level cap ${state.events?.cap ?? '-'} · type chart: ${esc(state.chartSource || '-')}</div>
-      <div class="pcopt-mut">data: ${state.data ? Object.keys(state.data.species).length + ' species · ' + (state.legends?.zones.length ?? 0) + ' legend zones' : 'not loaded'}
-        · bundle ${esc((bundleUrl() || '').split('/').pop() || '-')}</div>
+      <div class="pcopt-title"><span>Chapter dashboard <small>v${VERSION}</small></span>
+        <span class="pcopt-mut">${state.events ? esc(state.events.name) + ' · step ' + (adv?.node ?? '-') + ' / ' + (adv?.nodes || []).length : 'no chapter data'}</span></div>
+      <div class="map-sum" style="margin:2px 0"><span>cap <b>${state.events?.cap ?? '-'}</b></span><span>${state.eligible || 0} can join${save?.link ? ' · link ' + esc(save.link.to) : ''}</span>${state.roamer ? `<span>roamer <b>${esc(displayName(state.roamer.id))}</b> ${(state.roamer.catch * 100).toFixed(1)}%</span>` : ''}</div>
+      <div class="pcopt-mut">data: ${state.data ? Object.keys(state.data.species).length + ' species · ' + (state.legends?.zones.length ?? 0) + ' zones' : 'not loaded'}
+        · chart ${esc(state.chartSource || '-')} · bundle ${esc((bundleUrl() || '').split('/').pop() || '-')}</div>
       ${state.leagueInfo ? `<div class="pcopt-mut">${esc(state.leagueInfo)}</div>` : ''}
-      ${state.eligible ? `<div class="pcopt-mut">${state.eligible} Pokémon can join this team${save?.link ? ' (region link: ' + esc(save.link.to) + ')' : ''}</div>` : ''}
       ${state.waiting ? `<div class="pcopt-mut">${esc(state.waiting)}</div>` : ''}
       ${updateLine()}${errLine()}
-      <div class="pcopt-title" style="margin-top:10px"><span>Chapter events</span>
+      <div class="pcopt-title" style="margin-top:8px"><span>Chapter events</span>
         <span class="pcopt-mut">${state.enemies ? state.enemies.length + ' foes · ' + esc(node?.name || '') : ''}</span></div>
       <div class="pcopt-row" style="margin:4px 0">${typeChips(state.enemies, state.data)}</div>
-      <div class="pcopt-title" style="margin-top:10px"><span>Roamer hunt</span>
+      <div class="pcopt-row" style="margin-top:6px">${presetSeg()}
+        <button class="btn small" data-act="run">simulate</button>
+        <button class="btn small ghost" data-act="apply" ${state.team && state.team.length ? '' : 'disabled'}>apply to team</button>
+        <button class="btn small ghost" data-act="segments" ${state.busy ? 'disabled' : ''}>prepare segments</button>
+        <button class="btn small ghost" data-act="free" ${state.busy ? 'disabled' : ''}>empty templates</button>
+      </div>
+      ${segmentRows()}
+      <div class="pcopt-title" style="margin-top:8px"><span>Roamer hunt</span>
         <span class="pcopt-mut">${hunt?.running ? esc(hunt.status) : ''}</span></div>
       <div class="pcopt-row">
         <select data-act="roamer" aria-label="Roaming legendary" ${roam.length ? '' : 'disabled'}>${huntOptions}</select>
@@ -3588,9 +3647,17 @@
       <div class="pcopt-mut">${huntLine}${adv?.paused ? ' · adventure paused' : ''}</div>`;
     const sig = JSON.stringify([adv?.chapter, adv?.node, node?.name, state.enemies?.length,
       state.eligible, state.chartSource, state.errors, state.update?.repo, state.leagueInfo, state.waiting, adv?.paused,
+      state.preset, state.busy, state.team && state.team.map(t => t.mon.uid).join(','), state.roamer && state.roamer.id,
+      state.segments && state.segments.list.map(s => s.slot + ':' + s.team.join('/')).join(','),
       hunt?.running, hunt?.id, hunt?.ch, hunt?.attempts, hunt?.status, hunt?.last, state.huntSel,
       roam.map(r => r.id + ':' + r.ch).join(',')]);
-    const el = mountBlock(body, 'monitor', sig, html, el => {
+    const el = mountBlock(host, 'dashboard', sig, html, el => {
+      el.querySelectorAll('[data-preset]').forEach(b => b.onclick = () => { state.preset = b.dataset.preset; refreshUi(); });
+      el.querySelector('[data-act="run"]').onclick = () => runOptimizer();
+      el.querySelector('[data-act="apply"]').onclick = () => applyTeamFromPanel();
+      el.querySelector('[data-act="segments"]').onclick = () => prepareSegments();
+      el.querySelector('[data-act="free"]').onclick = () => freeTemplates();
+      el.querySelectorAll('[data-seg]').forEach(b => b.onclick = () => switchTemplate(+b.dataset.seg));
       const sel = el.querySelector('[data-act="roamer"]');
       if (sel) sel.onchange = () => {
         state.huntSel = sel.value === '' ? null : +sel.value;
@@ -3600,8 +3667,8 @@
         if (state.hunt?.running) { state.hunt.stop('stopped by hand'); return; }
         startRoamerHunt(sel ? sel.value : null);
       };
-    }, { prepend: true });
-    refreshHuntSelect(el, save, now);
+    }, { before: '#map-root' });
+    if (el) refreshHuntSelect(el, save, now);
   }
 
   /** The Adventure screen: the game's own team-template bar, between the route timeline and the arena.
@@ -3656,6 +3723,8 @@
     if (!host || !state.data) return;
     const cap = state.events?.cap ?? state.data.cfg?.MAX_LEVEL ?? 100;
     const sim = state.sim;
+    const save = readSave();
+    const activeSet = save?.teamSets?.on ?? 0;
     const html = `
       <div class="pcopt-title"><span>Chapter optimizer <small>v${VERSION}</small></span>
         <span class="pcopt-mut">${state.events ? 'chapter ' + state.events.index + ' · ' + esc(state.events.name) + ' · cap ' + cap : ''}</span></div>
@@ -3667,16 +3736,21 @@
         <div id="pcopt-simbar" style="display:none;flex:1 1 160px;align-items:center;gap:6px"><div style="flex:1;height:10px;border-radius:5px;background:var(--line);overflow:hidden"><div style="height:100%;width:0%;background:var(--c);transition:width .15s"></div></div><span class="pcopt-mut" style="font-size:11px;white-space:nowrap"></span></div>
         <button class="btn small ghost" data-act="apply" ${state.team && state.team.length && !state.busy ? '' : 'disabled'}>apply to team</button>
         <button class="btn small ghost" data-act="segments" ${state.busy ? 'disabled' : ''}>prepare segments</button>
-        <button class="btn small ghost" data-act="free" ${state.busy ? 'disabled' : ''}>free all templates</button>
+        <button class="btn small ghost" data-act="free" ${state.busy ? 'disabled' : ''}>empty templates</button>
       </div>
-      ${state.segments ? `<div class="pcopt-mut">segments: ${state.segments.list.map((s, i) => '#' + (s.slot + 1) + ' ' + esc(s.names.join(', ').slice(0, 60))).join(' · ')}${state.segments.total > state.segments.list.length ? ' · ' + (state.segments.total - state.segments.list.length) + ' over the limit — use free all templates' : ''}</div>` : ''}
-      ${state.reuseAll ? `<div class="pcopt-mut">all templates freed — the next prepare overwrites them</div>` : ''}
+      <div class="pcopt-row" style="margin-top:6px">
+        <label class="pcopt-mut">base team <select data-act="baseset">${[0, 1, 2, 3, 4].map(i => `<option value="${i}"${i === activeSet ? ' selected' : ''}>Template ${i + 1}</option>`).join('')}</select></label>
+        <button class="btn small ghost" data-act="basego" ${state.team && state.team.length && !state.busy ? '' : 'disabled'}>apply base team</button>
+      </div>
+      ${segmentRows()}
       <div data-team>${renderTeam()}</div>
       ${state.waiting ? `<div class="pcopt-mut">${esc(state.waiting)}</div>` : ''}
       ${errLine()}`;
-    const sig = JSON.stringify([state.preset, state.busy, state.team && state.team.map(t => t.mon.uid + ':' + t.hpCur).join(','),
+    const sig = JSON.stringify([state.preset, state.busy, activeSet,
+      state.team && state.team.map(t => t.mon.uid + ':' + t.hpCur).join(','),
       sim && [sim.rate, sim.avgCleared, sim.evaluated, sim.ms], state.errors, state.waiting, state.events?.index, cap,
-      state.segments && state.segments.list.map(s => s.slot + ':' + s.names.join('/')).join(','), state.segments && state.segments.total, state.reuseAll]);
+      state.roamer && state.roamer.id,
+      state.segments && state.segments.list.map(s => s.slot + ':' + s.team.join('/')).join(','), state.segments && state.segments.total]);
     mountBlock(host, 'chapter', sig, html, el => {
       el.querySelectorAll('[data-preset]').forEach(b => b.onclick = () => {
         state.preset = b.dataset.preset;
@@ -3687,52 +3761,66 @@
       el.querySelector('[data-act="apply"]').onclick = () => applyTeamFromPanel();
       el.querySelector('[data-act="segments"]').onclick = () => prepareSegments();
       el.querySelector('[data-act="free"]').onclick = () => freeTemplates();
-      el.querySelectorAll('[data-moves]').forEach(b => b.onclick = () => {
-        b.textContent = '…';
-        showMovesPanel(b.dataset.moves).then(() => { b.textContent = 'moves'; });
-      });
-      el.querySelectorAll('[data-api]').forEach(b => b.onclick = () => {
-        const uid = b.dataset.api;
-        const info = el.querySelector(`[data-info="${uid}"]`);
-        if (info) info.textContent = 'asking PokéAPI…';
-        compareWithPokeApi(uid, info);
-      });
+      el.querySelectorAll('[data-seg]').forEach(b => b.onclick = () => switchTemplate(+b.dataset.seg));
+      const go = el.querySelector('[data-act="basego"]');
+      if (go) go.onclick = async () => {
+        const slot = +(el.querySelector('[data-act="baseset"]')?.value ?? 0);
+        await switchTemplate(slot);
+        await sleep(400);
+        await applyTeamFromPanel(state.team);
+      };
     }, { before: '.pc-sticky' });
   }
 
-  /** The legendary team picker: boss info, odds, the team it computed. */
-  function mountLegendBox(head, ctx) {
+  /** The Team/PC header: a real "empty templates" button next to the game's team sets. */
+  function mountFreeAll() {
+    const sets = document.querySelector('#team-sets');
+    if (!sets || !readSave()?.teamSets) return;
+    if (document.querySelector('[data-pcopt="free-all"]')) return;
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'btn small ghost';
+    btn.dataset.pcopt = 'free-all';
+    btn.textContent = 'empty templates';
+    btn.title = 'Send every Pokémon in the team templates back to the PC';
+    btn.style.cssText = 'margin:6px 4px';
+    btn.onclick = e => { e.preventDefault(); freeTemplates(); };
+    sets.insertAdjacentElement('afterend', btn);
+  }
+
+  /** The legendary team picker: boss info, odds, the team it computed.
+   *  Mounted below the community list, never in the game's header. */
+  function mountLegendBox(ctx) {
     state.legBoss = ctx.zone.id;
     state.legTier = ctx.tier;
     state.legRegion = ctx.zone.region;
     const key = 'legend:' + ctx.zone.id + ':' + ctx.tier;
+    const team = state.legTeamKey === ctx.zone.id + ':' + ctx.tier ? state.legTeam : null;
     const html = `
       <div class="pcopt-row" style="margin-top:6px">
         ${presetSeg()}
         <button class="btn small" data-act="run" ${state.busy ? 'disabled' : ''}>✨ Optimize (mine)</button>
-        <button class="btn small ghost" data-act="apply" ${state.legTeam && state.legTeam.length && !state.busy ? '' : 'disabled'}>apply to team</button>
+        <button class="btn small ghost" data-act="apply" ${team && team.length && !state.busy ? '' : 'disabled'}>apply to team</button>
       </div>
       <div class="pcopt-mut">${legendInfo()}</div>
       <div class="pcopt-mut">${legendOddsLine()}</div>
-      <div data-team>${renderLegendTeam()}</div>
+      <div data-team>${renderLegendTeam(team)}</div>
       ${errLine()}`;
     const sig = JSON.stringify([key, state.preset, state.busy,
-      state.legTeam && state.legTeam.map(t => t.mon.uid).join(','),
-      state.legOdds && [state.legOdds.winChance, state.legOdds.rounds, state.legOdds.pCatch, state.legOdds.attempts],
+      team && team.map(t => t.mon.uid).join(','),
+      state.legOdds && state.legOdds.key === ctx.zone.id + ':' + ctx.tier && [state.legOdds.winChance, state.legOdds.rounds, state.legOdds.pCatch, state.legOdds.attempts],
       state.errors]);
-    mountBlock(head, 'legend', sig, html, el => {
+    mountBlock(pickerHost(6), 'legend', sig, html, el => {
       el.querySelectorAll('[data-preset]').forEach(b => b.onclick = () => {
         state.preset = b.dataset.preset;
-        el.querySelectorAll('[data-preset]').forEach(x => x.classList.toggle('on', x.dataset.preset === state.preset));
         refreshUi();
       });
       el.querySelector('[data-act="run"]').onclick = () => runLegendOptimizer();
-      el.querySelector('[data-act="apply"]').onclick = () => applyTeamFromPanel(state.legTeam);
-    });
+      el.querySelector('[data-act="apply"]').onclick = () => applyTeamFromPanel(team);
+    }, { after: '.rp-side' });
   }
 
-  /** The raid picker: fastest clear and the total DPS line. */
-  function mountRaidBox(head, rc) {
+  /** The raid picker: fastest clear and the total DPS line. */  function mountRaidBox(rc) {
     const boss = state.raidBoss;
     const key = 'raid:' + rc.id;
     const saved = state.evtOdds?.key === key ? state.evtOdds.text : '';
@@ -3744,7 +3832,7 @@
       <div class="pcopt-mut">${esc(displayName(rc.id))} · ${boss ? boss.maxHp.toLocaleString('en-US') + ' HP' : ''} · ${esc((state.data.species[rc.id]?.types || []).join('/'))}</div>
       ${errLine()}`;
     const sig = JSON.stringify([key, state.busy, saved, state.errors]);
-    mountBlock(head, 'raid', sig, html, el => {
+    mountBlock(pickerHost(state.data?.cfg?.RAID?.MINE ?? 2), 'raid', sig, html, el => {
       el.querySelector('[data-act="run"]').onclick = async () => {
         const btn = el.querySelector('[data-act="run"]');
         const info = el.querySelector('[data-info]');
@@ -3761,7 +3849,54 @@
         }
         btn.disabled = false;
       };
-    });
+    }, { after: '.rp-side' });
+  }
+
+  /** The game's own greedy set for the open legend picker (the "Recommandés" team), memoized per save. */
+  let legendGameSetCache = { key: '', set: new Set() };
+  function legendGameSet(ctx) {
+    const key = ctx.zone.id + '|' + ctx.tier + '|' + (lastRaw || '');
+    if (legendGameSetCache.key === key) return legendGameSetCache.set;
+    let set = new Set();
+    try {
+      const cands = legendCandidates(ctx.zone, ctx.tier);
+      set = new Set(pickLegendTeam(cands, ctx.zone, ctx.tier, state.engine, state.data, 6).map(c => c.mon.uid));
+    } catch (e) { logError('recommended: game set', e); }
+    legendGameSetCache = { key, set };
+    return set;
+  }
+
+  /** Mark my picks in the game's PC grid: blue, gold when the game would pick them too.
+   *  The game's own green/eff-up classes are never touched. */
+  function markRecommended() {
+    const grid = document.querySelector('#evt-pc');
+    if (!grid) return;
+    const legend = raidContext() ? null : pickerContext();
+    const ug = legend ? null : undergroundContext();
+    let team = legend ? state.legTeam : (ug ? state.ugTeam : null);
+    if (legend && state.legTeamKey !== legend.zone.id + ':' + legend.tier) team = null;
+    if (ug && state.ugTeamKey !== ug.theme.key) team = null;
+    if (!team || !team.length) { grid.querySelectorAll('.pcopt-rec').forEach(e => e.remove()); return; }
+    const uids = new Set(team.map(c => c.mon.uid));
+    const gameSet = legend && state.engine ? legendGameSet(legend) : new Set();
+    for (const cell of grid.querySelectorAll('.pc-cell[data-uid]')) {
+      const uid = cell.dataset.uid;
+      const want = uids.has(uid);
+      let tag = cell.querySelector('.pcopt-rec');
+      if (!want) { if (tag) tag.remove(); continue; }
+      // in a boss picker "both" = the game's greedy picks it too; in edge pickers the cell already has eff-up
+      const both = legend ? gameSet.has(uid) : cell.classList.contains('eff-up');
+      if (!tag) {
+        tag = document.createElement('span');
+        tag.className = 'pcopt-rec';
+        tag.dataset.uid = uid;
+        tag.textContent = '▲';
+        cell.style.position = 'relative';
+        cell.appendChild(tag);
+      }
+      tag.classList.toggle('both', both);
+      tag.title = both ? 'my pick · also game-recommended' : 'my optimizer pick';
+    }
   }
 
   /** Remove the floating panel and the old quick-optimize rows a previous version left behind. */
@@ -3779,11 +3914,12 @@
   function refreshUi() {
     try {
       cleanupLegacy();
-      mountMonitor();
+      mountDashboard();
       mountTemplates();
       mountChapter();
+      mountFreeAll();
       if (document.querySelector('#evt-pick-head')) injectPickerUi().catch(e => logError('picker ui: inject', e));
-      else state.raidBoss = null;
+      else { state.raidBoss = null; markRecommended(); }
     } catch (e) { logError('ui: refresh', e); }
   }
 
@@ -4063,6 +4199,7 @@
         .map(c => ({ ...c, hpCur: c.hp }));
       const scored = scoreCandidates(state.engine, state.data, foes, cands, cap, true);
       state.ugTeam = pickVsFoes(scored, enemies, state.engine, state.data, state.preset, ctx.size);
+      state.ugTeamKey = ctx.theme.key;
       if (!state.ugTeam.length) state.errors = ['no level-100 candidate in the PC'];
       log('info', 'underground optimizer: done', {
         theme: ctx.theme.name, guards: foes.length,
@@ -4077,26 +4214,27 @@
   }
 
   /** The underground picker: the theme's guards and my team for them. */
-  function mountUndergroundBox(head, ctx) {
+  function mountUndergroundBox(ctx) {
     const foes = state.data ? undergroundFoes(ctx.theme, state.data, readSave()) : [];
+    const team = state.ugTeamKey === ctx.theme.key ? state.ugTeam : null;
     const html = `
       <div class="pcopt-row" style="margin-top:6px">
         ${presetSeg()}
         <button class="btn small" data-act="run" ${state.busy ? 'disabled' : ''}>⛏ Optimize (mine)</button>
-        <button class="btn small ghost" data-act="apply" ${state.ugTeam && state.ugTeam.length && !state.busy ? '' : 'disabled'}>apply to team</button>
+        <button class="btn small ghost" data-act="apply" ${team && team.length && !state.busy ? '' : 'disabled'}>apply to team</button>
       </div>
       <div class="pcopt-mut">${esc(ctx.theme.name)} · ${foes.length} guards · Nv. ${state.data?.cfg?.MAX_LEVEL ?? 100} · team of ${ctx.size}</div>
-      ${state.ugTeam && state.ugTeam.length ? `<div class="pcopt-mut">${state.ugTeam.map(t => esc(displayName(t.species.id))).join(' · ')}</div>` : ''}
+      ${team && team.length ? `<div class="pcopt-mut">${team.map(t => esc(displayName(t.species.id))).join(' · ')}</div>` : ''}
       ${errLine()}`;
-    const sig = JSON.stringify([ctx.theme.key, state.preset, state.busy, state.ugTeam && state.ugTeam.map(t => t.mon.uid).join(','), state.errors]);
-    mountBlock(head, 'underground', sig, html, el => {
+    const sig = JSON.stringify([ctx.theme.key, state.preset, state.busy, team && team.map(t => t.mon.uid).join(','), state.errors]);
+    mountBlock(pickerHost(ctx.size), 'underground', sig, html, el => {
       el.querySelectorAll('[data-preset]').forEach(b => b.onclick = () => {
         state.preset = b.dataset.preset;
         refreshUi();
       });
       el.querySelector('[data-act="run"]').onclick = () => runUndergroundOptimizer();
-      el.querySelector('[data-act="apply"]').onclick = () => applyTeamFromPanel(state.ugTeam);
-    });
+      el.querySelector('[data-act="apply"]').onclick = () => applyTeamFromPanel(team);
+    }, { after: '.rp-side' });
   }
 
   async function runLegendOptimizer() {
@@ -4113,10 +4251,12 @@
       const greedy = pickLegendTeam(cands, zone, state.legTier, state.engine, state.data);
       const refined = refineLegendTeam(greedy, cands, zone, state.legTier, state.engine, state.data);
       state.legTeam = refined.team;
+      state.legTeamKey = zone.id + ':' + state.legTier;
       log(refined.gain > 0.001 ? 'info' : 'debug', 'legend refine: ' + (refined.gain > 0.001 ? '+' + Math.round(refined.gain * 100) + '%' : 'unchanged'), { gain: refined.gain });
       state.legOdds = state.legTeam.length
         ? legendOdds(zone, state.legTier, state.legTeam, state.engine, state.data, save)
         : null;
+      if (state.legOdds) state.legOdds.key = zone.id + ':' + state.legTier;
       if (!state.legTeam.length) state.errors = ['no level-100 candidate in the PC'];
       log('info', 'legend optimizer: done', {
         boss: displayName(zone.id), tier: state.legTier,
@@ -4254,7 +4394,6 @@
     // a prepared segment plan survives a reload (the templates live in the save)
     state.segments = store.get('segments', null);
     if (state.segments && !Array.isArray(state.segments.list)) state.segments = null;
-    state.reuseAll = store.get('reuseTemplates', false) === true;
     // a previous version's floating panel / quick rows: gone, the blocks replace them
     cleanupLegacy();
     ensureEnglish().catch(e => logError('names: English pack', e));
