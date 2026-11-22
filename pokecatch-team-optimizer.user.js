@@ -241,6 +241,9 @@
       return evalSandbox(literalAt(src, at + 8));
     });
     const cfg = table('CONFIG', true, read('a.CONFIG='));
+    // the boss-status knobs drive the legend credit: say it once when the bundle lost them
+    for (const knob of ['BOSS_STATUS', 'STATUS_TEAM', 'STATUS_PARA_COST', 'STATUS_SURE', 'ROAMING', 'UNDERGROUND'])
+      if (cfg[knob] == null) log('warn', 'bundle: knob missing — feature off', { knob });
     const chapters = table('CHAPTERS', true, () => {
       const lit = literalAfter(src, 'CHAPTERS:[').replace(/a\.UNOWN\.ids/g, JSON.stringify(UNOWN_IDS));
       try { return evalLit(lit); } catch { return evalSandbox(lit); }
@@ -323,6 +326,11 @@
         LEAGUE_DONE_CAP: cfg.LEAGUE_DONE_CAP, LEVEL_CAP_MARGIN: cfg.LEVEL_CAP_MARGIN,
         LEAGUE_BELOW: cfg.LEAGUE_TRAINERS?.below || [6, 5, 4, 3],
         LEGEND_ZONE: cfg.LEGEND_ZONE, ELITE: cfg.ELITE, RANK_STAT: cfg.UNDERGROUND?.RANK_STAT ?? 1,
+        UNDERGROUND: cfg.UNDERGROUND || null, ROAMING: cfg.ROAMING || { MIN_LEVEL: 100, CATCH: .04 },
+        BOSS_STATUS: cfg.BOSS_STATUS || null,
+        STATUS_TEAM: cfg.STATUS_TEAM || [1, .5],
+        STATUS_PARA_COST: cfg.STATUS_PARA_COST ?? 1,
+        STATUS_SURE: cfg.STATUS_SURE ?? .15,
         CAPTURE_BONUS: cfg.CAPTURE_BONUS, CAPTURE_MAX: cfg.CAPTURE_MAX,
         LEGENDARY_CAPTURE_RATE: cfg.LEGENDARY_CAPTURE_RATE,
         RAID: cfg.RAID || null,
@@ -858,18 +866,18 @@
   }
 
   /** Wild / trainer / gym foes of a chapter, with the levels the game uses. */
-  function chapterEnemies(data, info, nodes) {
+  function chapterEnemies(data, info, nodes, save) {
     const league = leagueChapters(data, info.index);
     if (league.length) {
       // the whole league: a wipe rewinds to the first member, so every one of them counts
       return league.flatMap(ch => leagueEnemies(data, ch));
     }
-    if (nodes && nodes.length) return enemiesFromNodes(data, info, nodes);
+    if (nodes && nodes.length) return enemiesFromNodes(data, info, nodes, save);
     return enemiesFromChapter(data, info);
   }
 
   /** The foes of the nodes the game actually built (the live chapter). */
-  function enemiesFromNodes(data, info, nodes) {
+  function enemiesFromNodes(data, info, nodes, save) {
     const cfg = data.cfg;
     const out = [];
     for (const node of nodes) {
@@ -890,6 +898,14 @@
           out.push({ id, level: lv, weight: 2, kind: 'trainer', source: node.trainer || node.name, hpMult: 1, damageMult: cfg.ENEMY_DAMAGE.trainer ?? 1 });
         }
       } else if ((node.type === 'wild' || node.type === 'trainer') && (node.pool?.length || node.areas)) {
+        // the roamer replaces the node's normal encounter and must be survived
+        if (node.type === 'wild' && roamerFree(save, node.roamer)) {
+          const rb = roamerBoss(node.roamer, save, data);
+          if (rb) {
+            out.push({ id: rb.id, level: rb.level, weight: 40, kind: 'wild', source: node.name, hpMult: rb.hpMult, damageMult: rb.damageMult });
+            continue;
+          }
+        }
         const pool = new Map();
         if (node.pool?.length) {
           for (const p of node.pool) {
@@ -1099,10 +1115,11 @@
   }
 
   /** The Pokémon that may join the team, projected at the chapter cap (evolutions included).
-   *  opts.branches = false keeps one candidate per real mon (the chapter sim evolves them itself). */
+   *  opts.branches = false keeps one candidate per real mon (the chapter sim evolves them itself).
+   *  opts.anyRegion = true skips the region-link rule (the legend pickers do not apply it). */
   function projectCandidates(eng, data, save, level, opts = {}) {
     const away = awayUids(save);
-    const cands = save.mons.filter(m => !away.has(m.uid) && data.species[m.id] && canJoinTeam(save, m));
+    const cands = save.mons.filter(m => !away.has(m.uid) && data.species[m.id] && (opts.anyRegion || canJoinTeam(save, m)));
     const branchesOf = opts.branches === false ? (c => [c.id]) : (c => evolvedBranches(data, save, c, level));
     return cands.flatMap(c => branchesOf(c).map(sid => {
       const sp = data.species[sid];
@@ -1171,6 +1188,29 @@
     if (preset === 'defense') return s.avgRounds;
     if (preset === 'offense') return s.avgDmg;
     return Math.sqrt(Math.max(0, s.avgDmg) * Math.max(0.01, s.avgRounds));
+  }
+
+  /** Greedy team for a plain foe list (the underground guards): one per species, preset score. */
+  function pickVsFoes(scored, enemies, eng, data, preset, size = 6) {
+    const pool = scored.slice()
+      .sort((a, b) => scoreFor(b, preset) - scoreFor(a, preset) || b.mon.level - a.mon.level)
+      .slice(0, 60);
+    const chosen = [];
+    const usedSpecies = new Set();
+    const usedUids = new Set();
+    while (chosen.length < size) {
+      let best = null, bestScore = -Infinity;
+      for (const cand of pool) {
+        if (chosen.includes(cand) || usedUids.has(cand.mon.uid) || usedSpecies.has(cand.species.id)) continue;
+        const sc = evaluateTeam(chosen.concat([cand]), enemies, eng, data, preset);
+        if (sc > bestScore) { bestScore = sc; best = cand; }
+      }
+      if (!best) break;
+      chosen.push(best);
+      usedSpecies.add(best.species.id);
+      usedUids.add(best.mon.uid);
+    }
+    return chosen;
   }
 
   /** One full fight: our team (in order) against one foe, the way the game chains them. */
@@ -1435,6 +1475,24 @@
     }
     return sum;
   }
+  /** A roaming legendary still on a chapter (the game marks one outdoor node with it). */
+  const roamerFree = (save, id) => id != null && !!save?.roam?.at?.[id] && !(save.roam.caught || []).includes(+id);
+
+  /** The roamer fight, the game's own knobs: Roam.level() (min 100), ROAM_HP / ROAM_POWER. */
+  function roamerBoss(id, save, data) {
+    const cfg = data.cfg;
+    const sp = data.species[id];
+    if (!sp) return null;
+    const levels = (save?.mons || []).map(m => m.level).filter(Number.isFinite);
+    const level = Math.min(cfg.MAX_LEVEL, Math.max(cfg.ROAMING?.MIN_LEVEL ?? 100, ...levels));
+    return {
+      id, mon: { id, level, types: sp.types }, level,
+      hpMult: (1 + (cfg.ENEMY_HP_PER_ALLY ?? .7) * ((cfg.TEAM_SIZE ?? 6) - 1)) * (cfg.LEGEND_ZONE?.ROAM_HP ?? 4),
+      damageMult: (cfg.ENEMY_DAMAGE?.static ?? 1) * (cfg.LEGEND_ZONE?.ROAM_POWER ?? .6),
+      catch: cfg.ROAMING?.CATCH ?? .04,
+    };
+  }
+
   /** The ordered chapter steps from the nodes the game built (heal stops + battles). */
   function chapterPlan(data, save) {
     const nodes = save?.adv?.nodes || [];
@@ -1446,6 +1504,7 @@
           kind: 'battle', type: node.type, name: node.name,
           pool: poolOfNode(node, data), lv: node.lv || null,
           team: node.team || null, size: node.size ?? null,
+          roamer: node.type === 'wild' && roamerFree(save, node.roamer) ? node.roamer : null,
           index: plan.length,
         });
         continue;
@@ -1497,6 +1556,18 @@
   /** The foes of one battle instance (wild roll, random trainer roll, or fixed team). */
   function rollBattleFoes(step, data, save, cap) {
     const cfg = data.cfg;
+    if (step.roamer != null) {
+      // the roamer node is a boss fight: one level-100 foe with ROAM_HP and ROAM_POWER
+      const rb = roamerBoss(step.roamer, save, data);
+      if (rb) {
+        return {
+          foes: [simFoe(rb.id, rb.level, rb.hpMult, rb.damageMult)], slots: 1, dmgMult: rb.damageMult,
+          // shortcut: the boss's rage burst is averaged into one strong attack; upgrade if the sim needs the rage cycle
+          // static: a lost roamer fight is a wipe, not a free flee
+          kind: 'static', index: step.index, xp: true, roamer: rb.id, boss: true,
+        };
+      }
+    }
     if (step.fixed) {
       return {
         foes: step.fixed.map(f => simFoe(f.id, f.level, f.hpMult ?? 1, f.damageMult ?? dmgMultOf(step.type, cfg, f.power))),
@@ -1768,9 +1839,105 @@
     return { zone, mon, types: sp.types, level, maxHp, hp, resist, powerKnob, damageTo, aura };
   }
 
+  /** The game's Ma(): the divisor of one boss DoT tick, per elite tier. */
+  const bossHurt = tier => {
+    const cfg = state.data.cfg;
+    return tier ? (cfg.ELITE?.HURT?.[tier] ?? cfg.BOSS_STATUS?.HURT ?? 60) : (cfg.BOSS_STATUS?.HURT ?? 60);
+  };
+  /** The game's aa(): elite bosses only resist statuses harder, never direct damage. */
+  const bossResist = tier => tier ? (state.data.cfg.ELITE?.RESIST?.[tier] ?? 1) : 1;
+
+  /** The game's Ja(): the expected status damage one mon brings to the boss.
+   *  Land chances come from the 30% status-move rule and the STATUS.capOf caps,
+   *  the DoT tick from the boss's HURT divisor, the resist from ELITE.RESIST. */
+  // shortcut: the 30% status turn is folded into a per-round land rate (the mon still attacks every round);
+  // upgrade to a per-turn move choice if the odds need it.
+  function legendStatusPlan(c, boss, tier, eng, data) {
+    const cfg = data.cfg;
+    if (!cfg.BOSS_STATUS) return { land: {}, dot: 0, para: 0 };
+    const canLand = { poison: 0, burn: 0, paralysis: 0 };
+    const sm = simStatusMove(c.proj, boss.mon);            // the game's dt(): its status move
+    const atk = eng.bestMove(c.proj, boss.types);          // the game's un(): its attack
+    if (sm && sm.status in canLand) canLand[sm.status] += (cfg.STATUS_MOVE_CHANCE ?? .3) * sm.chance / 100;
+    const sec = atk && data.statusMoves?.[atk.key];
+    if (sec && sec[0] in canLand && canStatus(boss.mon, sec[0]))
+      canLand[sec[0]] += (1 - (cfg.STATUS_MOVE_CHANCE ?? .3)) * (atk.acc / 100) * Math.min(sec[1], statusCap(atk.key)) / 100;
+    for (const k of Object.keys(canLand)) canLand[k] = Math.min(1, canLand[k] * bossResist(tier));
+    // the game's js(): the share of the DOT_TURNS ticks its land chance actually yields
+    const expect = (p, turns) => p > 0 ? turns * p / (turns * p + 1) : 0;
+    const tick = boss.hp / bossHurt(tier);
+    return {
+      land: canLand,
+      dot: tick * expect(canLand.poison + canLand.burn, cfg.BOSS_STATUS.DOT_TURNS ?? 4),
+      para: tick * expect(canLand.paralysis, cfg.STATUS_FX?.PARA_TURNS ?? 3),
+    };
+  }
+
+  /** The game's qa(): one mon's expected contribution to a boss fight. */
+  function legendParts(c, boss, tier, eng, data) {
+    const mv = eng.bestMove(c.proj, boss.types);
+    let dps = 0;
+    if (mv) dps = eng.damage(c.proj, boss.mon, mv, eng.typeEff(mv.type, boss.types)) * (mv.acc / 100);
+    const alive = Math.min(400, c.hp / Math.max(1, boss.damageTo(c.proj)));
+    const st = legendStatusPlan(c, boss, tier, eng, data);
+    return { value: dps * alive, dps, alive, dot: st.dot, para: st.para, land: st.land };
+  }
+
+  /** The game's st() team score: Σ value + the best dots × STATUS_TEAM, minus the para cost. */
+  function legendTeamScore(parts, data) {
+    const cfg = data.cfg;
+    const coef = cfg.STATUS_TEAM || [1, .5];
+    const dots = parts.map(p => p.dot).sort((a, b) => b - a);
+    let dotCred = 0;
+    dots.forEach((d, i) => { dotCred += d * (coef[i] ?? 0); });
+    const para = parts.reduce((a, p) => a + p.para, 0);
+    return parts.reduce((a, p) => a + p.value, 0) + dotCred - (dotCred > 0 ? (cfg.STATUS_PARA_COST ?? 1) * para : 0);
+  }
+
+  /** Land chances of the living team, the one source of the shared fight policy. */
+  function legendStatusRates(plans) {
+    let pDot = 1, pPara = 1;
+    for (const p of plans) {
+      pDot *= 1 - (p.land.poison || 0) - (p.land.burn || 0);
+      pPara *= 1 - (p.land.paralysis || 0);
+    }
+    return { pDot: 1 - pDot, pPara: 1 - pPara };
+  }
+
+  /** One round of the game's boss status: DoT, paralysis block, expiries.
+   *  `roll` drives the 200-run odds; without it the expected share is used. */
+  function legendStatusRound(st, rates, tick, cfg, roll) {
+    const bs = cfg.BOSS_STATUS;
+    if (!bs) return { dot: 0, blunt: 1 };
+    if (!roll) {
+      return {
+        dot: tick * rates.pDot,
+        blunt: 1 - (bs.PARA_BLOCK ?? .2) * rates.pPara,
+      };
+    }
+    if (!st.status) {
+      if (Math.random() < rates.pDot) { st.status = 'poison'; st.bit = 0; }
+      else if (Math.random() < rates.pPara) { st.status = 'paralysis'; st.bit = 0; }
+    }
+    let dot = 0, blunt = 1;
+    if (st.status === 'poison' || st.status === 'burn') {
+      dot = tick;
+      st.bit = (st.bit || 0) + 1;
+      if (st.bit >= (bs.DOT_TURNS ?? 4)) { delete st.status; delete st.bit; }
+    } else if (st.status === 'paralysis') {
+      blunt = 1 - (bs.PARA_BLOCK ?? .2);
+      st.bit = (st.bit || 0) + 1;
+      if (st.bit >= (cfg.STATUS_FX?.PARA_TURNS ?? 3)) { delete st.status; delete st.bit; }
+    }
+    return { dot, blunt };
+  }
+
   /** One legendary fight with the game's rolls (used for the win chance). */
-  function legendFightOnce(team, boss, eng) {
-    const alive = team.map(c => ({ c, hp: c.hpCur != null ? c.hpCur : c.hp }));
+  function legendFightOnce(team, boss, tier, eng, data) {
+    const cfg = data.cfg;
+    const plans = team.map(c => legendStatusPlan(c, boss, tier, eng, data));
+    const alive = team.map((c, i) => ({ c, hp: c.hpCur != null ? c.hpCur : c.hp, plan: plans[i] }));
+    const st = {};
     let bossHp = boss.hp, rounds = 0;
     while (bossHp > 0 && alive.length && rounds < 400) {
       let dps = 0;
@@ -1784,11 +1951,11 @@
         if (Math.random() < 1 / 24) d *= 1.5;                           // crit
         dps += d;
       }
-      dps *= boss.resist;
-      bossHp -= dps;
+      const status = legendStatusRound(st, legendStatusRates(alive.map(a => a.plan)), boss.hp / bossHurt(tier), cfg, true);
+      bossHp -= dps + status.dot;
       rounds++;
       for (const a of alive) {
-        const hit = boss.damageTo(a.c.proj) / 0.925;
+        const hit = boss.damageTo(a.c.proj) / 0.925 * status.blunt;
         a.hp -= hit * (0.85 + Math.random() * 0.15);
       }
       for (let i = alive.length - 1; i >= 0; i--) if (alive[i].hp <= 0) alive.splice(i, 1);
@@ -1806,7 +1973,7 @@
     if (!boss || !team.length) return null;
     let wins = 0, roundsSum = 0;
     for (let i = 0; i < runs; i++) {
-      const r = legendFightOnce(team, boss, eng);
+      const r = legendFightOnce(team, boss, tier, eng, data);
       if (r.win) { wins++; roundsSum += r.rounds; }
     }
     const winChance = wins / runs;
@@ -1840,8 +2007,11 @@
   }
 
   /** One legendary fight: the boss hits the whole team every round. */
-  function simulateLegend(team, boss, eng) {
-    const alive = team.map(c => ({ c, hp: c.hpCur != null ? c.hpCur : c.hp }));
+  function simulateLegend(team, boss, tier, eng, data) {
+    const cfg = data.cfg;
+    const plans = team.map(c => legendStatusPlan(c, boss, tier, eng, data));
+    const alive = team.map((c, i) => ({ c, hp: c.hpCur != null ? c.hpCur : c.hp, plan: plans[i] }));
+    const st = {};
     let bossHp = boss.hp, rounds = 0, dealt = 0;
     while (bossHp > 0 && alive.length && rounds < 400) {
       let dps = 0;
@@ -1851,11 +2021,12 @@
         const eff = eng.typeEff(mv.type, boss.types);
         dps += eng.damage(a.c.proj, boss.mon, mv, eff) * (mv.acc / 100);
       }
-      dps *= boss.resist;
-      bossHp -= dps;
-      dealt += dps;
+      const status = legendStatusRound(st, legendStatusRates(alive.map(a => a.plan)), boss.hp / bossHurt(tier), cfg, false);
+      const hit = dps + status.dot;
+      bossHp -= hit;
+      dealt += hit;
       rounds++;
-      for (const a of alive) a.hp -= boss.damageTo(a.c.proj);
+      for (const a of alive) a.hp -= boss.damageTo(a.c.proj) * status.blunt;
       for (let i = alive.length - 1; i >= 0; i--) if (alive[i].hp <= 0) alive.splice(i, 1);
     }
     const teamHp = team.reduce((a, c) => a + (c.hpCur != null ? c.hpCur : c.hp), 0);
@@ -1872,46 +2043,84 @@
   function evaluateLegendTeam(team, zone, tier, eng, data) {
     const boss = legendBoss(zone, tier, team, eng, data);
     if (!boss) return 0;
-    const res = simulateLegend(team, boss, eng);
+    const res = simulateLegend(team, boss, tier, eng, data);
     if (state.preset === 'offense') return res.dealt / Math.max(1, boss.hp);
     return fightScore(res, state.preset);
   }
 
-  /** Greedy team builder for one legendary boss. */
+  /** Greedy team builder for one legendary boss: the game's own counterTeam (st). */
   function pickLegendTeam(cands, zone, tier, eng, data, size = 6) {
-    // rank the candidates by what they actually bring against that boss
     const boss = legendBoss(zone, tier, cands.slice(0, 6), eng, data);
-    const contribution = c => {
-      if (!boss) return c.proj.level;
-      const mv = eng.bestMove(c.proj, boss.types);
-      if (!mv) return 0;
-      const eff = eng.typeEff(mv.type, boss.types);
-      const dps = eng.damage(c.proj, boss.mon, mv, eff) * (mv.acc / 100);
-      const inc = boss.damageTo(c.proj);
-      const alive = inc > 0 ? c.hp / inc : 999;
-      return dps * Math.min(alive, 400);
+    if (!boss) return [];
+    const parts = new Map();
+    const partOf = c => {
+      if (!parts.has(c)) parts.set(c, legendParts(c, boss, tier, eng, data));
+      return parts.get(c);
     };
-    const pool = cands.slice().sort((a, b) => contribution(b) - contribution(a)).slice(0, 80);
+    const pool = cands.slice()
+      .sort((a, b) => (partOf(b).value + partOf(b).dot) - (partOf(a).value + partOf(a).dot))
+      .slice(0, 80);
     const chosen = [];
     const usedSpecies = new Set();
-    const usedShiny = new Set();
     const usedUids = new Set();
+    const maxLegends = tier ? (data.cfg.ELITE?.LEGENDS ?? 1) : Infinity;
+    const isLegend = c => !!(c.species.legendary || c.species.mythical);
     while (chosen.length < size) {
       let best = null, bestScore = -Infinity;
+      const legends = chosen.filter(isLegend).length;
       for (const cand of pool) {
-        if (chosen.includes(cand) || usedUids.has(cand.mon.uid)) continue;
-        if (!cand.proj.shiny && usedSpecies.has(cand.species.id)) continue;
-        if (cand.proj.shiny && usedShiny.has(cand.species.id)) continue;
-        const sc = evaluateLegendTeam(chosen.concat([cand]), zone, tier, eng, data);
+        if (chosen.includes(cand) || usedUids.has(cand.mon.uid) || usedSpecies.has(cand.species.id)) continue;
+        if (legends >= maxLegends && isLegend(cand)) continue;
+        const sc = legendTeamScore(chosen.map(partOf).concat([partOf(cand)]), data);
         if (sc > bestScore) { bestScore = sc; best = cand; }
       }
       if (!best) break;
       chosen.push(best);
       usedSpecies.add(best.species.id);
       usedUids.add(best.mon.uid);
-      if (best.proj.shiny) usedShiny.add(best.species.id);
     }
     return chosen;
+  }
+
+  /** Swap one slot at a time on the greedy team (the chapter search's shape), on the fight score. */
+  function refineLegendTeam(team, cands, zone, tier, eng, data, budgetMs = 1500) {
+    const boss = legendBoss(zone, tier, team.length ? team : cands.slice(0, 6), eng, data);
+    if (!boss || !team.length) return { team, gain: 0 };
+    const parts = new Map();
+    const partOf = c => {
+      if (!parts.has(c)) parts.set(c, legendParts(c, boss, tier, eng, data));
+      return parts.get(c);
+    };
+    const pool = cands.slice()
+      .sort((a, b) => (partOf(b).value + partOf(b).dot) - (partOf(a).value + partOf(a).dot))
+      .slice(0, 30);
+    const maxLegends = tier ? (data.cfg.ELITE?.LEGENDS ?? 1) : Infinity;
+    const key = t => t.map(c => c.mon.uid).join('|');
+    const legal = t => new Set(t.map(c => c.species.id)).size === t.length
+      && (maxLegends === Infinity || t.filter(c => c.species.legendary || c.species.mythical).length <= maxLegends);
+    let best = team.slice();
+    let bestScore = evaluateLegendTeam(best, zone, tier, eng, data);
+    const base = bestScore;
+    const seen = new Set([key(best)]);
+    const started = Date.now();
+    while (Date.now() - started < budgetMs) {
+      let improved = false;
+      for (let slot = 0; slot < best.length && Date.now() - started < budgetMs; slot++) {
+        for (const cand of pool) {
+          if (Date.now() - started >= budgetMs) break;
+          if (best.some(c => c.mon.uid === cand.mon.uid)) continue;
+          const trial = best.slice();
+          trial[slot] = cand;
+          const k = key(trial);
+          if (seen.has(k) || !legal(trial)) continue;
+          seen.add(k);
+          const sc = evaluateLegendTeam(trial, zone, tier, eng, data);
+          if (sc > bestScore + 1e-9) { best = trial; bestScore = sc; improved = true; }
+        }
+      }
+      if (!improved) break;
+    }
+    return { team: best, gain: base > 0 ? bestScore / base - 1 : 0 };
   }
 
   /* ------------------------------------------------------------------ *
@@ -2679,29 +2888,49 @@
       row.dataset.pcoptDps = String(Math.round(dps));
     });
   }
-  /** The fastest clear: my best 2 picks + the 2 best allies, applied through the game's UI. */
-  async function fastestClear(rc) {
-    const boss = state.raidBoss;
-    const save = readSave();
-    const levelCap = state.data.cfg.RAID?.LEVEL ?? 100;
-    // the raid picker allows every PC mon (no region link), capped at the raid level
+  /** The two survival-weighted raid picks: provisional by raw DPS, then dps × min(alive rounds, R).
+   *  The raid boss has no counter/burst, so its per-round damage is its best hit over TEAM_SIZE,
+   *  scaled by the raid's dmgMult. */
+  function raidPicks(boss, save) {
+    const cfg = state.data.cfg;
+    const levelCap = cfg.RAID?.LEVEL ?? 100;
+    const size = Math.max(1, cfg.RAID?.MINE ?? 2);
     const mine = save.mons
-      .filter(m => state.data.species[m.id])
+      .filter(m => state.data.species[m.id] && m.level >= cfg.MAX_LEVEL)
       .map(m => {
         try {
-          return { mon: m, dps: raidDps({ id: m.id, level: Math.min(m.level, levelCap), shiny: m.shiny }, boss) };
+          const proj = { id: m.id, level: Math.min(m.level, levelCap), shiny: m.shiny, types: state.data.species[m.id].types };
+          const dps = raidDps(proj, boss);
+          const incoming = state.engine.bestDamage(boss.mon, proj) / Math.max(1, cfg.TEAM_SIZE) * boss.dmgMult;
+          return { mon: m, proj, dps, hp: state.engine.maxHp(proj), alive: incoming > 0 ? state.engine.maxHp(proj) / incoming : 999 };
         } catch (e) {
           logError('raid: dps failed for ' + m.id, e);
-          return { mon: m, dps: 0 };
+          return { mon: m, proj: { id: m.id, level: m.level, shiny: m.shiny }, dps: 0, hp: 0, alive: 0 };
         }
       })
       .sort((a, b) => b.dps - a.dps);
     // one per species (the game's rule), keep the highest-dps copy
     const seen = new Set();
-    const picked = mine.filter(x => !seen.has(x.mon.id) && seen.add(x.mon.id));
-    const team = picked.slice(0, 2).map(x => ({ mon: x.mon, dps: x.dps, species: state.data.species[x.mon.id], proj: { id: x.mon.id, level: x.mon.level, shiny: x.mon.shiny }, base: { id: x.mon.id }, hp: 0 }));
-    const myDps = team.reduce((a, t) => a + t.dps, 0);
-    log('debug', 'raid: dps check', { myDps, perMon: team.map(t => [t.mon.id, Math.round(t.dps * 10) / 10]), levels: team.map(t => t.mon.level), bossHp: boss.maxHp, hpPower: boss.hpPower, dmgMult: boss.dmgMult });
+    const uniq = mine.filter(x => !seen.has(x.mon.id) && seen.add(x.mon.id));
+    const team = uniq.slice(0, size);
+    const rounds = boss.maxHp / Math.max(1, team.reduce((a, t) => a + t.dps, 0));
+    const ranked = uniq.slice().sort((a, b) => raidRankScore(b, rounds) - raidRankScore(a, rounds));
+    return { ranked, team: ranked.slice(0, size), dps: team.reduce((a, t) => a + t.dps, 0), rounds };
+  }
+  /** Survival-weighted raid score: raw DPS, held back by the rounds the boss needs to KO the mon. */
+  const raidRankScore = (x, killRounds) => x.dps * Math.min(x.alive, killRounds);
+
+  /** The fastest clear: my best 2 picks + the 2 best allies, applied through the game's UI. */
+  async function fastestClear(rc) {
+    const boss = state.raidBoss;
+    const save = readSave();
+    const picks = raidPicks(boss, save);
+    const team = picks.team.map(x => ({
+      mon: x.mon, dps: x.dps, species: state.data.species[x.mon.id],
+      proj: x.proj, base: { id: x.mon.id }, hp: x.hp, alive: x.alive,
+    }));
+    const myDps = picks.dps;
+    log('debug', 'raid: dps check', { myDps, perMon: team.map(t => [t.mon.id, Math.round(t.dps * 10) / 10]), levels: team.map(t => t.mon.level), alive: team.map(t => Math.round(t.alive * 10) / 10), bossHp: boss.maxHp, hpPower: boss.hpPower, dmgMult: boss.dmgMult });
     state.evtOdds = { key: 'raid:' + rc.id, text: `team dps ${myDps >= 1000 ? (myDps / 1000).toFixed(1) + 'k' : Math.round(myDps)} · ${displayName(rc.id)} ${Math.round(boss.maxHp / Math.max(1, myDps))} rounds` };
     log('info', 'raid: fastest clear', { boss: displayName(rc.id), picks: team.map(t => displayName(t.mon.id) + ' ' + Math.round(t.dps || 0)) });
     await applyToEventPicker(team);
@@ -2770,6 +2999,41 @@
     return { zone, tier };
   }
 
+  /** The underground team picker ("Équipe N · Souterrain"): the theme is in its header chip. */
+  function undergroundContext() {
+    const headEl = document.querySelector('#evt-pick-head');
+    const head = headEl?.querySelector('h2');
+    const U = state.data?.cfg?.UNDERGROUND;
+    if (!head || !U) return null;
+    const txt = head.textContent.replace(/\s+/g, ' ').trim();
+    if (!/souterrain|underground/i.test(txt)) return null;
+    const label = headEl.querySelector('.ug-theme')?.textContent.trim() || '';
+    const themes = U.THEMES || [];
+    const theme = themes.find(t => t.name === label) || themes.find(t => t.key === label) || null;
+    return theme ? { theme, size: U.TEAM ?? 3 } : null;
+  }
+
+  /** The theme's guards, the game's guardsOf: the top-BST final species of the open dex with its types. */
+  function undergroundFoes(theme, data, save) {
+    const U = data.cfg.UNDERGROUND;
+    const bst = sp => Object.values(sp.stats || {}).reduce((a, b) => a + b, 0);
+    const finalOnly = id => !(data.evo[id] || []).some(e => data.species[e.to]);
+    // the game reads every finished region's dex; the furthest open dex is a safe stand-in
+    const open = data.regions.filter(r => r.dex && (save?.adv?.unlocked ?? 0) >= data.chapters.findIndex(c => (c.reg || 'kanto') === r.key));
+    const hi = Math.max(151, ...open.map(r => r.dex[1]));
+    const pick = (lo, top) => Object.values(data.species)
+      .filter(sp => sp.id >= lo && sp.id <= top && !sp.legendary && !sp.mythical && !sp.baby && !sp.unique
+        && finalOnly(sp.id) && sp.types.some(t => (theme.types || []).includes(t)))
+      .sort((a, b) => bst(b) - bst(a))
+      .slice(0, U.GUARD_POOL ?? 10);
+    const list = pick(387, 493);
+    const guards = list.length ? list : pick(1, hi);
+    return guards.map(sp => ({
+      id: sp.id, level: data.cfg.MAX_LEVEL, weight: 2, kind: 'static', source: theme.name,
+      hpMult: U.GUARD_MULT ?? 2, damageMult: data.cfg.ENEMY_DAMAGE?.static ?? 1,
+    }));
+  }
+
   function oddsText(o) {
     if (!o) return '';
     if (o.winChance < 0.02) return `win ~0% · cannot win with this team yet`;
@@ -2824,8 +3088,9 @@
       return;
     }
     const ctx = pickerContext();
-    if (!ctx) return;
-    mountLegendBox(head, ctx);
+    if (ctx) { mountLegendBox(head, ctx); return; }
+    const ug = undergroundContext();
+    if (ug) mountUndergroundBox(head, ug);
   }
 
 
@@ -3395,6 +3660,7 @@
       <div class="pcopt-title"><span>Chapter optimizer <small>v${VERSION}</small></span>
         <span class="pcopt-mut">${state.events ? 'chapter ' + state.events.index + ' · ' + esc(state.events.name) + ' · cap ' + cap : ''}</span></div>
       ${sim ? `<div class="pcopt-mut">chapter sim: win ${Math.round(sim.rate * 100)}% · clears ${sim.avgCleared}/${sim.battles} battles · ${sim.evaluated} teams in ${(sim.ms / 1000).toFixed(1)}s${Object.keys(sim.wipeAt || {}).length ? ' · wipe at step ' + Object.entries(sim.wipeAt).sort((a, b) => b[1] - a[1]).slice(0, 2).map(([i, n]) => '#' + i + '×' + n).join(', ') : ''}</div>` : ''}
+      ${state.roamer ? `<div class="pcopt-mut">roamer boss on this chapter: ${esc(displayName(state.roamer.id))} · Nv. ${state.roamer.level} · catch ${(state.roamer.catch * 100).toFixed(1)}%/K.O.</div>` : ''}
       <div class="pcopt-row" style="margin-top:6px">
         ${presetSeg()}
         <button class="btn small" data-act="run" ${state.busy ? 'disabled' : ''}>${state.busy ? 'working…' : 'simulate'}</button>
@@ -3540,7 +3806,7 @@
         for (let waited = 0; !url && waited < 30000; waited += 250) { await sleep(250); url = bundleUrl(); }
       }
       if (!url) { state.errors = ['game bundle not loaded yet']; log('warn', 'data: the game bundle is not on the page yet'); return; }
-      const cacheKey = 'bundle:v11:' + url;
+      const cacheKey = 'bundle:v12:' + url;
       let data = store.get(cacheKey, null);
       if (data && !dataLooksValid(data)) {
         log('warn', 'data: the cached tables are invalid, parsing the bundle again');
@@ -3620,11 +3886,13 @@
     state.leagueInfo = league.length
       ? `League: ${league.map(i => (state.data.chapters[i].steps.find(st => st.kind === 'gym')?.leader) || '?').join(' → ')} · a wipe rewinds to the first`
       : null;
-    state.enemies = chapterEnemies(state.data, info, save.adv.nodes).map(e => {
+    state.enemies = chapterEnemies(state.data, info, save.adv.nodes, save).map(e => {
       const types = state.data.species[e.id]?.types || [];
       const proj = { id: e.id, level: e.level, types };
       return { ...e, proj, types, hp: state.engine ? state.engine.maxHp(proj) : 0 };
     });
+    const roamNode = (save.adv.nodes || []).find(n => n.type === 'wild' && roamerFree(save, n.roamer));
+    state.roamer = roamNode?.roamer != null ? roamerBoss(roamNode.roamer, save, state.data) : null;
     const away = awayUids(save);
     state.eligible = save.mons.filter(m => !away.has(m.uid) && state.data.species[m.id] && canJoinTeam(save, m)).length;
   }
@@ -3637,7 +3905,7 @@
     const cands = projectCandidates(state.engine, state.data, save, cap, { branches: false });
     if (!cands.length) return { error: 'no candidate found in the PC' };
     // quick individual ranking to build the search pool
-    const foes = chapterEnemies(state.data, info, save.adv.nodes);
+    const foes = chapterEnemies(state.data, info, save.adv.nodes, save);
     const scored = scoreCandidates(state.engine, state.data, foes, cands, cap, state.league);
     const preset = state.preset;
     scored.sort((a, b) => scoreFor(b, preset) - scoreFor(a, preset));
@@ -3724,7 +3992,7 @@
       state.leagueInfo = league.length
         ? `League: ${league.map(i => (state.data.chapters[i].steps.find(st => st.kind === 'gym')?.leader) || '?').join(' → ')} · a wipe rewinds to the first`
         : null;
-      state.enemies = chapterEnemies(state.data, info, save.adv.nodes).map(e => {
+      state.enemies = chapterEnemies(state.data, info, save.adv.nodes, save).map(e => {
         const types = state.data.species[e.id]?.types || [];
         const proj = { id: e.id, level: e.level, types };
         return { ...e, proj, types, hp: state.engine.maxHp(proj) };
@@ -3773,6 +4041,64 @@
     }
   }
 
+  /** The underground team picker: the theme's guards, built with the chapter greedy. */
+  async function runUndergroundOptimizer() {
+    state.busy = true; state.errors = []; refreshUi();
+    log('info', 'underground optimizer: start');
+    try {
+      await ensureData();
+      const ctx = undergroundContext();
+      if (!ctx) { state.errors = ['underground picker not recognised']; state.busy = false; refreshUi(); return; }
+      const save = readSave();
+      if (!save) { state.errors = ['no save found']; state.busy = false; refreshUi(); return; }
+      const foes = undergroundFoes(ctx.theme, state.data, save);
+      if (!foes.length) { state.errors = ['no guard species for this theme']; state.busy = false; refreshUi(); return; }
+      const cap = state.data.cfg.MAX_LEVEL;
+      const enemies = foes.map(e => {
+        const types = state.data.species[e.id]?.types || [];
+        const proj = { id: e.id, level: e.level, types };
+        return { ...e, proj, types, hp: state.engine.maxHp(proj) };
+      });
+      const cands = projectCandidates(state.engine, state.data, save, cap)
+        .map(c => ({ ...c, hpCur: c.hp }));
+      const scored = scoreCandidates(state.engine, state.data, foes, cands, cap, true);
+      state.ugTeam = pickVsFoes(scored, enemies, state.engine, state.data, state.preset, ctx.size);
+      if (!state.ugTeam.length) state.errors = ['no level-100 candidate in the PC'];
+      log('info', 'underground optimizer: done', {
+        theme: ctx.theme.name, guards: foes.length,
+        team: state.ugTeam.map(t => displayName(t.species.id)),
+      });
+    } catch (e) {
+      logError('underground optimizer: failed', e);
+      state.errors = ['underground optimizer error: ' + e.message];
+    }
+    state.busy = false;
+    refreshUi();
+  }
+
+  /** The underground picker: the theme's guards and my team for them. */
+  function mountUndergroundBox(head, ctx) {
+    const foes = state.data ? undergroundFoes(ctx.theme, state.data, readSave()) : [];
+    const html = `
+      <div class="pcopt-row" style="margin-top:6px">
+        ${presetSeg()}
+        <button class="btn small" data-act="run" ${state.busy ? 'disabled' : ''}>⛏ Optimize (mine)</button>
+        <button class="btn small ghost" data-act="apply" ${state.ugTeam && state.ugTeam.length && !state.busy ? '' : 'disabled'}>apply to team</button>
+      </div>
+      <div class="pcopt-mut">${esc(ctx.theme.name)} · ${foes.length} guards · Nv. ${state.data?.cfg?.MAX_LEVEL ?? 100} · team of ${ctx.size}</div>
+      ${state.ugTeam && state.ugTeam.length ? `<div class="pcopt-mut">${state.ugTeam.map(t => esc(displayName(t.species.id))).join(' · ')}</div>` : ''}
+      ${errLine()}`;
+    const sig = JSON.stringify([ctx.theme.key, state.preset, state.busy, state.ugTeam && state.ugTeam.map(t => t.mon.uid).join(','), state.errors]);
+    mountBlock(head, 'underground', sig, html, el => {
+      el.querySelectorAll('[data-preset]').forEach(b => b.onclick = () => {
+        state.preset = b.dataset.preset;
+        refreshUi();
+      });
+      el.querySelector('[data-act="run"]').onclick = () => runUndergroundOptimizer();
+      el.querySelector('[data-act="apply"]').onclick = () => applyTeamFromPanel(state.ugTeam);
+    });
+  }
+
   async function runLegendOptimizer() {
     state.busy = true; state.errors = []; refreshUi();
     log('info', 'legend optimizer: start', { region: state.legRegion, boss: state.legBoss, tier: state.legTier });
@@ -3782,17 +4108,18 @@
       if (!zone) { state.errors = ['no boss zone']; state.busy = false; refreshUi(); return; }
       const save = readSave();
       if (!save) { state.errors = ['no save found']; state.busy = false; refreshUi(); return; }
-      // the game brings the team to the zone's level (max level for an elite tier) and heals it
-      const zoneLevel = state.legTier ? state.data.cfg.MAX_LEVEL : (zone.level ?? state.data.cfg.MAX_LEVEL);
-      const cands = projectCandidates(state.engine, state.data, save, zoneLevel)
-        .map(c => ({ ...c, hpCur: c.hp }));
-      state.legTeam = pickLegendTeam(cands, zone, state.legTier, state.engine, state.data);
+      // every game boss picker only sends max-level mons: keep the same pool
+      const cands = legendCandidates(zone, state.legTier);
+      const greedy = pickLegendTeam(cands, zone, state.legTier, state.engine, state.data);
+      const refined = refineLegendTeam(greedy, cands, zone, state.legTier, state.engine, state.data);
+      state.legTeam = refined.team;
+      log(refined.gain > 0.001 ? 'info' : 'debug', 'legend refine: ' + (refined.gain > 0.001 ? '+' + Math.round(refined.gain * 100) + '%' : 'unchanged'), { gain: refined.gain });
       state.legOdds = state.legTeam.length
         ? legendOdds(zone, state.legTier, state.legTeam, state.engine, state.data, save)
         : null;
-      if (!state.legTeam.length) state.errors = ['no candidate found in the PC'];
+      if (!state.legTeam.length) state.errors = ['no level-100 candidate in the PC'];
       log('info', 'legend optimizer: done', {
-        boss: displayName(zone.id), tier: state.legTier, level: zoneLevel,
+        boss: displayName(zone.id), tier: state.legTier,
         team: state.legTeam.map(t => displayName(t.species.id)),
         odds: state.legOdds && { win: state.legOdds.winChance, rounds: state.legOdds.rounds, catch: state.legOdds.pCatch },
       });
@@ -3802,6 +4129,16 @@
     }
     state.busy = false;
     refreshUi();
+  }
+
+  /** The max-level pool of a legend zone (elite tiers always project at MAX_LEVEL). */
+  function legendCandidates(zone, tier) {
+    const save = readSave();
+    if (!save || !state.engine) return [];
+    const level = tier ? state.data.cfg.MAX_LEVEL : (zone.level ?? state.data.cfg.MAX_LEVEL);
+    return projectCandidates(state.engine, state.data, save, level, { anyRegion: true })
+      .filter(c => c.mon.level >= state.data.cfg.MAX_LEVEL)
+      .map(c => ({ ...c, hpCur: c.hp }));
   }
 
   async function applyTeamFromPanel(team) {
@@ -3814,6 +4151,102 @@
     state.waiting = null;
     if (!res.ok) { log('error', 'panel: apply failed', res.error); state.errors = ['apply failed: ' + res.error]; }
     refreshUi();
+  }
+
+  /** window.__pcopt.selftest(): the reworked optimizers' invariants, on the live save + synthetic cases. */
+  async function selftest() {
+    const results = [];
+    const check = (name, pass, detail) => {
+      results.push({ name, pass: !!pass, detail });
+      log(pass ? 'info' : 'warn', 'selftest: ' + (pass ? 'ok' : 'FAIL') + ' · ' + name, detail);
+    };
+    const started = Date.now();
+    try {
+      await ensureData();
+      const data = state.data, eng = state.engine;
+      if (!data || !eng) { check('data', false, 'bundle not loaded'); return { ok: false, ms: Date.now() - started, results }; }
+      const save = readSave();
+      if (!save) { check('save', false, 'no save'); return { ok: false, ms: Date.now() - started, results }; }
+      const cap = data.cfg.MAX_LEVEL;
+      const isLegend = c => !!(c.species.legendary || c.species.mythical);
+      const onePerSpecies = t => new Set(t.map(c => c.species.id)).size === t.length;
+      const zone = legendZones().find(z => data.species[z.id]) || null;
+      check('legend zone data', !!zone);
+
+      if (zone) {
+        const tier0 = state.legTier;
+        state.legTier = 0;
+        const pool = legendCandidates(zone, 0);
+        check('legend pool is level 100', pool.every(c => c.mon.level >= cap) && (pool.length > 0 || !save.mons.some(m => m.level >= cap)), { pool: pool.length });
+        const team = pickLegendTeam(pool, zone, 0, eng, data);
+        state.legTier = 1;
+        const elitePool = legendCandidates(zone, 1);
+        const elite = pickLegendTeam(elitePool, zone, 1, eng, data, 6);
+        state.legTier = tier0;
+        check('legend team is one per species', onePerSpecies(team), team.map(c => c.species.id));
+        check('elite team respects ELITE.LEGENDS',
+          elite.filter(isLegend).length <= (data.cfg.ELITE?.LEGENDS ?? 1), elite.map(c => c.species.id));
+        const refined = refineLegendTeam(team, pool, zone, 0, eng, data, 600);
+        check('legend refine never lowers the score', refined.gain >= -1e-9, { gain: refined.gain });
+        check('refined team stays one per species', onePerSpecies(refined.team));
+
+        // a shiny and a plain copy of one species: at most one may be picked
+        const base = pool[0];
+        if (base) {
+          const shiny = { ...base, mon: { ...base.mon, uid: base.mon.uid + ':shiny' }, proj: { ...base.proj, shiny: true } };
+          const pair = pickLegendTeam([base, shiny, ...pool.slice(1)], zone, 0, eng, data, 6);
+          check('shiny + plain of one species never both picked', pair.filter(c => c.species.id === base.species.id).length <= 1);
+        }
+
+        // two legendaries: capped at an elite tier, uncapped outside
+        const synth = (id, uid) => {
+          const sp = data.species[id];
+          const proj = { id, level: cap, types: sp.types };
+          return { mon: { uid, id, level: cap, shiny: false }, base: { id, shiny: false, types: sp.types }, proj, species: sp, hp: eng.maxHp(proj), hpCur: eng.maxHp(proj) };
+        };
+        const legends = Object.values(data.species).filter(sp => sp.legendary || sp.mythical).slice(0, 2);
+        if (legends.length === 2) {
+          const two = legends.map((sp, i) => synth(sp.id, 'selftest-leg-' + i));
+          const capped = pickLegendTeam(two, zone, 1, eng, data, 2);
+          const open = pickLegendTeam(two, zone, 0, eng, data, 2);
+          check('elite caps the legendaries', capped.filter(isLegend).length <= 1, capped.map(c => c.species.id));
+          check('no legend cap outside elite', open.filter(isLegend).length === 2, open.map(c => c.species.id));
+        }
+      }
+
+      // raids: survival-weighted picks, level-100 pool, game size
+      if (data.cfg.RAID) {
+        const boss = raidBoss({ id: 25 });
+        const picks = raidPicks(boss, save);
+        check('raid pool is level 100', picks.ranked.every(x => x.mon.level >= cap), { pool: picks.ranked.length });
+        check('raid picks are survival weighted',
+          picks.ranked.every((x, i, a) => i === 0 || raidRankScore(a[i - 1], picks.rounds) >= raidRankScore(x, picks.rounds)));
+        check('raid picks respect RAID.MINE', picks.team.length <= (data.cfg.RAID.MINE ?? 2), { picks: picks.team.length });
+        const glass = { dps: 300, alive: 2 }, tank = { dps: 100, alive: 50 };
+        check('2-round glass cannon ranks below a survivor at R=10', raidRankScore(glass, 10) < raidRankScore(tank, 10));
+      }
+
+      // roamers: a boss on the marked node, nothing when none is out
+      const nodes = [{ type: 'wild', name: 'selftest route', pool: [{ id: 25, w: 1 }], lv: [5, 6], roamer: 243 }];
+      const baseSave = { adv: { chapter: 0, nodes }, mons: [{ uid: 'selftest-a', id: 25, level: 50 }], roam: { at: {}, caught: [] } };
+      const roamSave = { ...baseSave, roam: { at: { 243: { ch: 0, until: Date.now() + 1e6 } }, caught: [] } };
+      const p0 = chapterPlan(data, baseSave)[0];
+      const p1 = chapterPlan(data, roamSave)[0];
+      const spec = p1 ? rollBattleFoes(p1, data, roamSave, cap) : null;
+      check('no roamer out, the plan is unchanged', p0 && p0.roamer == null);
+      check('roamer node becomes a level-100 boss',
+        !!spec && spec.boss === true && spec.foes[0].hpMult > 1 && spec.foes[0].level >= (data.cfg.ROAMING?.MIN_LEVEL ?? 100),
+        spec && { level: spec.foes[0].level, hpMult: spec.foes[0].hpMult });
+      const caughtSave = { ...baseSave, roam: { at: { 243: { ch: 0, until: Date.now() + 1e6 } }, caught: [243] } };
+      check('caught roamer is not a boss', chapterPlan(data, caughtSave)[0]?.roamer == null);
+    } catch (e) {
+      check('selftest crashed', false, e.message);
+      logError('selftest', e);
+    }
+    const ms = Date.now() - started;
+    const ok = results.every(r => r.pass);
+    log(ok ? 'info' : 'warn', 'selftest: ' + (ok ? 'all green' : 'FAILED'), { checks: results.length, ms });
+    return { ok, ms, results };
   }
 
   function boot() {
@@ -3872,9 +4305,10 @@
     chapterEnemies, chapterInfo, readSave, scoreCandidates, scoreFor,
     applyTeam, bundleUrl, httpGet, canJoinTeam, showMovesPanel, pokeApiSpecies, compareWithPokeApi,
     parseLegends, legendBoss, simulateLegend, pickLegendTeam, evaluateLegendTeam, runLegendOptimizer,
-    legendFightOnce, legendOdds, logs,
+    legendFightOnce, legendOdds, legendParts, legendTeamScore, legendCandidates, refineLegendTeam, logs,
     projectCandidates, evolvedBranches, refreshChapter,
     chapterPlan, segmentPlans, prepareSegments, switchSegment, freeTemplates, switchTemplate, simulateChapter, searchChapterTeam, rollBattleFoes, simBattle, simAct, simOhko, simGeneric, autoScore, ensureEnglish,
-    raidDps, raidBoss, annotateRaidSuggestions, huntDecision, huntPlacement, roamList, huntPacing
+    raidDps, raidBoss, raidPicks, raidRankScore, annotateRaidSuggestions, huntDecision, huntPlacement, roamList, huntPacing,
+    undergroundContext, undergroundFoes, pickVsFoes, roamerBoss, selftest
   };
 })();
