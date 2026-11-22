@@ -1,222 +1,251 @@
 # Poke'Catch Team Optimizer
 
-A Tampermonkey helper for [Poke'Catch](https://pokecatch-online.netlify.app/) that
+<div align="center">
 
-- **simulates a whole chapter** with the game's own battle rules and finds the team of 6 with the
-  highest completion rate (wilds, trainers, gyms, heal stops, statuses, XP and evolutions included),
-- does the same for **legendary battles** (every legend zone and its five elite tiers) with win
-  chance, run time and capture odds,
-- optimizes **shiny raids** (DPS badges on every pick/ally suggestion and a one-click fastest clear),
-- **watches the team** and records where a wipe happens,
-- and **applies** a team to the game by dragging mons into the real slots, like a player.
+<img src="https://capsule-render.vercel.app/api?type=waving&color=gradient&customColorList=6,11,20&height=190&text=Poke%27Catch%20Team%20Optimizer&fontSize=42&fontAlignY=36&desc=Teams%20built%20with%20the%20game%27s%20own%20rules%2C%20applied%20through%20its%20own%20slots&descAlignY=56&fontColor=ffffff" width="100%" />
 
-All Pokémon and move names are **English** — when the page runs in another language, the script
-reads `/boot.js`, finds the English pack (`bundle/lang-en.<hash>.js`) and loads it for its own
-labels.
+<!-- readme-gen:start:badges -->
+![Version](https://img.shields.io/badge/version-1.7.0-2f6fe4?style=flat)
+![Platform](https://img.shields.io/badge/Tampermonkey-userscript-00a94f?style=flat)
+![Game](https://img.shields.io/badge/Poke%27Catch-online-ee8130?style=flat)
+![Dependencies](https://img.shields.io/badge/dependencies-none-555?style=flat)
+<!-- readme-gen:end:badges -->
+
+</div>
+
+A single-file Tampermonkey userscript for [Poke'Catch](https://pokecatch-online.netlify.app/).
+It reads the game's own bundle, simulates fights with the game's own math, and fills the game's
+own team slots by dragging Pokémon the way a player would — no save editing, no extra requests
+during play.
+
+## What it does
+
+<table>
+<tr>
+<td width="50%" valign="top">
+
+### 🧭 Chapter planning
+Simulates the whole generated chapter — wilds, trainers, gyms, heal stops, statuses, XP and
+mid-run evolutions — then saves a team per stretch between Pokémon Centers and switches
+templates as the run reaches each center.
+
+</td>
+<td width="50%" valign="top">
+
+### ✨ Legendary and elite zones
+The game's `counterTeam` ranking: one mon per species, one legendary per elite team, damage
+plus the boss-status credit (DoT and paralysis), the elite HURT/RESIST tables, a short
+swap-one-slot refine, then a 200-fight win and capture line.
+
+</td>
+</tr>
+<tr>
+<td width="50%" valign="top">
+
+### ⚡ Shiny raids
+`atk` badges on the community cards and on every ally avatar, and a **Fastest clear** that
+picks two level-100 mons by DPS weighed against how many rounds the boss needs to KO them.
+
+</td>
+<td width="50%" valign="top">
+
+### ⛏ Underground
+The theme's guard pool (the game's `guardsOf` species, top BST final forms) becomes a plain
+foe list; the chapter greedy fills the three slots at cap 100.
+
+</td>
+</tr>
+<tr>
+<td width="50%" valign="top">
+
+### 🐾 Roamers
+A roamer out on the current chapter is modeled as a level-100 boss (ROAM_HP / ROAM_POWER)
+inside the chapter plan, so the segment teams have to survive it. The hunt loop restarts the
+roamer's chapter and turns its loop on/off through the map.
+
+</td>
+<td width="50%" valign="top">
+
+### 🗺️ One dashboard
+Progress screen, above the map: chapter and step, cap, eligible count, type chips, the preset
+switch, simulate / apply / prepare segments / empty templates, the prepared segment rows and
+the roamer hunt.
+
+</td>
+</tr>
+</table>
 
 ## Install
 
 1. Install [Tampermonkey](https://www.tampermonkey.net/).
-2. Open `pokecatch-team-optimizer.user.js` → Tampermonkey offers to install it.
-3. Open <https://pokecatch-online.netlify.app/> and log in. There is **no floating window**:
-   the helper's data lives inside the game's own screens (see below), styled with the game's
-   CSS so it reads as part of the UI. Blocks only rebuild when something changed, so nothing
-   flickers while the game plays. The block title shows the running version.
+2. Open [`pokecatch-team-optimizer.user.js`](https://raw.githubusercontent.com/smuglilgoat/pokecatch-helper/main/pokecatch-team-optimizer.user.js)
+   — Tampermonkey offers to install it.
+3. Open the game and log in. There is **no floating window**: every block lives inside the
+   game's own screens, built from its classes. Blocks rebuild only when something changed.
 
 ## Where everything is
 
-| Game screen | What the helper adds there |
+| Game screen | What the helper adds |
 |---|---|
-| **Progress** | Run monitor: chapter, step and cap; data source and bundle; eligible count; league info; errors and the update notice; the chapter's events with the type chips; the **wipe watcher** with its log; the **roamer hunt** (roaming legendaries out now, with a Hunt/Stop button). |
-| **Adventure** | Between the route timeline and the arena, the game's **team-template bar** (same markup, sprites and active state): one click fields that template, which the segment watcher then leaves alone until the next center. |
-| **Team/PC** | The **chapter optimizer** above the PC list: presets, **simulate** with the progress bar, the simulation result, the team with each mon's move and a `moves`/`api` button, **apply to team**, **prepare segments** (one team per stretch between Pokémon Centers, stored in the game's free team templates) and **free all templates** (let the planner reuse every template; the game has no delete, so the next prepare overwrites them). |
-| **Legendary team picker** (any legend zone) | The **legendary optimizer**: the boss with its HP and damage, the odds line, presets, **✨ Optimize (mine)**, the team and **apply to team**. |
-| **Raid team picker** ("Raid vs boss") | The **raid optimizer**: **⚡ Fastest clear**, the DPS line and an `atk` badge on every pick/ally suggestion. |
+| **Progress** | The dashboard above the map: chapter name and step n/N, cap, league line, eligible count, data source and bundle, errors and the update notice, the chapter's type chips, the presets, quick actions, the prepared segment rows, and the roamer hunt (out now, time left, Hunt/Stop). |
+| **Adventure** | The game's team-template bar between the timeline and the arena, with the same markup and active state: one click fields that template. |
+| **Team/PC** | Above the PC list: the **chapter optimizer** — presets, **simulate** with its progress bar and result line, the compact team rows (icon, `atk` / `def` badges), **apply to team**, a base-team template select + **apply base team**, **prepare segments**, **empty templates**, and the segment rows (T1..T5 with sprites and win rate; click one to switch). An **empty templates** button also sits next to the game's `#team-sets`. |
+| **Legendary / elite picker** | Below “Les plus choisis”: presets, **✨ Optimize (mine)**, the boss line (types, HP, damage per round), the odds line, the team with `atk` (damage into the boss) and `def` (rounds survived) badges, and **apply to team**. |
+| **Underground picker** | Below the community section: the theme's guards, presets, **⛏ Optimize (mine)** and **apply to team**. |
+| **Raid picker** | Below the community section: **⚡ Fastest clear**, the total DPS line, `atk` on the species cards and a total-DPS badge on each ally avatar. |
+| **PC grid** (any picker with a result) | A blue ▲ on every mon the script picked; gold when the game's own ranking would pick it too (in edge pickers: when the game already marks it `eff-up`). The game's own green marks are never touched. |
 
-The **Defense / Offense / Balanced** presets order the candidate pool the search starts from
-(survivability, damage, or the balance of both); the final team is the one that wins the
-simulation.
+The **Defense / Offense / Balanced** presets order the candidate pool and weigh the chapter
+fight score; the same preset is shared by all optimizers.
 
 ## The chapter simulator
 
-The **simulate** button is a full run simulation of the chapter the game generated, not a per-foe
-score:
+**simulate** is a full run of the chapter the game generated, not a per-foe score:
 
-- it walks the chapter's real node list in order — wild encounters, random trainers, story
-  trainers, gym leaders, heal stops. A **league** chapter is built by the game with all five
-  members' paths; the sim walks them all, and a wipe still rewinds the league to its first member.
-- battles use the game's own rules, ported from its bundle: every living mon acts each round in
-  speed order (paralysis ×0.25 speed), OHKO-capable moves are preferred, **status moves are used
-  with the game's 30 % chance** (accuracy capped 100/70/30 by move kind, immunity by type), else the
-  best attack; damage rolls 0.85–1.15, crits, multi-hits and secondary status effects per hit.
-- statuses behave exactly as in game: sleep 1–3 turns, freeze until a 0.2 thaw, full-para 0.25 with
-  a 3-turn cap, burn/poison tick `maxHp/8` for 5 turns, the 0.75 stat cuts, confusion self-hits,
-  night-sleep on diurnal wilds — and they **persist between fights** until a heal.
-- the team keeps its HP between fights, gains the game's XP per defeated foe and **levels up
-  mid-run**: new moves from the graded learnset, evolutions with their gates; the panel shows the
-  form each mon becomes at the cap (`Mascaïman → Krookodile · Lv32 → 100`).
+- it walks the live node list in order — wilds, random trainers, story trainers, gym leaders,
+  heal stops, statics. A league chapter walks every member, and a wipe still rewinds the league.
+- battles use the game's rules: every living mon acts each round in speed order (paralysis
+  ×0.25 speed), OHKO moves are preferred, **status moves are used with the game's 30 % chance**
+  (accuracy capped 100/70/30 by move kind), else the best attack; damage rolls 0.85–1.15,
+  crits, multi-hits and secondary statuses per hit.
+- statuses behave as in game: sleep 1–3 turns, freeze until a 0.2 thaw, full-para 0.25 with a
+  3-turn cap, burn/poison tick `maxHp/8` for 5 turns, the 0.75 stat cuts, confusion self-hits,
+  night-sleep on diurnal wilds — and they persist between fights until a heal.
+- the team keeps its HP between fights, gains the game's XP and levels up mid-run: new moves
+  from the graded learnset, evolutions with their gates (daytime, party, uid-hash branch).
 - the search is a hill climb over the strongest pool (Monte-Carlo runs per team, one mon per
-  species), scored by completion rate. The result line reads like
+  species), scored by completion rate. The line reads like
   `chapter sim: win 62% · clears 19/24 battles · 121 teams in 1.1s · wipe at step #7×3`.
+
+A roamer on the chapter is added to this plan as a boss fight at its real level (100) with the
+game's ROAM_HP and ROAM_POWER, and it is weighted heavily in the candidate scoring. The chapter
+line also shows its one-ball capture chance (`ROAMING.CATCH × capture-berry buff`).
 
 ### Segment teams (one per Pokémon Center)
 
-A chapter is split at its **heal nodes**; each stretch is simulated on its own (starting from a
-healed team, which is what a Pokémon Center gives you). **prepare segments** computes a team for
-each stretch and stores it in a **free** team template of the game (`#team-sets`) — your own
-templates are never overwritten. While the run is in a chapter that has prepared segments, the
-script watches the node and switches **one node before each Pokémon Center** — the game heals when
-the center node starts, so a team fielded at the center itself would miss the heal. The chapter
-block lists the prepared segments as `#slot team…`. The plan survives a page reload: the
-segment→template map is kept next to the data cache, so switching resumes where the run is.
+A chapter is split at its **heal nodes**; each stretch is simulated from a healed team, which
+is what a center gives you. **prepare segments** computes a team per stretch and writes
+segment *i* into **Template *i* + 1**, overwriting whatever was there (the panel lists T1–T5
+with sprites and win rates). While the chapter runs, the script watches the node and switches
+**one node before each Pokémon Center** — the game heals when the center starts, so a team
+fielded at the center would miss it. A manual pick in the game's bar wins for its segment.
 
-A **wipe restarts the chapter**, so the script drops the current segment and fields **segment 1's
-template** again as soon as the run is back at the start.
+**empty templates** really empties them: it selects each filled template and drags every member
+out to the PC through the game's pointer gestures, then logs what is left. It never writes the
+save.
 
-The game has no "delete template" action, so **free all templates** cannot empty them: it releases
-the segment plan and lets the next **prepare segments** overwrite every template (it asks first,
-and the filled templates are only replaced when you prepare). To switch by hand, the game's own
-template bar sits on the Adventure screen between the timeline and the arena: click a template and
-the watcher leaves your pick alone until the next Pokémon Center.
+## Legendary and elite teams
 
-## Legendary battles
+Open a legend zone's picker, pick a tier, then **✨ Optimize (mine)**. Only **level-100** mons
+are used (the game sends max-level teams into these fights) and the region-link rule does not
+apply — the game's zone picker allows every region.
 
-Open a legend zone's team picker, then **✨ Optimize (mine)**: the boss fights the whole team every
-round (main move + burst + counter, like the game), scales with the team's shiny/level and uses the
-elite tables. The fight is simulated at the level the game brings the team to — the **zone's level**
-(100) or the max level for an elite tier — starting from a **healed team**, which is how a
-legendary fight always begins.
+The ranking is the game's own `counterTeam`:
 
-Under the boss the line tells you what the fight costs:
+- each candidate's value is its damage into the boss × the rounds it survives there;
+- on top of that, the **boss-status credit**: the expected DoT (a `bossHp / HURT` tick with the
+  `BOSS_STATUS.DOT_TURNS` cap, land chance from the 30 % status-move rule and the status caps,
+  scaled by `ELITE.RESIST`) and paralysis, then `Σ value + best dots × STATUS_TEAM −
+  STATUS_PARA_COST × Σ para` (the penalty only when a dot is present);
+- one mon per species — a shiny and a plain copy of the same species never both go in;
+- **one legendary** per elite team (`ELITE.LEGENDS`), no cap outside elite;
+- a budgeted (~1.5 s) swap-one-slot hill climb then refines the picks against the fight
+  simulation; the console logs `legend refine: +x%` or `unchanged`.
 
-| Number | Meaning |
-|---|---|
-| **win %** | victory chance, from 200 simulated fights with the game's rolls |
-| **rounds ≈ time/run** | length of one attempt (~2.5 s per round at the game's fast speed, scaled by your speed) |
-| **catch %/run** | capture chance of one successful attempt (the game's formula: `captureRate × 0.6 / 255`, legendary `3/255`, times your capture-berry buff) |
-| **~N runs ≈ total time** | expected attempts and wall-clock time, capped by the raid pity (150 tries) |
+The odds line reports win %, rounds, catch % per attempt and the expected runs/time to the
+capture, from 200 simulated fights with the game's rolls and damage variance. The direct damage
+is not reduced by `ELITE.RESIST` — in the bundle that resistance applies to statuses only.
 
-## Shiny raids
+## Raids
 
-In the game's raid picker ("Raid vs *boss*") my row adds a **⚡ Fastest clear** button:
+In the game's raid picker my row adds **⚡ Fastest clear**:
 
-- every suggestion carries an **atk** badge — the expected damage per round against the raid boss,
-  using the game's own raid knobs (`BOSS.HP/POWER × (BST_REF/BST)^exp × ADJ`, shiny boss, the
-  6-slot HP scaling) and accuracy-weighted;
-- the community species cards in the picker and every ally row in "Pick an ally" are annotated
-  (the ally score is the sum of the two mons shown in the row);
-- the button fills your two pick slots with the highest-DPS mons (any PC mon is allowed, capped at
-  the raid level, one per species), then walks the ally slots and picks the two best allies;
-- the line reports the total: `team dps 2.1k (mine 831 + allies 1279) · Swablu 10 rounds to break`.
-
-## Inside the game, beside its own buttons
-
-The game has its own **Optimize** button in the team pickers and its own controls in the Team/PC
-header. The helper's blocks sit right there, built from the game's own classes, and their buttons
-fill the game's own slots — the two optimizers work side by side and both write to the game.
-
-## Wipe watcher
-
-The game heals the team the instant it is wiped, so an "all knocked out" state never lasts. The
-watcher reads the game's own counters instead: `adv.deaths[chapter]` for a normal chapter,
-`adv.league.tries` for a league run and `adv.zone.tries` for an elite legend zone (the 2026-11
-update stopped counting league and elite wipes in `deaths`). Each record holds the step the team
-fell on, the foes, your team and the wipe mode (chapter / league / elite zone).
+- every species card gets an **atk** badge; each ally avatar gets its duo's total DPS badge
+  instead of having a tag pushed into the row;
+- picks are **survival-weighted**: rank by raw DPS for a provisional team, let
+  `R = bossHp / teamDps`, then re-rank by `dps × min(aliveRounds, R)`, where `aliveRounds` is
+  the mon's HP over the boss's per-round hit (`bestDamage / TEAM_SIZE × raid dmgMult`). The
+  atk badges and the total line stay raw DPS;
+- the pool is level-100 mons, one per species; the button fills the two pick slots, then walks
+  the ally modals and takes the best row of each.
 
 ## Roamer hunt
 
-The roaming legendaries (Raikou, Entei, Suicune, Latias, Latios, Cresselia, Tornadus, Thundurus)
-are not fixed to a route: the game keeps each one on a random chapter of its region for 15 minutes
-(30 with a rowap berry), then re-rolls it. Only while it is out and uncaught does the chapter's
-build mark one random outdoor wild with a roamer fight.
+The roaming legendaries stay on a random chapter of their region for 15 minutes (30 with a
+rowap berry) and re-roll afterwards. The dashboard lists the ones out (`save.roam.at`) with
+their chapter and time left. Pick one and press **Hunt**: the script re-checks the timer and
+placement, restarts the roamer's chapter with the game's own restart button, turns the
+chapter's loop on, waits for the roamer fight and its single capture ball, and starts over on
+a miss. **Stop** ends it and turns the loop back off unless you had turned it on yourself.
 
-The Progress screen lists the roamers currently out (`save.roam.at`) with their chapter and time
-left. Pick one and press **Hunt**: the script keeps checking the timer and placement, rebuilds the
-roamer's chapter with the game's own **Recommencer** / **Refaire le chapitre** button until the run
-reaches the marked node, waits for the roamer fight and its single automatic capture ball, and
-starts over when the ball fails. **Stop** ends it. The loop lives in the page: keep the game tab
-open, and a reload ends the hunt. A reload also forgets which loops the hunt turned on, so if one
-is still on, turn it off on the chapter row on the map.
-
-The hunt also turns on the chapter's own **loop** switch, so a pass that ends without reaching the
-roamer restarts itself instead of waiting for the panel. A loop restart does not check the roamer's
-placement, so the hunt re-checks it on every same-chapter rebuild and stops or follows the roamer
-when it moved. **Stop** turns that loop back off — unless you had already turned it on yourself; if
-it cannot be turned off, the status line says so and the switch stays on the map.
-
-Limits, from the game's own rules:
-
-- the placement is re-checked before every restart and on every loop rebuild: when the 15-minute
-  window closes, or the game re-rolls the roamer to another chapter, the hunt stops or follows it
-  instead of hunting a stale chapter;
-- each attempt has one capture roll at 4 % × the capture-berry buff. A **master ball in the bag**
-  makes that roll 100 % and is consumed automatically — the hunt then stops on the capture;
-- the adventure must keep running: a paused adventure stays paused, and a wipe auto-restarts the
-  chapter by itself (the hunt just keeps waiting);
-- the hunt refuses to start during an event, a legendary zone, a league run or the Battle Tower (the
-  map does not offer a restart then), and stops if one starts mid-hunt;
-- one roamer at a time, no team optimization for its fight, and no re-roll of the placement itself.
+Server pacing: one restart per 10–14 s and at most 120 per rolling hour, then a 10-minute
+rest. The hunt stops or follows the roamer when its placement expires or moves, refuses to run
+during an event / zone / league / tower, and never persists: a reload ends it.
 
 ## Where the data comes from
 
-- **The game itself** — the script parses the bundle the page already loaded
-  (`bundle/app.<hash>.js`): Pokédex, moves, evolutions, chapters, encounters, the config knobs and
-  the legend zones. The per-species learnset is recomputed with the game's own grading algorithm
-  (the 2026-11 re-grading: a 20-level gap cap, per-type level reassignment by weight, a per-species
-  4–5 spacing step), so the recommended attacks are exactly the ones the game allows at the cap —
-  verified equal to the game's own algorithm on all 649 species.
-- **https://pokemondb.net/type** — the type chart (identical to the game's), with PokeAPI and the
-  game chart as fallbacks.
-- **https://pokeapi.co/api/v2** — cross-check of types and level-up learnsets.
+- **The game itself** — the bundle the page already loaded (`bundle/app.<hash>.js`): Pokédex,
+  moves, evolutions, chapters, encounters, config knobs, legend zones and the gem/underground
+  themes. The per-species learnset is recomputed with the game's grading (20-level gap cap,
+  per-type reassignment, the 4–5 spacing step).
+- **https://pokemondb.net/type** — the type chart, with PokeAPI and the game chart as fallbacks.
+- **https://pokeapi.co/api/v2** — the debug `api` cross-check only; no UI button uses it.
 
-Tables are cached in userscript storage keyed by the bundle hash and validated on load: an
-implausible or half-read table is thrown away and re-parsed.
+Tables are cached in userscript storage keyed by the bundle hash, validated on load, and a
+half-read table is thrown away and re-parsed. No new network fetch is added by the optimizers.
 
 ## When the game updates
 
-The game rewrites its bundle on every release, including the minified names the script reads. The
-parser never trusts a minified name: it locates tables by their public markers (`a.POKEDEX=`,
-`a.CONFIG=`…) or by the shape of the data, and reads legend zones through the public
-`a.LegendZones` export. Each table parses on its own; one the update broke is named in the panel
-(`bundle parse failed: game update changed the bundle: MOVES — …`) while the rest keeps working.
+The game rewrites its bundle every release, minified names included. The parser locates tables
+by public markers (`a.POKEDEX=`, `a.CONFIG=`…) or by data shape, and reads legend zones through
+`a.LegendZones`. Each table parses on its own; a broken one is named in the dashboard while the
+rest keeps working. Missing boss-status knobs switch the status credit off with a named
+`[pcopt]` log line instead of failing.
 
-Every action is logged to the console with a `[pcopt]` prefix — bundle parse with table sizes,
-cache hits, chart source, optimizer runs and their teams, applied slots, injections, raid/legend
-runs, wipes and their mode, and every error. The last 400 entries are in `window.__pcopt.logs`.
+The script checks GitHub once per page load and shows the update line when a newer `@version`
+exists. Tampermonkey also pulls updates itself through `@updateURL` / `@downloadURL`; GitHub
+raw caches for ~5 minutes.
 
-### Automatic updates
+## Debugging and self-test
 
-The script declares `@updateURL` / `@downloadURL` at the raw file on GitHub `main`, so Tampermonkey
-pulls every release by itself — no reinstall — **as long as `@version` changed** (it does, on every
-release; the panel header shows the running version). Tampermonkey checks on its own schedule
-(dashboard → Settings → **Update** → check interval), or force it from the toolbar (⚙ → *Check for
-updates*). GitHub raw caches for ~5 minutes.
+Every action is logged to the console with a `[pcopt]` prefix (bundle tables, cache hits, chart
+source, optimizer runs and teams, applied slots, picker mounts, refine gains, errors). The last
+400 entries are in `window.__pcopt.logs`.
 
-The script also checks once per page load and shows
-`update 1.6.2 is on GitHub (installed 1.6.0) — Tampermonkey → Check for updates` as soon as a
-newer version exists, and it removes the previous version's floating panel and quick-optimize
-rows from the page, so after an update only the blocks' controls remain (reload the page once
-after installing). For truly instant updates, install from a **local clone** instead:
-Tampermonkey re-reads a `file://` script when it changes (needs *Allow access to file URLs*).
+```js
+window.__pcopt.selftest()   // runs the reworked invariants on the live save + synthetic cases
+```
+
+It logs one `[pcopt] selftest:` line per check and returns `{ ok, ms, results }`. The checks
+cover: the level-100 legend/raid pools, one mon per species, the elite legendary cap, the shiny
++ plain pair rule, the refine never lowering the score, survival-weighted raid picks and their
+size, the 2-round glass cannon ordering, and the roamer node becoming a level-100 boss (and
+staying normal when none is out or it is caught). It is cheap (< 2 s on a 540-mon PC).
 
 ## Notes and limits
 
-- **Level cap projection.** The team is evaluated at the cap the game currently allows: the next
-  gym you still owe in any **open** region (travel list, region-link destination, unlocked
-  chapters), ace + margin — so a mid-region chapter gives its own cap (48 on *Badge Jet*) rather
-  than the max level. The team rows read `Lv48 → cap`.
-- **Shiny** Pokémon get the game's +10 % stat bonus and are marked ✨.
-- **Eligibility.** Only mons the game accepts join an adventure team (region link, one per species);
-  the **raid** picker accepts any PC mon.
-- **Evolutions.** Level evolutions within the cap are projected, with the game's gates: daytime
-  (`TIME_EVOLUTIONS`), the party requirement (e.g. Mantyke needs a Remoraid), and the uid-hash pick
-  when several level branches qualify. Item evolutions count only when the item is in the current
-  region's bag; **link-cable** evolutions count when your wallet covers the game's trade fee
-  (computed with the game's own tier formula). The legend optimizer scores every reachable branch;
-  the chapter sim evolves the real mon as it levels. The game's dex-dedup evolution gate is not
-  modelled.
-- **Random trainers** are rolled like the game's encounter builder (team size, level bonus,
-  evolved chance, doubles/triples odds) and wilds are sampled from the node's live pool.
-- **Raid bosses** are optimized for DPS and clear time; their fight is not simulated round by round
-  like the chapter.
+- **Levels.** Legend and raid pools are level-100 only, matching the game's pickers. The
+  chapter optimizer projects at the current chapter cap; the underground brings the team to
+  level 100 and therefore accepts every level.
+- **Eligibility.** The chapter and underground pickers apply the region link; the legend and
+  raid pickers do not (the game's own `allow` rules).
+- **Shiny** mons get the game's +10 % stat bonus and are marked ✨.
+- **Evolutions** within the cap are projected with the game's gates (daytime, party, uid-hash
+  branch, item in the bag, link-cable fee). The dex-dedup evolution gate is not modelled.
+- **Raids** rank by DPS and survival; the fight is not simulated round by round.
+- **The world-boss attack picker is not covered**: its config has no foes and no boss entry to
+  rank against, only the daily “already attacked” lock, which the game already enforces.
+- **The underground theme** is matched by the label the game puts in the header (its French
+  config name). If a future language pack translates it, the block stays hidden rather than
+  guessing a theme.
+- **The roamer's rage burst** is averaged into one strong per-round attack in the chapter sim;
+  the odds line is capture flavour, not a round-by-round roamer simulation.
 - The simulator is a model: expected rolls and the game's probabilities, not frame-perfect.
+
+<div align="center">
+
+<img src="https://capsule-render.vercel.app/api?type=waving&color=gradient&customColorList=6,11,20&height=100&section=footer" width="100%" />
+
+**One file, no dependencies — built for the game as it is today (bundle `app.29a3ff3cf6.js`).**
+
+</div>
