@@ -2,7 +2,7 @@
 // @name         Poke'Catch Team Optimizer
 // @namespace    pokecatch-helper
 // @version      1.6.8
-// @description  Reads the current chapter events, watches for team wipes (and where they happen), then builds an optimal team of 6 from the PC with Defense / Offense / Balanced presets.
+// @description  Reads the current chapter events, then builds an optimal team of 6 from the PC with Defense / Offense / Balanced presets, optimizes legendary, elite, underground and raid teams, and prepares per-segment template teams.
 // @author       GrumpyOwl
 // @match        https://pokecatch-online.netlify.app/*
 // @match        https://pokecatch-online.pages.dev/*
@@ -1228,36 +1228,6 @@
     return score;
   }
 
-  /** Greedy team builder: one Pokémon per species (the game keeps only one of each). */
-  function pickTeam(scored, enemies, eng, data, preset, size = 6) {
-    const pool = scored.slice()
-      .sort((a, b) => scoreFor(b, preset) - scoreFor(a, preset) || b.mon.level - a.mon.level)
-      .slice(0, 60);
-    const chosen = [];
-    const usedSpecies = new Set();
-    const usedShiny = new Set();
-    const usedUids = new Set();
-    while (chosen.length < size) {
-      let best = null, bestScore = -Infinity;
-      for (const cand of pool) {
-        if (chosen.includes(cand) || usedUids.has(cand.mon.uid)) continue;
-        if (!cand.mon.shiny && usedSpecies.has(cand.species.id)) continue;
-        if (cand.mon.shiny && usedShiny.has(cand.species.id)) continue;
-        const sc = evaluateTeam(chosen.concat([cand]), enemies, eng, data, preset);
-        // same score: prefer the Pokémon that is already the closest to the chapter cap
-        if (sc > bestScore || (sc === bestScore && best && cand.mon.level > best.mon.level)) {
-          bestScore = sc; best = cand;
-        }
-      }
-      if (!best) break;
-      chosen.push(best);
-      usedSpecies.add(best.species.id);
-      usedUids.add(best.mon.uid);
-      if (best.mon.shiny) usedShiny.add(best.species.id);
-    }
-    return chosen;
-  }
-
   /* ------------------------------------------------------------------ *
    * 6c. Chapter simulation — the game's own battle rules, ported from
    *     its bundle: move pick (OHKO / status 30% / best attack), status
@@ -1945,134 +1915,7 @@
   }
 
   /* ------------------------------------------------------------------ *
-   * 7. Wipe watcher: remembers on which step the team falls
-   * ------------------------------------------------------------------ */
-  class WipeWatcher {
-    constructor(onChange) {
-      this.onChange = onChange;
-      this.fails = store.get('fails', []) || [];
-      this.running = false;
-      this.timer = null;
-      this.lastBattle = null;    // last battle seen (the fight can end before we poll)
-      this.firstKo = null;       // step where the first team member fell
-      this.lastDeaths = null;    // the game's own death counter (adv.deaths)
-      this.lastTries = null;     // league/elite attempt counters (adv.league.tries, adv.zone.tries)
-      this.prevState = null;     // chapter/step before the last change
-    }
-    start() {
-      if (this.running) return;
-      this.running = true;
-      this.timer = setInterval(() => {
-        try { this.poll(); } catch (e) { logError('watcher: poll', e); }
-      }, 700);
-      this.firstKo = null;
-      this.lastDeaths = null;
-      this.lastTries = null;
-      this.prevState = null;
-      log('info', 'watcher: started');
-      try { this.poll(); } catch (e) { logError('watcher: poll', e); }
-    }
-    stop() {
-      this.running = false;
-      if (this.timer) clearInterval(this.timer);
-      this.timer = null;
-      log('info', 'watcher: stopped');
-    }
-    poll() {
-      const save = readSave();
-      if (!save || !save.adv) return;
-      const adv = save.adv;
-      const nodeIdx = adv.node;
-      const battle = adv.battle;
-      if (battle) {
-        this.lastBattle = {
-          kind: battle.kind,
-          node: nodeIdx,
-          enemies: (battle.enemies || []).map(e => ({ id: e.id, level: e.level }))
-        };
-      }
-      const team = (adv.team || save.team || []).map(u => monByUid(save, u)).filter(Boolean);
-      const ko = team.filter(m => m.hp != null && m.hp <= 0);
-      if (ko.length && !this.firstKo) {
-        this.firstKo = { node: nodeIdx, at: Date.now(), name: (adv.nodes || [])[nodeIdx]?.name || '?' };
-      }
-      if (!ko.length) this.firstKo = null;
-
-      // The game heals the team the instant it is wiped, so the "all knocked out" state
-      // never lasts. The game now counts a wipe differently per mode (bundle 2026-11):
-      //   adventure/league chapter: adv.deaths[chapter]++
-      //   league run:               adv.league.tries++
-      //   elite legend zone:        adv.zone.tries++
-      const deaths = adv.deaths || {};
-      const prev = this.lastDeaths;
-      this.lastDeaths = { ...deaths };
-      let died = null, diedCount = 0, why = 'chapter';
-      if (prev) {
-        for (const [ch, n] of Object.entries(deaths)) {
-          const d = n - (prev[ch] || 0);
-          if (d > 0) { died = Number(ch); diedCount = d; }
-        }
-      }
-      const tries = {
-        league: adv.league ? { reg: adv.league.reg, tier: adv.league.tier, n: adv.league.tries || 0 } : null,
-        zone: adv.zone?.elite && adv.zone.id != null
-          ? { id: adv.zone.id, tier: adv.zone.elite, n: adv.zone.tries || 0 } : null,
-      };
-      const prevTries = this.lastTries;
-      this.lastTries = tries;
-      if (!died && prevTries) {
-        const L = tries.league, pL = prevTries.league;
-        const Z = tries.zone, pZ = prevTries.zone;
-        if (L && pL && L.reg === pL.reg && L.tier === pL.tier && L.n > pL.n) {
-          died = adv.chapter; diedCount = L.n - pL.n; why = 'league';
-        } else if (Z && pZ && Z.id === pZ.id && Z.tier === pZ.tier && Z.n > pZ.n) {
-          died = adv.chapter; diedCount = Z.n - pZ.n; why = 'elite zone';
-        }
-      }
-      const state = { chapter: adv.chapter, node: nodeIdx, name: (adv.nodes || [])[nodeIdx]?.name || '?' };
-      if (!died) {
-        this.prevState = state;
-        return;
-      }
-      // report the step the team fell on (the last poll before the wipe)
-      const before = this.prevState || state;
-      const node = (adv.nodes || [])[before.node] || {};
-      const b = this.lastBattle || {};
-      const rec = {
-        at: Date.now(),
-        chapter: before.chapter,
-        node: before.node,
-        name: node.name || before.name || '?',
-        kind: node.type || b.kind || '?',
-        why,
-        lv: node.lv || null,
-        enemies: b.enemies || [],
-        firstKo: this.firstKo,
-        team: team.map(m => ({ uid: m.uid, id: m.id, level: m.level }))
-      };
-      // more than one wipe can slip through between two polls (background tab)
-      for (let i = 0; i < Math.min(diedCount, 5); i++) this.fails.unshift(i === 0 ? rec : { ...rec, at: rec.at - i * 1000 });
-      this.fails = this.fails.slice(0, 25);
-      store.set('fails', this.fails);
-      log('warn', 'watcher: team wipe', {
-        why, chapter: rec.chapter, step: rec.name, kind: rec.kind, count: diedCount,
-        enemies: rec.enemies.slice(0, 3),
-      });
-      this.firstKo = null;
-      this.onChange && this.onChange(rec);
-    }
-    clear() {
-      this.fails = [];
-      this.wiped = false;
-      this.firstKo = null;
-      store.set('fails', []);
-      log('info', 'watcher: wipes cleared');
-      this.onChange && this.onChange(null);
-    }
-  }
-
-  /* ------------------------------------------------------------------ *
-   * 7b. Roamer hunt: restart the roaming legendary's chapter until caught
+   * 7. Roamer hunt: restart the roaming legendary's chapter until caught
    * ------------------------------------------------------------------ */
   const HUNT_GRACE_MS = 4000;
   /** Chapters whose loop switch this script turned on (in-memory; the save itself holds the loop). */
@@ -2994,7 +2837,7 @@
   const state = {
     data: null, chart: null, chartSource: '', engine: null, learnAll: null,
     events: null, enemies: null, scored: null, team: null,
-    preset: 'balanced', errors: [], busy: false, watcher: null, eligible: 0,
+    preset: 'balanced', errors: [], busy: false, eligible: 0,
     apiCache: {}, info: {}, legends: null, legBoss: null, legTier: 0, legTeam: null, waiting: null,
     evtOdds: null, loading: null,
     league: false, leagueInfo: null, legOdds: null,
@@ -3090,17 +2933,6 @@
     const entries = Object.entries(counts).sort((a, b) => b[1] - a[1]);
     const total = entries.reduce((a, [, c]) => a + c, 0) || 1;
     return entries.map(([t, c]) => `${typeBadge(t)}<span class="pcopt-mut">${Math.round(c / total * 100)}%</span>`).join('');
-  }
-
-  function renderFails() {
-    const fails = state.watcher?.fails || [];
-    if (!fails.length) return '<div class="pcopt-mut">no wipe recorded yet</div>';
-    return fails.map(f => {
-      const foes = (f.enemies || []).map(e => `${displayName(e.id)} Lv${e.level}`).join(', ');
-      return `<div class="pcopt-mon"><div><b>${esc(f.name)}</b> <span class="pcopt-mut">#${f.node} · ${esc(f.kind || '')}${f.why && f.why !== 'chapter' ? ' · ' + esc(f.why) : ''}${f.lv ? ' · Lv ' + f.lv.join('-') : ''}`
-        + `${f.firstKo ? ` · 1st KO step ${f.firstKo.node}` : ''}</div><div class="pcopt-mut">${esc(foes)}</div></div>`
-        + `<div class="pcopt-mut">${new Date(f.at).toLocaleTimeString()}</div></div>`;
-    }).join('');
   }
 
   const legendZones = () => (state.legends?.zones || []);
@@ -3266,7 +3098,7 @@
     refreshUi();
   }
 
-  /** Manual template switch (Progress screen). The watcher leaves it alone until the next segment. */
+  /** Manual template switch (Progress screen): a hand pick wins for its segment. */
   async function switchTemplate(slot) {
     if (state.busy) return;
     let btn = document.querySelector(`#team-sets button[data-set="${slot}"]`);
@@ -3363,7 +3195,7 @@
 
   /* ------------------------------------------------------------------ *
    * 9b. UI — every block lives inside the game's own screens
-   *     Progress: run monitor (chapter, events, wipes, status)
+   *     Progress: run monitor (chapter, events, status)
    *     Team/PC:  chapter optimizer + progress bar
    *     Pickers:  legendary optimizer / raid fastest clear
    * ------------------------------------------------------------------ */
@@ -3453,15 +3285,13 @@
     sel.value = roam.some(r => r.id === pick) ? String(pick) : (roam[0] ? String(roam[0].id) : '');
   }
 
-  /** The Progress screen: what the game is doing right now, the wipes, the data status. */
+  /** The Progress screen: what the game is doing right now and the data status. */
   function mountMonitor() {
     const body = document.querySelector('#screen-map .map-body');
     if (!body) return;
     const save = readSave();
     const adv = save?.adv;
     const node = adv?.nodes?.[adv.node];
-    const fails = state.watcher?.fails || [];
-    const last = fails[0];
     const now = Date.now();
     const roam = roamList(save, now);
     const hunt = state.hunt;
@@ -3483,30 +3313,19 @@
       ${updateLine()}${errLine()}
       <div class="pcopt-title" style="margin-top:10px"><span>Chapter events</span>
         <span class="pcopt-mut">${state.enemies ? state.enemies.length + ' foes · ' + esc(node?.name || '') : ''}</span></div>
-      ${last ? `<div class="pcopt-mut">last wipe: step ${last.node} · ${esc(last.name)} (${esc((last.enemies || []).map(e => displayName(e.id)).join(', '))})</div>` : ''}
       <div class="pcopt-row" style="margin:4px 0">${typeChips(state.enemies, state.data)}</div>
-      <div class="pcopt-row">
-        <button class="btn small ghost" data-act="watch">${state.watcher.running ? '● watching' : 'watch for wipes'}</button>
-        <button class="btn small ghost" data-act="clear">clear log</button>
-      </div>
       <div class="pcopt-title" style="margin-top:10px"><span>Roamer hunt</span>
         <span class="pcopt-mut">${hunt?.running ? esc(hunt.status) : ''}</span></div>
       <div class="pcopt-row">
         <select data-act="roamer" aria-label="Roaming legendary" ${roam.length ? '' : 'disabled'}>${huntOptions}</select>
         <button class="btn small ${hunt?.running ? '' : 'ghost'}" data-act="hunt">${hunt?.running ? 'Stop' : 'Hunt'}</button>
       </div>
-      <div class="pcopt-mut">${huntLine}${adv?.paused ? ' · adventure paused' : ''}</div>
-      <div class="pcopt-log">${renderFails()}</div>`;
-    const sig = JSON.stringify([adv?.chapter, adv?.node, node?.name, state.enemies?.length, fails.length, state.watcher.running,
+      <div class="pcopt-mut">${huntLine}${adv?.paused ? ' · adventure paused' : ''}</div>`;
+    const sig = JSON.stringify([adv?.chapter, adv?.node, node?.name, state.enemies?.length,
       state.eligible, state.chartSource, state.errors, state.update?.repo, state.leagueInfo, state.waiting, adv?.paused,
       hunt?.running, hunt?.id, hunt?.ch, hunt?.attempts, hunt?.status, hunt?.last, state.huntSel,
       roam.map(r => r.id + ':' + r.ch).join(',')]);
     const el = mountBlock(body, 'monitor', sig, html, el => {
-      el.querySelector('[data-act="watch"]').onclick = () => {
-        if (state.watcher.running) state.watcher.stop(); else state.watcher.start();
-        refreshUi();
-      };
-      el.querySelector('[data-act="clear"]').onclick = () => { state.watcher.clear(); refreshUi(); };
       const sel = el.querySelector('[data-act="roamer"]');
       if (sel) sel.onchange = () => {
         state.huntSel = sel.value === '' ? null : +sel.value;
@@ -4017,23 +3836,13 @@
         try { refreshUi(); } catch (e) { logError('ui: observer', e); }
       });
     }).observe(document.body, { childList: true, subtree: true });
-    // a template picked in the game's own bar is the player's choice: the watcher leaves that segment alone
+    // a template picked in the game's own bar is the player's choice: the auto-switch leaves that segment alone
     document.addEventListener('click', e => {
       const b = e.target.closest?.('#team-sets button[data-set]');
       if (!b || state.selfClick) return;
       state.manual = { idx: segmentIndex(readSave()), slot: +b.dataset.set, at: Date.now() };
       log('info', 'templates: manual pick in the game', { slot: +b.dataset.set });
     }, true);
-    state.watcher = new WipeWatcher(rec => {
-      refreshUi();
-      if (rec) {
-        // the run restarts from the chapter start: drop the manual pick and field segment 1 again
-        state.manual = null;
-        state.segOn = null;
-        // the team fell on this step: rebuild an optimal team for the chapter
-        runOptimizer();
-      }
-    });
     state.hunt = new RoamerHunt();
     refreshUi();
     ensureData().then(() => {
@@ -4060,8 +3869,8 @@
   // exposed for tests / manual checks
   window.__pcopt = {
     state, ensureData, runOptimizer, parsePokemonDbChart, buildLearnAll, makeEngine,
-    chapterEnemies, chapterInfo, readSave, scoreCandidates, pickTeam, scoreFor,
-    WipeWatcher, applyTeam, bundleUrl, httpGet, canJoinTeam, showMovesPanel, pokeApiSpecies, compareWithPokeApi,
+    chapterEnemies, chapterInfo, readSave, scoreCandidates, scoreFor,
+    applyTeam, bundleUrl, httpGet, canJoinTeam, showMovesPanel, pokeApiSpecies, compareWithPokeApi,
     parseLegends, legendBoss, simulateLegend, pickLegendTeam, evaluateLegendTeam, runLegendOptimizer,
     legendFightOnce, legendOdds, logs,
     projectCandidates, evolvedBranches, refreshChapter,
