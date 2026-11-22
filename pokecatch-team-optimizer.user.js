@@ -515,25 +515,21 @@
       return null;
     }
 
-    // the elite multipliers: { zoneId: { tier: [hp, power] } }
-    const candidates = [];
-    if (names?.ELITE_K) candidates.push(...defLiterals(src, names.ELITE_K, '{'));
-    const ei = src.indexOf('ELITE_K:');
-    if (ei > 0) {
-      const name = (src.slice(ei, ei + 80).match(/ELITE_K:\s*([A-Za-z_$][\w$]*)/) || [])[1];
-      if (name) candidates.push(...defLiterals(src, name, '{'));
-      const bi = src.lastIndexOf('b={', ei);
-      if (bi > 0) { try { candidates.push(literalAt(src, bi + 2)); } catch { /* old layout */ } }
+    // the per-zone elite power multiplier the game's eliteKnobs applies: { zoneId: number }
+    const pname = names?.ELITE_P || (src.match(/ELITE_P:\s*([A-Za-z_$][\w$]*)/) || [])[1];
+    let eliteP = {};
+    if (pname) {
+      for (const lit of defLiterals(src, pname, '{')) {
+        try {
+          const v = evalSandbox(lit);
+          const keys = Object.keys(v || {});
+          if (keys.length > 20 && keys.every(k => /^\d+$/.test(k) && typeof v[k] === 'number')) { eliteP = v; break; }
+        } catch (e) { log('debug', 'legends: ELITE_P candidate skipped', e.message); }
+      }
     }
-    let elite = {};
-    for (const lit of candidates) {
-      try {
-        const v = evalSandbox(lit);
-        if (v && typeof v === 'object' && !Array.isArray(v) && Object.keys(v).length > 3) { elite = v; break; }
-      } catch (e) { log('debug', 'legends: elite candidate skipped', e.message); }
-    }
-    log('info', 'legends: parsed', { zones: zones.length, elite: Object.keys(elite).length, via });
-    return { zones, elite };
+    if (!Object.keys(eliteP).length) log('warn', 'legends: ELITE_P table not found, elite power uses the shared knob only');
+    log('info', 'legends: parsed', { zones: zones.length, eliteP: Object.keys(eliteP).length, via });
+    return { zones, eliteP };
   }
 
   /* ------------------------------------------------------------------ *
@@ -1814,15 +1810,12 @@
     const aura = team.length
       ? Math.pow(team.reduce((a, c) => a + (c.proj.shiny ? 1 : Math.max(1, Math.min(c.proj.level, cfg.MAX_LEVEL) / cfg.MAX_LEVEL)), 0) / team.length, cfg.LEGEND_ZONE?.AURA || 1)
       : 1;
-    // the game's eliteKnobs: a per-zone override wins over the shared ELITE_K table
-    const inline = tier ? (zone.elite?.[zone.id]?.[tier] || zone.elite?.[tier]) : null;
-    const eliteTable = tier ? (inline
-      ? [inline.hp ?? 1, inline.power ?? 1]
-      : (state.legends?.elite?.[zone.id]?.[tier] || [1, 1])) : null;
+    // the game's eliteKnobs: power × ELITE.POWER[tier] × the per-zone ELITE_P (clamped .4–2.2)
     const eliteHp = tier ? (cfg.ELITE?.HP?.[tier] ?? 1) : 1;
     const elitePower = tier ? (cfg.ELITE?.POWER?.[tier] ?? 1) : 1;
-    const hpKnob = (zone.hp ?? cfg.LEGEND_ZONE?.HP ?? 3) * eliteHp * (eliteTable ? eliteTable[0] : 1) * (tier ? 1 : aura);
-    const powerKnob = (zone.power ?? cfg.LEGEND_ZONE?.POWER ?? .5) * elitePower * (eliteTable ? eliteTable[1] : 1) * (tier ? 1 : aura * aura);
+    const eliteP = tier ? Math.min(2.2, Math.max(.4, state.legends?.eliteP?.[zone.id] ?? 1)) : 1;
+    const hpKnob = (zone.hp ?? cfg.LEGEND_ZONE?.HP ?? 3) * eliteHp * (tier ? 1 : aura);
+    const powerKnob = (zone.power ?? cfg.LEGEND_ZONE?.POWER ?? .5) * elitePower * eliteP * (tier ? 1 : aura * aura);
     const hp = Math.floor(maxHp * (1 + (cfg.ENEMY_HP_PER_ALLY ?? .7) * (cfg.TEAM_SIZE - 1)) * hpKnob);
     const resist = tier ? (cfg.ELITE?.RESIST?.[tier] ?? 1) : 1;
     const counter = zone.counter ? data.moves[zone.counter] : null;
@@ -1855,6 +1848,8 @@
   function legendStatusPlan(c, boss, tier, eng, data) {
     const cfg = data.cfg;
     if (!cfg.BOSS_STATUS) return { land: {}, dot: 0, para: 0 };
+    // the game's Ja(): a boss immune to both poison and burn earns no status credit at all
+    if (!canStatus(boss.mon, 'poison') && !canStatus(boss.mon, 'burn')) return { land: {}, dot: 0, para: 0 };
     const canLand = { poison: 0, burn: 0, paralysis: 0 };
     const sm = simStatusMove(c.proj, boss.mon);            // the game's dt(): its status move
     const atk = eng.bestMove(c.proj, boss.types);          // the game's un(): its attack
@@ -2985,6 +2980,18 @@
     return null;
   }
 
+  /** The elite tier a picker header names: "Elite I vs Zapdos", "Élite 1 contre Zapdos". 0 outside elite. */
+  function eliteTier(txt) {
+    const m = txt.match(/(?:é|e)lite\s*([IVX]+|\d+)\b/i);
+    if (!m) return 0;
+    const roman = { I: 1, V: 5, X: 10 };
+    if (/^\d+$/.test(m[1])) return +m[1];
+    const s = m[1].toUpperCase();
+    let n = 0;
+    for (let i = 0; i < s.length; i++) n += roman[s[i]] < roman[s[i + 1]] ? -roman[s[i]] : roman[s[i]];
+    return n;
+  }
+
   /** What the game's team picker is open for (the boss and the elite tier, from its header). */
   function pickerContext() {
     const headEl = document.querySelector('#evt-pick-head');
@@ -2997,11 +3004,11 @@
     if (id == null) return null;
     const zone = state.legends.zones.find(z => z.id === id);
     if (!zone) return null;
-    const tier = +(((txt.match(/lite\s*(\d)/i) || [])[1]) || 0);
-    return { zone, tier };
+    return { zone, tier: eliteTier(txt) };
   }
 
-  /** The underground team picker ("Équipe N · Souterrain"): the theme is in its header chip. */
+  /** The underground team picker ("Équipe N · Souterrain" / "Team N · Underground"): the theme
+   *  is matched structurally on its opponent types, so both language packs work. */
   function undergroundContext() {
     const headEl = document.querySelector('#evt-pick-head');
     const head = headEl?.querySelector('h2');
@@ -3011,8 +3018,12 @@
     if (!/souterrain|underground/i.test(txt)) return null;
     const label = headEl.querySelector('.ug-theme')?.textContent.trim() || '';
     const themes = U.THEMES || [];
-    const theme = themes.find(t => t.name === label) || themes.find(t => t.key === label) || null;
-    return theme ? { theme, size: U.TEAM ?? 3 } : null;
+    const badges = [...headEl.querySelectorAll('.ug-foes .type[data-type]')].map(el => el.dataset.type);
+    const theme = (badges.length ? themes.find(t => (t.types || []).length === badges.length && t.types.every(x => badges.includes(x))) : null)
+      || themes.find(t => t.name === label) || themes.find(t => t.key === label) || null;
+    // the picker's team key is "under:<bay>"; the header names the bay from 1
+    const bay = (txt.match(/(?:équipe|equipe|team)\s*(\d+)/i) || [])[1];
+    return theme ? { theme, size: U.TEAM ?? 3, eventKey: bay ? 'under:' + (+bay - 1) : null } : null;
   }
 
   /** The theme's guards, the game's guardsOf: the top-BST final species of the open dex with its types. */
@@ -3255,16 +3266,25 @@
     return oddsText(o);
   }
 
+  /** The current event team as species ids: "is this pick already in the picker's team". */
+  const eventTeamIds = key => {
+    const save = readSave();
+    return new Set(key ? (save?.eventTeams?.[key] || []).map(uid => monByUid(save, uid)?.id).filter(Boolean) : []);
+  };
+
   function renderLegendTeam(team = state.legTeam) {
     if (!team) return '<div class="pcopt-mut">run the optimizer to get a team</div>';
     if (!team.length) return '<div class="pcopt-mut">no level-100 candidate</div>';
     const zone = legendZone();
     const boss = zone && state.engine ? legendBoss(zone, state.legTier, team, state.engine, state.data) : null;
-    return team.map(s => {
+    const inTeam = eventTeamIds(zone ? 'zone:' + zone.id : null);
+    return `<div class="rp-pks">${team.map(s => {
       const p = boss ? legendParts(s, boss, state.legTier, state.engine, state.data) : null;
-      return `<div class="pcopt-mon">${sprOf(s.species.id)}<div style="flex:1"><b>${esc(displayName(s.species.id))}</b>${s.proj.shiny ? ' ✨' : ''} <span class="pcopt-mut">Nv. ${s.proj.level}</span></div>`
-        + `${pcoptBadge('atk', p?.dps)}${pcoptBadge('def', p?.alive)}</div>`;
-    }).join('');
+      const has = inTeam.has(s.species.id);
+      const title = `${displayName(s.species.id)}: ${has ? 'already in the team' : 'add your Lv. ' + s.proj.level}`;
+      // the game's own community-button markup: its #evt-pop click delegation adds the mon
+      return `<button class="rp-pk${has ? ' in' : ''}"${has ? '' : ` data-pop="${s.species.id}"`} title="${esc(title)}"><span class="dc-hero fr-mon" style="--m:36">${sprOf(s.species.id, 36)}</span><small>atk ${Math.round(p?.dps || 0)} · def ${Math.round(p?.alive || 0)}</small><span class="mine">${has ? 'in the team' : 'ton Nv. ' + s.proj.level}</span></button>`;
+    }).join('')}</div>`;
   }
 
   /** The picker's community host: "Les plus choisis" sits on the side only for 2-slot pickers. */
@@ -3394,7 +3414,8 @@
         while (left.length && guard++ < 8) {
           const uid = left[0];
           const member = $$('#team-slots .slot').find(s => s.dataset.uid === uid);
-          const pc = document.querySelector('#pc-grid');
+          // the PC grid container rejects most drops: drop on a real cell instead
+          const pc = [...document.querySelectorAll('#pc-grid .pc-cell')].find(c => c.getBoundingClientRect().width > 0);
           if (!member || !pc) { log('warn', 'templates: member cannot be dragged out', { slot, uid }); break; }
           dragToSlot(member, pc);
           await sleep(700);
@@ -3808,6 +3829,7 @@
       ${errLine()}`;
     const sig = JSON.stringify([key, state.preset, state.busy,
       team && team.map(t => t.mon.uid).join(','),
+      [...eventTeamIds('zone:' + ctx.zone.id)].join(','),
       state.legOdds && state.legOdds.key === ctx.zone.id + ':' + ctx.tier && [state.legOdds.winChance, state.legOdds.rounds, state.legOdds.pCatch, state.legOdds.attempts],
       state.errors]);
     mountBlock(pickerHost(6), 'legend', sig, html, el => {
@@ -3816,7 +3838,7 @@
         refreshUi();
       });
       el.querySelector('[data-act="run"]').onclick = () => runLegendOptimizer();
-      el.querySelector('[data-act="apply"]').onclick = () => applyTeamFromPanel(team);
+      el.querySelector('[data-act="apply"]').onclick = () => applyTeamFromPanel(team, true);
     }, { after: '.rp-side' });
   }
 
@@ -3942,7 +3964,7 @@
         for (let waited = 0; !url && waited < 30000; waited += 250) { await sleep(250); url = bundleUrl(); }
       }
       if (!url) { state.errors = ['game bundle not loaded yet']; log('warn', 'data: the game bundle is not on the page yet'); return; }
-      const cacheKey = 'bundle:v12:' + url;
+      const cacheKey = 'bundle:v13:' + url;
       let data = store.get(cacheKey, null);
       if (data && !dataLooksValid(data)) {
         log('warn', 'data: the cached tables are invalid, parsing the bundle again');
@@ -4217,6 +4239,12 @@
   function mountUndergroundBox(ctx) {
     const foes = state.data ? undergroundFoes(ctx.theme, state.data, readSave()) : [];
     const team = state.ugTeamKey === ctx.theme.key ? state.ugTeam : null;
+    const inTeam = eventTeamIds(ctx.eventKey);
+    const rows = team && team.length ? `<div class="rp-pks">${team.map(t => {
+      const has = inTeam.has(t.species.id);
+      const title = `${displayName(t.species.id)}: ${has ? 'already in the team' : 'add your Lv. ' + t.proj.level}`;
+      return `<button class="rp-pk${has ? ' in' : ''}"${has ? '' : ` data-pop="${t.species.id}"`} title="${esc(title)}"><span class="dc-hero fr-mon" style="--m:36">${sprOf(t.species.id, 36)}</span><small>atk ${Math.round(t.avgDmg || 0)} · def ${Math.round(t.avgRounds || 0)}</small><span class="mine">${has ? 'in the team' : 'ton Nv. ' + t.proj.level}</span></button>`;
+    }).join('')}</div>` : '';
     const html = `
       <div class="pcopt-row" style="margin-top:6px">
         ${presetSeg()}
@@ -4224,16 +4252,17 @@
         <button class="btn small ghost" data-act="apply" ${team && team.length && !state.busy ? '' : 'disabled'}>apply to team</button>
       </div>
       <div class="pcopt-mut">${esc(ctx.theme.name)} · ${foes.length} guards · Nv. ${state.data?.cfg?.MAX_LEVEL ?? 100} · team of ${ctx.size}</div>
-      ${team && team.length ? `<div class="pcopt-mut">${team.map(t => esc(displayName(t.species.id))).join(' · ')}</div>` : ''}
+      ${rows}
       ${errLine()}`;
-    const sig = JSON.stringify([ctx.theme.key, state.preset, state.busy, team && team.map(t => t.mon.uid).join(','), state.errors]);
+    const sig = JSON.stringify([ctx.theme.key, state.preset, state.busy, team && team.map(t => t.mon.uid).join(','),
+      ctx.eventKey && [...eventTeamIds(ctx.eventKey)].join(','), state.errors]);
     mountBlock(pickerHost(ctx.size), 'underground', sig, html, el => {
       el.querySelectorAll('[data-preset]').forEach(b => b.onclick = () => {
         state.preset = b.dataset.preset;
         refreshUi();
       });
       el.querySelector('[data-act="run"]').onclick = () => runUndergroundOptimizer();
-      el.querySelector('[data-act="apply"]').onclick = () => applyTeamFromPanel(team);
+      el.querySelector('[data-act="apply"]').onclick = () => applyTeamFromPanel(team, true);
     }, { after: '.rp-side' });
   }
 
@@ -4281,15 +4310,16 @@
       .map(c => ({ ...c, hpCur: c.hp }));
   }
 
-  async function applyTeamFromPanel(team) {
+  async function applyTeamFromPanel(team, picker = false) {
     team = team || state.team;
     if (!team || !team.length) return;
     state.busy = true; refreshUi();
-    log('info', 'panel: apply team', { mons: team.length });
-    const res = await applyTeam(team);
+    log('info', 'panel: apply team', { mons: team.length, picker });
+    const res = picker ? { ok: true, done: await applyToEventPicker(team) } : await applyTeam(team);
     state.busy = false;
     state.waiting = null;
     if (!res.ok) { log('error', 'panel: apply failed', res.error); state.errors = ['apply failed: ' + res.error]; }
+    else log('info', 'panel: apply done', { placed: res.done ?? 0, picker });
     refreshUi();
   }
 
@@ -4312,8 +4342,25 @@
       const onePerSpecies = t => new Set(t.map(c => c.species.id)).size === t.length;
       const zone = legendZones().find(z => data.species[z.id]) || null;
       check('legend zone data', !!zone);
+      check('elite tier parses both language packs',
+        eliteTier('Elite I vs Zapdos') === 1 && eliteTier('Élite 1 contre Zapdos') === 1 && eliteTier('Équipe contre Zapdos') === 0,
+        [eliteTier('Elite I vs Zapdos'), eliteTier('Élite 1 contre Zapdos'), eliteTier('Équipe contre Zapdos')]);
+
+      // a fire/steel boss is immune to both poison and burn: the game's early return, no para credit
+      const immBoss = { mon: { id: 6, level: cap, types: ['fire', 'steel'] }, hp: 10000 };
+      const immPlan = legendStatusPlan({ proj: { id: 143, level: cap, types: ['normal'] } }, immBoss, 0, eng, data);
+      check('fire+steel boss gets no DoT and no para credit', immPlan.dot === 0 && immPlan.para === 0, immPlan);
 
       if (zone) {
+        const pz = legendZones().find(z => data.species[z.id] && state.legends?.eliteP?.[z.id] != null);
+        if (!pz) check('elite boss power uses ELITE_P', false, 'no ELITE_P zone in the parsed bundle');
+        else {
+          const p = state.legends.eliteP[pz.id];
+          const b1 = legendBoss(pz, 1, [], eng, data);
+          const want = (pz.power ?? data.cfg.LEGEND_ZONE?.POWER ?? .5) * (data.cfg.ELITE?.POWER?.[1] ?? 1) * Math.min(2.2, Math.max(.4, p));
+          check('elite boss power uses ELITE_P', !!b1 && Math.abs(b1.powerKnob - want) < 1e-9,
+            { zone: pz.id, eliteP: p, knob: b1 && b1.powerKnob, want });
+        }
         const tier0 = state.legTier;
         state.legTier = 0;
         const pool = legendCandidates(zone, 0);

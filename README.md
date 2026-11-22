@@ -106,7 +106,7 @@ fight score; the same preset is shared by all optimizers.
   heal stops, statics. A league chapter walks every member, and a wipe still rewinds the league.
 - battles use the game's rules: every living mon acts each round in speed order (paralysis
   ×0.25 speed), OHKO moves are preferred, **status moves are used with the game's 30 % chance**
-  (accuracy capped 100/70/30 by move kind), else the best attack; damage rolls 0.85–1.15,
+  (accuracy capped 100/70/30 by move kind), else the best attack; damage rolls 0.85–1.00,
   crits, multi-hits and secondary statuses per hit.
 - statuses behave as in game: sleep 1–3 turns, freeze until a 0.2 thaw, full-para 0.25 with a
   3-turn cap, burn/poison tick `maxHp/8` for 5 turns, the 0.75 stat cuts, confusion self-hits,
@@ -137,8 +137,9 @@ save.
 ## Legendary and elite teams
 
 Open a legend zone's picker, pick a tier, then **✨ Optimize (mine)**. Only **level-100** mons
-are used (the game sends max-level teams into these fights) and the region-link rule does not
-apply — the game's zone picker allows every region.
+are used (the game sends max-level teams into these fights). The zone picker enforces no
+region link only when no link is active; while a link is running, the script may still suggest
+a mon you cannot field yet — apply then skips it.
 
 The ranking is the game's own `counterTeam`:
 
