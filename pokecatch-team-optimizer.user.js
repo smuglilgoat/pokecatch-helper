@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Poke'Catch Team Optimizer
 // @namespace    pokecatch-helper
-// @version      1.6.7
+// @version      1.6.8
 // @description  Reads the current chapter events, watches for team wipes (and where they happen), then builds an optimal team of 6 from the PC with Defense / Offense / Balanced presets.
 // @author       GrumpyOwl
 // @match        https://pokecatch-online.netlify.app/*
@@ -26,7 +26,7 @@
    * 0. Small helpers
    * ------------------------------------------------------------------ */
   const SAVE_KEY = 'gachamon-save-v1';
-  const VERSION = '1.6.7';
+  const VERSION = '1.6.8';
   const UPDATE_URL = 'https://raw.githubusercontent.com/smuglilgoat/pokecatch-helper/main/pokecatch-team-optimizer.user.js';
   const $ = (sel, root = document) => root.querySelector(sel);
   const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
@@ -2077,35 +2077,37 @@
   const HUNT_GRACE_MS = 4000;
   /** Chapters whose loop switch this script turned on (in-memory; the save itself holds the loop). */
   const HUNT_LOOPS = new Set();
-  const HUNT_RESTART_WINDOW_MS = 12000;      // 8-16 s window, re-drawn at every gate
+  const HUNT_RESTART_WINDOW_MS = 12000;      // 10-14 s window, drawn once per restart
   const HUNT_RESTARTS_PER_HOUR = 120;
   const HUNT_REST_MS = 10 * 60 * 1000;
 
   /**
-   * Server-polite restart pacing: one restart per 8-16 s and at most 120 per rolling hour.
+   * Server-polite restart pacing: one restart per 10-14 s and at most 120 per rolling hour.
    * `canRestart` consumes a slot when it answers yes, so two immediate checks answer yes then no.
+   * `nextAllowedAt` is drawn once per restart; the 700 ms poll cannot re-roll it.
    * `restUntil` pauses only the restart acts; the poll and the UI keep running.
    */
   const huntPacing = {
     lastRestartAt: 0,
+    nextAllowedAt: 0,
     restarts: [],
     restUntil: 0,
     canRestart(now = Date.now()) {
       if (this.restUntil) {
         if (now < this.restUntil) return { ok: false, why: 'rest', until: this.restUntil };
-        // the 10-minute break is over: start a fresh window so the hunt actually resumes
+        // the 10-minute block is over: the rolling window drains on its own and the cap
+        // re-arms in 10-minute blocks until the count genuinely drops below 120
         this.restUntil = 0;
-        this.restarts = [];
       }
       this.restarts = this.restarts.filter(t => now - t < 3600000);
       if (this.restarts.length >= HUNT_RESTARTS_PER_HOUR) {
         this.restUntil = now + HUNT_REST_MS;
         return { ok: false, why: 'rest', until: this.restUntil };
       }
-      const gap = HUNT_RESTART_WINDOW_MS + (Math.random() * 8000 - 4000);
-      const since = now - this.lastRestartAt;
-      if (since < gap) return { ok: false, why: 'gap', waitMs: Math.ceil(gap - since) };
+      if (now < this.nextAllowedAt) return { ok: false, why: 'gap', waitMs: Math.ceil(this.nextAllowedAt - now) };
+      const gap = HUNT_RESTART_WINDOW_MS + (Math.random() * 4000 - 2000);
       this.lastRestartAt = now;
+      this.nextAllowedAt = now + gap;
       this.restarts.push(now);
       return { ok: true, gap };
     },
@@ -2113,6 +2115,7 @@
       this.restarts = this.restarts.filter(t => now - t < 3600000);
       return {
         lastRestartAt: this.lastRestartAt,
+        nextAllowedAt: this.nextAllowedAt,
         restartsLastHour: this.restarts.length,
         resting: this.restUntil > now,
         restUntil: this.restUntil > now ? this.restUntil : 0,
@@ -2520,8 +2523,8 @@
         log('info', 'hunt: roamer moved, following', { id: this.id, ch: res.ch });
         refreshUi();
         const go = this.loopOn != null && this.loopOn !== res.ch
-          ? this.dropLoop(ch, gen).then(ok => this.restart(res.ch, false, gen).then(() => { if (!ok) this.warnLoopStuck(gen); }))
-          : this.restart(res.ch, false, gen);
+          ? this.dropLoop(ch, gen).then(ok => this.restart(res.ch, false, gen, true).then(() => { if (!ok) this.warnLoopStuck(gen); }))
+          : this.restart(res.ch, false, gen, true);
         return go;
       }
       if (res.why === 'button' || res.why === 'row') {
