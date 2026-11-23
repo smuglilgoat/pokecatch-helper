@@ -3,6 +3,7 @@
 [![version](https://img.shields.io/badge/dynamic/regex?url=https%3A%2F%2Fraw.githubusercontent.com%2Fsmuglilgoat%2Fpokecatch-helper%2Fmain%2Fpokecatch-team-optimizer.user.js&search=%40version%5Cs%2B%28%5Cd%2B%5C.%5Cd%2B%5C.%5Cd%2B%29&replace=%241&label=version&color=2f6fe4)](https://raw.githubusercontent.com/smuglilgoat/pokecatch-helper/main/pokecatch-team-optimizer.user.js)
 [![last commit](https://img.shields.io/github/last-commit/smuglilgoat/pokecatch-helper)](https://github.com/smuglilgoat/pokecatch-helper/commits/main)
 [![Tampermonkey](https://img.shields.io/badge/Tampermonkey-userscript-00a94f?style=flat)](https://www.tampermonkey.net/)
+[![License: MIT](https://img.shields.io/badge/license-MIT-2f6fe4?style=flat)](LICENSE)
 
 Tampermonkey userscript that simulates Poke'Catch's fights and fills the game's own team slots with the result.
 
@@ -53,7 +54,7 @@ Open `http://localhost:8765/pokecatch-team-optimizer.user.js`, accept Tampermonk
 
 ## Pacing
 
-The roamer hunt and the zone looper share one restart gate: one chapter restart every 10–14 s, at most 120 per rolling hour, then a 10-minute rest. Both wait out a paused adventure and stop when an event, legend zone, league or tower run starts; the looper also waits for a day, night or tide-gated zone. Neither survives a reload.
+The roamer hunt and the zone looper share one restart gate: one chapter restart every 10–14 s, at most 120 per rolling hour, then a 10-minute rest. Both wait out a paused adventure and stop when an event, legend zone, league or tower run starts; the looper also waits for a day, night or tide-gated zone. Neither survives a reload; the game's chapter loop they switched on stays in the save — turn it off on the map.
 
 ## Screenshots
 
@@ -82,3 +83,7 @@ Small single-file project. Open an issue before a large change, keep the diff in
 ## Credits
 
 [Poke'Catch](https://pokecatch-online.netlify.app/) by its authors; type chart from [pokemondb.net](https://pokemondb.net/type), with [PokéAPI](https://pokeapi.co/) as the optional cross-check; written by GrumpyOwl.
+
+## License
+
+MIT — see [LICENSE](LICENSE).
