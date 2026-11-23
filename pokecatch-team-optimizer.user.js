@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Poke'Catch Team Optimizer
 // @namespace    pokecatch-helper
-// @version      1.7.0
+// @version      1.8.0
 // @description  Reads the current chapter events, then builds an optimal team of 6 from the PC with Defense / Offense / Balanced presets, optimizes legendary, elite, underground and raid teams, and prepares per-segment template teams.
 // @author       GrumpyOwl
 // @match        https://pokecatch-online.netlify.app/*
@@ -26,7 +26,7 @@
    * 0. Small helpers
    * ------------------------------------------------------------------ */
   const SAVE_KEY = 'gachamon-save-v1';
-  const VERSION = '1.7.0';
+  const VERSION = '1.8.0';
   const UPDATE_URL = 'https://raw.githubusercontent.com/smuglilgoat/pokecatch-helper/main/pokecatch-team-optimizer.user.js';
   const $ = (sel, root = document) => root.querySelector(sel);
   const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
@@ -250,6 +250,13 @@
     });
     const leagueTeams = table('LEAGUE_TEAMS', false, read('a.LEAGUE_TEAMS=')) || {};
     const baseExp = table('BASE_EXP', false, read('a.BASE_EXP=')) || {};
+    // item names: the base table, then the game's own story/berry extension
+    const itemNames = table('ITEM_NAMES', false, () => {
+      const out = read('a.ITEM_NAMES=')();
+      for (const lit of literalsAfter(src, 'Object.assign(a.ITEM_NAMES||{},'))
+        try { Object.assign(out, evalLit(lit, { CONFIG: { PENSION: { BERRIES: {} }, BUFF_BERRIES: {} } })); } catch { /* plain pair table only */ }
+      return out;
+    }) || {};
     // the moves that can inflict a status: the learnset grading counts them as usable
     const statusMoves = table('STATUS.MOVES', false, () => {
       const anchor = src.indexOf('a.STATUS=function(){');
@@ -292,6 +299,7 @@
       regions,
       leagueTeams,
       baseExp,
+      itemNames,
       statusMoves,
       legends,
       cfg: {
@@ -2310,11 +2318,11 @@
 
   /**
    * Open chapter `ch` on the map screen and rebuild it from node 0.
-   * The roamer placement is checked once more just before the click: the game
-   * re-rolls it lazily when `until` passes, so a stale placement must not be hunted.
-   * `alive()` is the generation check: a stale chain never clicks or writes state.
+   * `guards(save, ch)` re-checks the caller's own preconditions just before the
+   * click (the hunt re-checks the roamer placement here). `alive()` is the
+   * generation check: a stale chain never clicks or writes state.
    */
-  async function restartChapterViaMap(ch, id, alive = null) {
+  async function restartChapterViaMap(ch, id, alive = null, guards = null) {
     const dead = () => !!alive && !alive();
     let loop = { loopSet: null, loopWas: false };
     if (dead()) return { ok: false, why: 'aborted', ...loop };
@@ -2342,12 +2350,9 @@
     if (dead()) return { ok: false, why: 'aborted', ...loop };
     if (!btn) { log('warn', 'hunt: no restart button for the chapter', { ch }); return { ok: false, why: 'button', ...loop }; }
     const save = readSave();
-    const at = save?.roam?.at?.[id];
-    const now = Date.now();
-    if (!at) return { ok: false, why: 'gone', ...loop };
-    if (+at.until <= now) return { ok: false, why: 'timer', ...loop };
-    if (+at.ch !== ch) return { ok: false, why: 'moved', ch: +at.ch, ...loop };
-    if (!save.adv) return { ok: false, why: 'map', ...loop };
+    const guard = guards ? guards(save, ch) : null;
+    if (guard) return { ok: false, ...guard, ...loop };
+    if (!save?.adv) return { ok: false, why: 'map', ...loop };
     if (save.adv.event || save.adv.zone || save.adv.league || save.adv.tower) return { ok: false, why: 'event', ...loop };
     if (save.adv.battle) return { ok: false, why: 'battle', ...loop };
     if (dead()) return { ok: false, why: 'aborted', ...loop };
@@ -2364,6 +2369,62 @@
     }
     log('warn', 'hunt: the chapter did not restart', { ch });
     return { ok: false, why: 'verify', ...loop };
+  }
+
+  /** Turn a script-set chapter loop off; false when it stays on (or the chain is stale). */
+  async function dropChapterLoop(ch, alive = null) {
+    const dead = () => !!alive && !alive();
+    if (ch == null) return false;
+    const save = readSave();
+    if (!save?.adv) return false;
+    if (!save.adv.loops?.includes(ch)) {
+      HUNT_LOOPS.delete(ch);
+      return true;
+    }
+    for (let i = 0; i < 3; i++) {
+      if (dead()) return false;
+      if (!await gotoMapScreen(30, alive)) {
+        if (!dead()) log('warn', 'hunt: map screen unavailable for loop cleanup', { ch });
+        return false;
+      }
+      if (dead()) return false;
+      const row = await openChapterRow(ch, alive);
+      if (dead()) return false;
+      if (!row) { log('warn', 'hunt: chapter row unavailable for loop cleanup', { ch }); return false; }
+      const sw = row.querySelector('.pg-loop[data-loop]');
+      if (!sw) break;
+      const before = readSave();
+      if (!before?.adv) return false;
+      if (!before.adv.loops?.includes(ch)) {
+        HUNT_LOOPS.delete(ch);
+        return true;
+      }
+      if (dead()) return false;
+      sw.click();
+      await sleep(500);
+      if (dead()) return false;
+      const after = readSave();
+      if (!after?.adv?.loops?.includes(ch)) {
+        HUNT_LOOPS.delete(ch);
+        log('info', 'hunt: chapter loop off', { ch });
+        return true;
+      }
+    }
+    log('warn', 'hunt: could not turn the hunt loop off', { ch });
+    return false;
+  }
+
+  /** Sequential, generation-guarded cleanup; resolves to the first chapter it could not turn off. */
+  async function drainChapterLoops(loops, alive = null) {
+    let stuck = null;
+    for (const ch of loops) {
+      if (alive && !alive()) return null;
+      if (!await dropChapterLoop(ch, alive)) {
+        if (alive && !alive()) return null;
+        stuck = stuck == null ? ch : stuck;
+      }
+    }
+    return stuck;
   }
 
   /** 700 ms poll: decide, then drive the map screen. One hunt at a time, never persisted. */
@@ -2544,7 +2605,13 @@
       this.status = 'restarting';
       this.last = `restarting chapter ${ch}`;
       refreshUi();
-      const res = await restartChapterViaMap(ch, this.id, () => gen === this.gen);
+      const res = await restartChapterViaMap(ch, this.id, () => gen === this.gen, save => {
+        const at = save?.roam?.at?.[this.id];
+        if (!at) return { why: 'gone' };
+        if (+at.until <= Date.now()) return { why: 'timer' };
+        if (+at.ch !== ch) return { why: 'moved', ch: +at.ch };
+        return null;
+      });
       if (gen !== this.gen) return;
       // only claim a loop the toggle actually set and the save confirmed (or a leftover of this script)
       if (res.loopSet != null) this.loopOn = res.loopSet;
@@ -2587,15 +2654,7 @@
     }
     /** Sequential, generation-guarded cleanup; resolves to the first chapter it could not turn off. */
     async drainOwned(loops, gen) {
-      let stuck = null;
-      for (const ch of loops) {
-        if (gen !== this.gen) return null;
-        if (!await this.dropLoop(ch, gen)) {
-          if (gen !== this.gen) return null;
-          stuck = stuck == null ? ch : stuck;
-        }
-      }
-      return stuck;
+      return drainChapterLoops(loops, () => gen === this.gen);
     }
     warnLoopStuck(gen) {
       if (gen !== this.gen) return;
@@ -2605,46 +2664,290 @@
     /** Turn a script-set chapter loop off; returns false when it stays on (or the chain is stale). */
     async dropLoop(ch, gen) {
       if (ch == null || gen !== this.gen) return false;
+      const ok = await dropChapterLoop(ch, () => gen === this.gen);
+      if (this.loopOn === ch && (ok || gen !== this.gen)) this.loopOn = null;
+      return ok;
+    }
+  }
+
+  /* ------------------------------------------------------------------ *
+   * 7b. Zone looper: restart a chapter as soon as its story item's zones are done
+   * ------------------------------------------------------------------ */
+  const farmKey = t => t.ch + '|' + t.kind + '|' + t.item;
+
+  /** Dex ownership: the save's dex entry or a mon anywhere in the save. */
+  function ownsSpecies(save, id) {
+    if (save?.dex && save.dex[id] != null) return true;
+    return Array.isArray(save?.mons) && save.mons.some(m => m.id === +id);
+  }
+
+  /** Why a loot entry's hard conditions fail (or null); team/day/tide only make it harder. */
+  function lootBlockedReason(save, cond) {
+    if (!cond || typeof cond !== 'object') return null;
+    const needs = [];
+    if (Array.isArray(cond.owns) && !cond.owns.every(id => ownsSpecies(save, +id)))
+      needs.push('owns ' + cond.owns.map(id => '#' + id).join(', '));
+    if (cond.badge && !(save?.adv?.badges || []).includes(cond.badge)) needs.push('badge ' + cond.badge);
+    return needs.length ? 'needs ' + needs.join(' · ') : null;
+  }
+
+  /**
+   * Every farmable story item of the unlocked chapters, one entry per (chapter, item).
+   * kind: 'loot' (repeatable roll), 'quest' (questFind, repeatable until upTo), 'find' (once).
+   */
+  function farmTargets(data, save) {
+    const out = [];
+    if (!data?.chapters || !save?.adv) return out;
+    const unlocked = Math.min(data.chapters.length - 1, save.adv.unlocked ?? 0);
+    for (let ch = 0; ch <= unlocked; ch++) {
+      const steps = data.chapters[ch]?.steps;
+      if (!Array.isArray(steps)) continue;
+      const byItem = new Map();
+      const add = (step, item, kind, fields = {}) => {
+        let t = byItem.get(item);
+        if (!t) {
+          t = { ch, item, kind, p: fields.p, upTo: fields.upTo, once: fields.once, zones: [], steps: [], conds: [] };
+          byItem.set(item, t);
+        }
+        if (!t.zones.includes(step.name)) t.zones.push(step.name);
+        t.steps.push(step);
+        if (kind === 'loot') t.conds.push(fields.cond ?? null);
+      };
+      for (const step of steps) {
+        for (const [item, entry] of Object.entries(step.loot || {})) {
+          if (item.startsWith('egg:')) continue;
+          const cond = entry && typeof entry === 'object' ? entry : null;
+          add(step, item, 'loot', { p: typeof entry === 'number' ? entry : cond?.p, cond });
+        }
+        if (step.questFind?.item) {
+          const q = step.questFind;
+          add(step, q.item, 'quest', { p: q.p, upTo: q.upTo, once: q.until });
+        }
+        if (step.kind === 'find' && step.item) add(step, step.item, 'find', { once: step.once });
+      }
+      for (const t of byItem.values()) {
+        t.phase = t.steps.some(s => s.night || s.day || s.tide);
+        t.done = t.kind === 'loot' ? !!save.adv.gifts?.[t.item]
+          : t.kind === 'quest' ? (save.items?.[t.item] || 0) >= t.upTo
+            : !!save.adv.gifts?.[t.once];
+        if (t.kind === 'loot') {
+          const reasons = t.conds.map(c => lootBlockedReason(save, c)).filter(Boolean);
+          t.blocked = t.conds.length > 0 && reasons.length === t.conds.length;
+          t.why = t.blocked ? reasons[0] : '';
+        } else {
+          t.blocked = false;
+          t.why = '';
+        }
+        out.push(t);
+      }
+    }
+    return out;
+  }
+
+  /**
+   * The live nodes of a target item: every node of its zone(s), the node after them,
+   * whether this pass can still drop the item, and whether the goal is already met.
+   */
+  function loopPlan(data, save, target) {
+    const nodes = save?.adv?.nodes || [];
+    const zoneIdxs = [];
+    for (let i = 0; i < nodes.length; i++) {
+      const n = nodes[i];
+      if (target.kind === 'loot' ? !!(n.loot && n.loot[target.item] != null) : target.zones.includes(n.name)) zoneIdxs.push(i);
+    }
+    const canYield = target.kind === 'loot'
+      ? zoneIdxs.some(i => nodes[i].type === 'item' && !nodes[i].find)
+      : target.kind === 'quest'
+        ? zoneIdxs.some(i => nodes[i].find?.item === target.item)
+        : true;
+    const done = target.kind === 'loot' ? !!save?.adv?.gifts?.[target.item]
+      : target.kind === 'quest' ? (save?.items?.[target.item] || 0) >= target.upTo
+        : !!save?.adv?.gifts?.[target.once];
+    return { zoneIdxs, restartNode: zoneIdxs.length ? zoneIdxs[zoneIdxs.length - 1] + 1 : 0, canYield, done };
+  }
+
+  /**
+   * Pure looper state machine. `loop` carries the target; never mutated here.
+   * Acts: stop-obtained | stop-event | wait-paused | restart-drift | wait-phase |
+   *       restart-fruitless | restart-zone | wait
+   */
+  function loopDecision(save, loop, plan, now = Date.now()) {
+    const adv = save?.adv;
+    const target = loop?.target;
+    if (!adv || !target) return { act: 'wait', why: 'no save' };
+    if (plan.done) return { act: 'stop-obtained' };
+    if (adv.event || adv.zone || adv.league || adv.tower) return { act: 'stop-event', why: 'event / zone / league / tower active' };
+    if (adv.paused) return { act: 'wait-paused' };
+    if (adv.chapter !== target.ch) return { act: 'restart-drift', ch: target.ch };
+    if (!plan.zoneIdxs.length && target.phase) return { act: 'wait-phase' };
+    if (!plan.zoneIdxs.length || !plan.canYield) return { act: 'restart-fruitless' };
+    if ((adv.node ?? 0) >= plan.restartNode) return { act: 'restart-zone' };
+    return { act: 'wait' };
+  }
+
+  /** 700 ms poll: decide, then drive the map screen. One looper at a time, never persisted. */
+  class ZoneLooper {
+    constructor() {
+      this.target = null;
+      this.running = false;
+      this.attempts = 0;
+      this.loopOn = null;
+      this.gen = 0;
+      this.status = 'idle';
+      this.last = '';
+      this.working = false;
+      this.timer = null;
+    }
+    start(target) {
+      if (this.running || !target) return;
+      const gen = ++this.gen;
+      Object.assign(this, {
+        target, running: true, attempts: 0, loopOn: null,
+        status: 'restarting', last: 'starting', working: true
+      });
+      if (state.hunt?.running) state.hunt.stop('zone looper started');
+      const own = target.ch;
       const save = readSave();
-      if (!save?.adv) return false;
-      if (!save.adv.loops?.includes(ch)) {
-        HUNT_LOOPS.delete(ch);
-        if (this.loopOn === ch) this.loopOn = null;
-        return true;
+      if (save?.adv) {
+        for (const old of [...HUNT_LOOPS]) {
+          if (old !== own && !save.adv.loops?.includes(old)) HUNT_LOOPS.delete(old);
+        }
+        // a loop this script set on this chapter survives the run that set it
+        if (save.adv.loops?.includes(own) && HUNT_LOOPS.has(own)) this.loopOn = own;
       }
-      for (let i = 0; i < 3; i++) {
-        if (gen !== this.gen) return false;
-        if (!await gotoMapScreen(30, () => gen === this.gen)) {
-          if (gen === this.gen) log('warn', 'hunt: map screen unavailable for loop cleanup', { ch });
-          return false;
-        }
-        if (gen !== this.gen) return false;
-        const row = await openChapterRow(ch, () => gen === this.gen);
-        if (gen !== this.gen) return false;
-        if (!row) { log('warn', 'hunt: chapter row unavailable for loop cleanup', { ch }); return false; }
-        const sw = row.querySelector('.pg-loop[data-loop]');
-        if (!sw) break;
-        const before = readSave();
-        if (!before?.adv) return false;
-        if (!before.adv.loops?.includes(ch)) {
-          HUNT_LOOPS.delete(ch);
-          if (this.loopOn === ch) this.loopOn = null;
-          return true;
-        }
-        if (gen !== this.gen) return false;
-        sw.click();
-        if (this.loopOn === ch) this.loopOn = null;
-        await sleep(500);
-        if (gen !== this.gen) return false;
-        const after = readSave();
-        if (!after?.adv?.loops?.includes(ch)) {
-          HUNT_LOOPS.delete(ch);
-          log('info', 'hunt: chapter loop off', { ch });
-          return true;
-        }
+      log('info', 'loop: started', { ch: own, item: target.item, kind: target.kind });
+      refreshUi();
+      this.timer = setInterval(() => { this.poll().catch(e => logError('loop: poll', e)); }, 700);
+      const stale = [...HUNT_LOOPS].filter(old => old !== own);
+      this.drainOwned(stale, gen)
+        .then(stuck => this.restart(own, true, gen, false, 'starting')
+          .then(() => { if (stuck != null) this.warnLoopStuck(gen); }))
+        .catch(e => logError('loop: start', e))
+        .finally(() => { if (gen === this.gen) this.working = false; });
+    }
+    stop(why = 'stopped', status = 'stopped') {
+      if (!this.running) return;
+      const gen = ++this.gen;
+      this.running = false;
+      this.working = false;
+      if (this.timer) clearInterval(this.timer);
+      this.timer = null;
+      this.status = status;
+      this.last = why;
+      const owned = new Set(HUNT_LOOPS);
+      if (this.loopOn != null) owned.add(this.loopOn);
+      this.loopOn = null;
+      log('info', 'loop: stopped', { why, ch: this.target?.ch, item: this.target?.item, attempts: this.attempts });
+      refreshUi();
+      if (owned.size) {
+        this.drainOwned([...owned], gen)
+          .then(stuck => { if (stuck != null) this.warnLoopStuck(gen); })
+          .catch(e => logError('loop: loop cleanup', e));
       }
-      log('warn', 'hunt: could not turn the hunt loop off', { ch });
-      return false;
+    }
+    async poll() {
+      if (!this.running || this.working || state.busy) return;
+      const gen = this.gen;
+      const save = readSave();
+      if (!save?.adv) return;
+      const plan = loopPlan(state.data, save, this.target);
+      const d = loopDecision(save, this, plan, Date.now());
+      switch (d.act) {
+        case 'stop-obtained':
+          this.stop('item obtained!', 'done');
+          return;
+        case 'stop-event':
+          this.stop('event / legend zone / league / tower active');
+          return;
+        case 'wait-paused':
+          this.setWait('adventure paused');
+          break;
+        case 'wait-phase':
+          this.setWait('waiting for night/day/low tide');
+          break;
+        case 'restart-drift':
+        case 'restart-zone':
+        case 'restart-fruitless': {
+          const pace = huntPacing.canRestart();
+          if (!pace.ok) { this.paced(pace); break; }
+          const reason = d.act === 'restart-drift' ? 'chapter drifted, restarting'
+            : d.act === 'restart-zone' ? 'zone done, restarting'
+              : 'no drop this pass, restarting';
+          this.status = 'restarting';
+          this.last = reason;
+          refreshUi();
+          this.working = true;
+          this.restart(d.ch ?? this.target.ch, false, gen, true, reason)
+            .catch(e => logError('loop: restart', e))
+            .finally(() => { if (gen === this.gen) this.working = false; });
+          break;
+        }
+        default:
+          if (this.status !== 'waiting' || this.last === 'waiting to retry the restart') {
+            this.status = 'waiting';
+            this.last = 'waiting for the zone';
+            refreshUi();
+          }
+      }
+    }
+    setWait(last) {
+      if (this.status === 'waiting' && this.last === last) return;
+      this.status = 'waiting';
+      this.last = last;
+      log('info', 'loop: ' + last, { ch: this.target?.ch, item: this.target?.item });
+      refreshUi();
+    }
+    /** Show a server-pacing pause without touching the looper state machine. */
+    paced(pace) {
+      const resting = pace.why === 'rest';
+      const status = resting ? 'resting (server pacing)' : 'waiting';
+      const last = resting ? 'auto-resume after 10 min' : 'waiting for the server pacing window';
+      if (this.status === status && this.last === last) return;
+      this.status = status;
+      this.last = last;
+      log('info', resting ? 'loop: resting (server pacing)' : 'loop: waiting for the server pacing window', { ch: this.target?.ch });
+      refreshUi();
+    }
+    /** Rebuild the target chapter; stop when the run's guards say the loop is over. */
+    async restart(ch, first = false, gen = this.gen, paced = false, reason = null) {
+      if (!this.running || gen !== this.gen) return;
+      if (!paced) {
+        const pace = huntPacing.canRestart();
+        if (!pace.ok) { this.paced(pace); return; }
+      }
+      this.attempts++;
+      this.status = 'restarting';
+      this.last = reason || `restarting chapter ${ch}`;
+      refreshUi();
+      const res = await restartChapterViaMap(ch, null, () => gen === this.gen, save => {
+        if (save?.adv?.event || save?.adv?.zone || save?.adv?.league || save?.adv?.tower) return { why: 'event' };
+        if (save?.adv?.battle) return { why: 'battle' };
+        return null;
+      });
+      if (gen !== this.gen) return;
+      if (res.loopSet != null) this.loopOn = res.loopSet;
+      else if (res.loopWas && HUNT_LOOPS.has(ch)) this.loopOn = ch;
+      if (res.ok) {
+        this.status = 'waiting';
+        this.last = `chapter ${ch} restarted${res.loopSet != null || res.loopWas ? ' · loop on' : ''}`;
+        refreshUi();
+        return;
+      }
+      if (res.why === 'event') { this.stop('event / legend zone / league / tower active'); return; }
+      if (res.why === 'button' || res.why === 'row') { this.stop('chapter not reachable on the map'); return; }
+      // transient (map/battle/verify): the next poll retries after the pacing window
+      this.status = 'waiting';
+      this.last = first ? 'restart failed; retrying' : 'waiting to retry the restart';
+      log('warn', 'loop: restart failed, retrying', { ch, why: res.why });
+      refreshUi();
+    }
+    async drainOwned(loops, gen) {
+      return drainChapterLoops(loops, () => gen === this.gen);
+    }
+    warnLoopStuck(gen) {
+      if (gen !== this.gen) return;
+      this.last = 'loop still on — turn it off on the map';
+      refreshUi();
     }
   }
 
@@ -3121,7 +3424,7 @@
     evtOdds: null, loading: null,
     league: false, leagueInfo: null, legOdds: null,
     segments: null, segOn: null, switching: false, selfClick: false, manual: null,
-    hunt: null, huntSel: null
+    hunt: null, huntSel: null, loop: null, loopSel: null
   };
 
   const TYPE_COLORS = {
@@ -3197,6 +3500,15 @@
     const n = lang?.moves?.[key];
     return (Array.isArray(n) ? n[0] : n) || state.data?.moves?.[key]?.name || key;
   }
+  /** Story-item names: the bundle's French table, then the English pack's string map. */
+  function displayItem(id) {
+    const fr = state.data?.itemNames?.[id];
+    const en = englishData()?.items?.[id];
+    const map = window.I18N?.en || window.I18n?.en;
+    return en || (fr && map?.[fr]) || fr || id;
+  }
+  /** Chapter and zone names from the English pack when it has one. */
+  const englishText = s => (window.I18N?.en || window.I18n?.en)?.[s] || s;
 
   /** The game's own type badge (same markup as the rest of the UI). */
   const typeBadge = t => `<span class="type sm" data-type="${t}" style="--tc:${typeColor(t)};background:var(--tc)">${t}</span>`;
@@ -3606,8 +3918,30 @@
       refreshUi();
       return;
     }
+    if (state.loop?.running) state.loop.stop('roamer hunt started');
     state.huntSel = id;
     state.hunt.start(id, +at.ch);
+  }
+
+  /** Start the zone looper on one farm entry (the same farmTargets entry the dropdown lists). */
+  function startZoneLoop(key) {
+    if (!state.loop) state.loop = new ZoneLooper();
+    const save = readSave();
+    const target = key ? farmTargets(state.data, save).find(t => farmKey(t) === key) : null;
+    let why = null;
+    if (!save?.adv) why = 'no save';
+    else if (!target) why = 'pick a story item';
+    else if (target.done) why = 'already obtained';
+    else if (target.blocked) why = target.why;
+    if (why) {
+      state.loop.last = 'not started: ' + why;
+      log('warn', 'loop: not started', { why, key });
+      refreshUi();
+      return;
+    }
+    if (state.hunt?.running) state.hunt.stop('zone looper started');
+    state.loopSel = key;
+    state.loop.start(target);
   }
 
   /** Keep the roam dropdown's countdown fresh without rebuilding the whole block every tick. */
@@ -3622,6 +3956,38 @@
     const pick = state.huntSel;
     sel.value = roam.some(r => r.id === pick) ? String(pick) : (roam[0] ? String(roam[0].id) : '');
   }
+
+  /** One dropdown line: item, chapter, zone(s), chance or goal, and why it is unavailable. */
+  function farmLabel(t) {
+    const chap = englishText(state.data?.chapters?.[t.ch]?.name || '');
+    const zones = t.zones.map(englishText).join(', ');
+    const goal = t.kind === 'loot' ? Math.round((t.p || 0) * 100) + '%'
+      : t.kind === 'quest' ? '×' + t.upTo : 'once';
+    return `${displayItem(t.item)} · ch ${t.ch} ${chap} · ${zones} · ${goal}`
+      + (t.done ? ' ✓' : '') + (t.blocked ? ' · ' + t.why : '');
+  }
+
+  /** Keep the item dropdown fresh; only rewrite its options when the list changes. */
+  function refreshLoopSelect(el, save) {
+    const sel = el?.querySelector('[data-act="farmitem"]');
+    if (!sel || sel === document.activeElement || !state.data) return;
+    const list = farmTargets(state.data, save);
+    const options = list.length
+      ? list.map(t => `<option value="${esc(farmKey(t))}"${t.done || t.blocked ? ' disabled' : ''}>${esc(farmLabel(t))}</option>`).join('')
+      : '<option value="">nothing farmable yet</option>';
+    const sig = options + '|' + (state.loopSel || '');
+    if (sel.dataset.sig !== sig) { sel.dataset.sig = sig; sel.innerHTML = options; }
+    const selected = list.find(t => farmKey(t) === state.loopSel && !t.done && !t.blocked);
+    const pick = selected || list.find(t => !t.done && !t.blocked)
+      || list.find(t => farmKey(t) === state.loopSel) || list[0];
+    sel.value = pick ? farmKey(pick) : '';
+    if (pick && !selected && state.loop?.running !== true) state.loopSel = farmKey(pick);
+  }
+
+  const loopProgress = (t, save) => !t ? ''
+    : t.kind === 'quest' ? `${save?.items?.[t.item] || 0}/${t.upTo} ${displayItem(t.item)}`
+      : t.kind === 'loot' ? `${Math.round((t.p || 0) * 100)}% ${displayItem(t.item)}`
+        : displayItem(t.item);
 
   /** The Progress screen dashboard: chapter, data, quick actions, segments and the roamer hunt.
    *  Mounted above #map-root so the game's own map render never replaces it. */
@@ -3640,6 +4006,15 @@
     const huntLine = hunt?.running
       ? `${esc(hunt.status)} · attempt ${hunt.attempts}${hunt.last ? ' · ' + esc(hunt.last) : ''}`
       : esc(hunt?.last || 'pick a roamer, then Hunt');
+    const loop = state.loop;
+    const farm = state.data ? farmTargets(state.data, save) : [];
+    const loopTarget = farm.find(t => farmKey(t) === state.loopSel)
+      || farm.find(t => !t.done && !t.blocked) || farm[0] || null;
+    const loopLine = loop?.running
+      ? `${esc(loop.status)} · pass ${Math.max(1, loop.attempts)}${loop.last ? ' · ' + esc(loop.last) : ''}`
+        + (loopProgress(loop.target || loopTarget, save) ? ' · ' + esc(loopProgress(loop.target || loopTarget, save)) : '')
+      : esc(loop?.last || 'pick a story item, then Loop');
+    const farmable = farm.some(t => !t.done && !t.blocked);
     const html = `
       <div class="pcopt-title"><span>Chapter dashboard <small>v${VERSION}</small></span>
         <span class="pcopt-mut">${state.events ? esc(state.events.name) + ' · step ' + (adv?.node ?? '-') + ' / ' + (adv?.nodes || []).length : 'no chapter data'}</span></div>
@@ -3665,13 +4040,22 @@
         <select data-act="roamer" aria-label="Roaming legendary" ${roam.length ? '' : 'disabled'}>${huntOptions}</select>
         <button class="btn small ${hunt?.running ? '' : 'ghost'}" data-act="hunt">${hunt?.running ? 'Stop' : 'Hunt'}</button>
       </div>
-      <div class="pcopt-mut">${huntLine}${adv?.paused ? ' · adventure paused' : ''}</div>`;
+      <div class="pcopt-mut">${huntLine}${adv?.paused ? ' · adventure paused' : ''}</div>
+      <div class="pcopt-title" style="margin-top:8px"><span>Zone looper</span>
+        <span class="pcopt-mut">${loop?.running ? esc(loop.status) : ''}</span></div>
+      <div class="pcopt-row">
+        <select data-act="farmitem" aria-label="Story item to farm" ${farm.length ? '' : 'disabled'}></select>
+        <button class="btn small ${loop?.running ? '' : 'ghost'}" data-act="loop" ${farmable || loop?.running ? '' : 'disabled'}>${loop?.running ? 'Stop' : 'Loop'}</button>
+      </div>
+      <div class="pcopt-mut">${loopLine}${adv?.paused ? ' · adventure paused' : ''}</div>`;
     const sig = JSON.stringify([adv?.chapter, adv?.node, node?.name, state.enemies?.length,
       state.eligible, state.chartSource, state.errors, state.update?.repo, state.leagueInfo, state.waiting, adv?.paused,
       state.preset, state.busy, state.team && state.team.map(t => t.mon.uid).join(','), state.roamer && state.roamer.id,
       state.segments && state.segments.list.map(s => s.slot + ':' + s.team.join('/')).join(','),
       hunt?.running, hunt?.id, hunt?.ch, hunt?.attempts, hunt?.status, hunt?.last, state.huntSel,
-      roam.map(r => r.id + ':' + r.ch).join(',')]);
+      roam.map(r => r.id + ':' + r.ch).join(','),
+      loop?.running, loop?.target && farmKey(loop.target), loop?.attempts, loop?.status, loop?.last, state.loopSel,
+      farm.map(t => farmKey(t) + (t.done ? 'd' : '') + (t.blocked ? 'b' : '')).join(',')]);
     const el = mountBlock(host, 'dashboard', sig, html, el => {
       el.querySelectorAll('[data-preset]').forEach(b => b.onclick = () => { state.preset = b.dataset.preset; refreshUi(); });
       el.querySelector('[data-act="run"]').onclick = () => runOptimizer();
@@ -3688,8 +4072,18 @@
         if (state.hunt?.running) { state.hunt.stop('stopped by hand'); return; }
         startRoamerHunt(sel ? sel.value : null);
       };
+      const farmSel = el.querySelector('[data-act="farmitem"]');
+      if (farmSel) farmSel.onchange = () => {
+        state.loopSel = farmSel.value || null;
+        refreshUi();
+      };
+      el.querySelector('[data-act="loop"]').onclick = () => {
+        if (state.loop?.running) { state.loop.stop('stopped by hand'); return; }
+        startZoneLoop(farmSel ? farmSel.value : state.loopSel);
+      };
     }, { before: '#map-root' });
     if (el) refreshHuntSelect(el, save, now);
+    if (el) refreshLoopSelect(el, save);
   }
 
   /** The Adventure screen: the game's own team-template bar, between the route timeline and the arena.
@@ -4426,6 +4820,47 @@
         spec && { level: spec.foes[0].level, hpMult: spec.foes[0].hpMult });
       const caughtSave = { ...baseSave, roam: { at: { 243: { ch: 0, until: Date.now() + 1e6 } }, caught: [243] } };
       check('caught roamer is not a boss', chapterPlan(data, caughtSave)[0]?.roamer == null);
+
+      // zone looper: synthetic chapters and saves
+      const loopData = { chapters: [
+        { name: 'Test One', steps: [
+          { kind: 'route', name: 'Zone A', item: true, loot: { orb: { p: .05, owns: [1, 2] } } },
+          { kind: 'route', name: 'Zone B', item: true, questFind: { item: 'tusk', p: .1, upTo: 10, until: 'nest' } },
+          { kind: 'find', name: 'Zone C', item: 'amber', once: 'amber' },
+          { kind: 'route', name: 'Night Zone', night: true, item: true, loot: { moon: .1 } },
+        ] },
+        { name: 'Test Two', steps: [{ kind: 'route', name: 'Locked Zone', item: true, loot: { key: .1 } }] },
+      ] };
+      const loopBase = { adv: { chapter: 0, node: 0, unlocked: 0, gifts: {}, badges: [] }, items: {}, mons: [], dex: {} };
+      const loopList = farmTargets(loopData, loopBase);
+      const orbT = loopList.find(t => t.item === 'orb');
+      const tuskT = loopList.find(t => t.item === 'tusk');
+      const moonT = loopList.find(t => t.item === 'moon');
+      check('farm list marks obtained loot items done',
+        farmTargets(loopData, { ...loopBase, adv: { ...loopBase.adv, gifts: { orb: true } } }).find(t => t.item === 'orb')?.done === true);
+      check('questFind goal reads the bag count',
+        farmTargets(loopData, { ...loopBase, items: { tusk: 10 } }).find(t => t.item === 'tusk')?.done === true);
+      check('locked chapters are not offered', !loopList.some(t => t.ch === 1), loopList.map(t => t.ch));
+      const zoneNodes = [
+        { type: 'wild', name: 'Elsewhere' },
+        { type: 'wild', name: 'Elsewhere' },
+        { type: 'item', name: 'Zone A', loot: { orb: .05 } },
+        { type: 'wild', name: 'Zone A', loot: { orb: .05 } },
+        { type: 'trainer', name: 'Zone A', loot: { orb: .05 } },
+        { type: 'heal', name: 'Elsewhere' },
+      ];
+      const zoneSave = { ...loopBase, adv: { ...loopBase.adv, node: 5, nodes: zoneNodes } };
+      const zonePlan = loopPlan(loopData, zoneSave, orbT);
+      check('zone finished triggers the restart decision',
+        loopDecision(zoneSave, { target: orbT }, zonePlan).act === 'restart-zone', zonePlan);
+      const freshSave = { ...loopBase, adv: { ...loopBase.adv, node: 0, nodes: [{ type: 'wild', name: 'Elsewhere' }] } };
+      const freshPlan = loopPlan(loopData, freshSave, orbT);
+      check('fruitless pass restarts immediately',
+        loopDecision(freshSave, { target: orbT }, freshPlan).act === 'restart-fruitless', freshPlan);
+      const phasePlan = loopPlan(loopData, freshSave, moonT);
+      check('phase-gated zone waits',
+        loopDecision(freshSave, { target: moonT }, phasePlan).act === 'wait-phase', phasePlan);
+      check('owns-gated loot is blocked', !!orbT?.blocked && /needs/.test(orbT.why), orbT && orbT.why);
     } catch (e) {
       check('selftest crashed', false, e.message);
       logError('selftest', e);
@@ -4495,6 +4930,7 @@
     projectCandidates, evolvedBranches, refreshChapter,
     chapterPlan, segmentPlans, prepareSegments, switchSegment, freeTemplates, switchTemplate, simulateChapter, searchChapterTeam, rollBattleFoes, simBattle, simAct, simOhko, simGeneric, autoScore, ensureEnglish,
     raidDps, raidBoss, raidPicks, raidRankScore, annotateRaidSuggestions, huntDecision, huntPlacement, roamList, huntPacing,
+    farmTargets, loopPlan, loopDecision, startZoneLoop, ZoneLooper,
     undergroundContext, undergroundFoes, pickVsFoes, roamerBoss, selftest
   };
 })();

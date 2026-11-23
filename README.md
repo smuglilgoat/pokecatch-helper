@@ -1,6 +1,6 @@
 # Poke'Catch Team Optimizer
 
-![Version](https://img.shields.io/badge/version-1.7.0-2f6fe4?style=flat)
+![Version](https://img.shields.io/badge/version-1.8.0-2f6fe4?style=flat)
 ![Platform](https://img.shields.io/badge/Tampermonkey-userscript-00a94f?style=flat)
 
 A single-file Tampermonkey userscript for [Poke'Catch](https://pokecatch-online.netlify.app/). It reads the game's code bundle, the file the page has already loaded, simulates fights with the game's formulas, and fields the result by dragging Pokémon into the game's own team slots. The save is read but not written.
@@ -29,21 +29,22 @@ The file is one IIFE with numbered sections. This table is the map:
 | 26 | 0. Small helpers |
 | 73 | 0b. Console log (`[pcopt]`, last 400 entries) |
 | 91 | 1. Game data parsed from the bundle |
-| 536 | 2. Type chart (pokemondb.net, PokeAPI and the game as fallbacks) |
-| 582 | 3. Save access |
-| 631 | 4. Battle math (the game's formulas) |
-| 736 | 5. Chapter events |
-| 1004 | 6. Optimizer |
-| 1268 | 6c. Chapter simulation |
-| 1799 | 6b. Legendary fights |
-| 2122 | 7. Roamer hunt |
-| 2652 | 8. Team editing (drag and drop) |
-| 2744 | 8b. PokéAPI cross-check and the moves panel |
-| 2794 | 8b. Shiny raids |
-| 2970 | 8c. Controls inside the game's screens |
-| 3114 | 9. UI state |
-| 3523 | 9b. UI blocks mounted in the game's screens |
-| 3949 | 10. Boot and actions |
+| 544 | 2. Type chart (pokemondb.net, PokeAPI and the game as fallbacks) |
+| 590 | 3. Save access |
+| 639 | 4. Battle math (the game's formulas) |
+| 744 | 5. Chapter events |
+| 1012 | 6. Optimizer |
+| 1276 | 6c. Chapter simulation |
+| 1807 | 6b. Legendary fights |
+| 2130 | 7. Roamer hunt |
+| 2674 | 7b. Zone looper |
+| 2955 | 8. Team editing (drag and drop) |
+| 3047 | 8b. PokéAPI cross-check and the moves panel |
+| 3097 | 8b. Shiny raids |
+| 3273 | 8c. Controls inside the game's screens |
+| 3417 | 9. UI state |
+| 3835 | 9b. UI blocks mounted in the game's screens |
+| 4343 | 10. Boot and actions |
 
 Section numbers are the file's own labels; the table follows file order, and 8b is used twice.
 
@@ -103,15 +104,21 @@ The game keeps a roaming legendary on a random chapter of its region for 15 minu
 
 The server pacing is one restart per 10–14 s and at most 120 per rolling hour; hitting the cap starts a 10-minute rest. The hunt stops when the placement timer runs out, follows the roamer when it moves, stays off during an event, legend zone, league or tower, and does not survive a reload.
 
+### Zone looper
+
+The dashboard lists every farmable story item of the unlocked chapters, one entry per chapter and item: repeatable loot rolls with their chance (`Adamant Orb · 5%`), quest finds with their goal (`Broken Tusk · ×10`), and one-time pickups. Item names come from the bundle's own table and the English pack, so a French id reads in English. Pick one and press **Loop**: the script watches the save and restarts the chapter as soon as the item's zones are past, pacing every restart through the same 10–14 s / 120-per-hour machinery as the roamer hunt and turning the game's chapter loop switch on so a completion never drifts the run.
+
+It stops the moment the goal is met: the loot gift, the quest's bag count, or the once flag. Entries already obtained stay listed with ✓; entries whose `owns` or `badge` gate is unmet are disabled with the reason (team and time-of-day gates only make the item harder, so they do not block). A pass with no node that can still drop the item is restarted at once instead of played to the end. A night, day or tide-gated zone that is absent from the live pass waits for the phase rather than burning restarts, and an adventure pause or an event, legend zone, league or tower run stops the loop. Starting either the hunt or the looper stops the other, and neither survives a reload. The save is only read.
+
 ### The dashboard
 
-The Progress screen carries a dashboard above the map. It shows the run's state (chapter and step, level cap, league progress, the count of mons that can join), the data source and bundle, errors and the update notice, the chapter's type chips, the presets, the quick action buttons, the prepared segment rows, and the roamer hunt. Every block is built from the game's classes and only rebuilds when its inputs change; the Progress row below lists each item.
+The Progress screen carries a dashboard above the map. It shows the run's state (chapter and step, level cap, league progress, the count of mons that can join), the data source and bundle, errors and the update notice, the chapter's type chips, the presets, the quick action buttons, the prepared segment rows, the roamer hunt and the zone looper. Every block is built from the game's classes and only rebuilds when its inputs change; the Progress row below lists each item.
 
 ## Where each block appears
 
 | Game screen | What the helper adds |
 |---|---|
-| **Progress** | The **Chapter dashboard** above the map: chapter name and step n/N, cap, league line, eligible count, data source and bundle, errors and the update notice, the chapter's type chips, the **Defense / Offense / Balanced** presets, **simulate**, **apply to team**, **prepare segments**, **empty templates**, the prepared segment rows, and the roamer hunt (out on a chapter, time left, **Hunt** / **Stop**). |
+| **Progress** | The **Chapter dashboard** above the map: chapter name and step n/N, cap, league line, eligible count, data source and bundle, errors and the update notice, the chapter's type chips, the **Defense / Offense / Balanced** presets, **simulate**, **apply to team**, **prepare segments**, **empty templates**, the prepared segment rows, the roamer hunt (out on a chapter, time left, **Hunt** / **Stop**), and the zone looper (item dropdown with chapter, zone and chance or goal, **Loop** / **Stop**). |
 | **Adventure** | A copy of the game's team-template bar between the timeline and the arena, with the same markup and active state: one click loads that template into the team. |
 | **Team/PC** | Above the PC list sits the **Chapter optimizer**: presets, **simulate** with its progress bar and the chapter sim line, the team rows (sprite, `atk` and `def` badges), **apply to team**, a base-team template select with **apply base team** (it switches the game to the picked template and fields the optimized team there, so the team lands in the template you choose as the base), **prepare segments**, **empty templates**, and the segment rows (T1–T5 with sprites and win rate; click one to switch). An **empty templates** button also sits next to the game's own template bar (`#team-sets`). |
 | **Legendary / elite picker** | Below "Les plus choisis" (the community section's French label): presets, **✨ Optimize (mine)**, the boss line (types, HP, damage per round), the odds line, the team with `atk` (damage into the boss) and `def` (rounds survived) badges, and **apply to team**. |
@@ -160,6 +167,13 @@ It logs one `[pcopt] selftest:` line per check and returns `{ ok, ms, results }`
 - `no roamer out, the plan is unchanged`
 - `roamer node becomes a level-100 boss`
 - `caught roamer is not a boss`
+- `farm list marks obtained loot items done`
+- `questFind goal reads the bag count`
+- `locked chapters are not offered`
+- `zone finished triggers the restart decision`
+- `fruitless pass restarts immediately`
+- `phase-gated zone waits`
+- `owns-gated loot is blocked`
 
 Actions are logged to the console with a `[pcopt]` prefix: bundle tables, cache hits, chart source, optimizer runs and teams, applied slots, picker mounts, refine gains and errors. The last 400 entries are in `window.__pcopt.logs`.
 
@@ -179,4 +193,5 @@ A version bump goes in the `@version` header and in the `VERSION` constant near 
 - The world-boss attack picker is not covered.
 - **The underground theme** is matched from the type badges in the picker header, with the label the game puts there as a fallback (its config name stays French, whatever language the interface is in). If a future language pack translates that label, the block stays hidden rather than guessing a theme.
 - **The roamer's rage burst** (its burst move) is averaged into one strong per-round attack in the chapter sim. The chapter line's capture chance is a one-ball estimate, and no roamer fight is replayed round by round.
+- **The zone looper** stops at the game's own goal: Broken Tusk stops at 10 collected, and the Axew nest afterwards is manual.
 - The simulator is a model: it uses the game's formulas and probabilities.
