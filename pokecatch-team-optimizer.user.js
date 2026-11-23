@@ -2673,12 +2673,14 @@
   /* ------------------------------------------------------------------ *
    * 7b. Zone looper: restart a chapter as soon as its story item's zones are done
    * ------------------------------------------------------------------ */
-  const farmKey = t => t.ch + '|' + t.kind + '|' + t.item;
+  const farmKey = t => t.ch + '|' + t.kind + '|' + t.item + (t.kind === 'find' ? '|' + t.once : '');
 
-  /** Dex ownership: the save's dex entry or a mon anywhere in the save. */
+  /** The game's `owns` condition: current possession, not a dex entry of a released mon. */
   function ownsSpecies(save, id) {
-    if (save?.dex && save.dex[id] != null) return true;
-    return Array.isArray(save?.mons) && save.mons.some(m => m.id === +id);
+    const has = m => m && +m.id === +id;
+    if ((save?.mons || []).some(has)) return true;
+    if ((save?.pension?.mons || []).some(p => has(p?.mon))) return true;
+    return (save?.under?.slots || []).some(slot => (slot.mons || []).some(has));
   }
 
   /** Why a loot entry's hard conditions fail (or null); team/day/tide only make it harder. */
@@ -2692,7 +2694,7 @@
   }
 
   /**
-   * Every farmable story item of the unlocked chapters, one entry per (chapter, item).
+   * Every farmable story-item pickup of the unlocked chapters, one entry per pickup (a route candy included).
    * kind: 'loot' (repeatable roll), 'quest' (questFind, repeatable until upTo), 'find' (once).
    */
   function farmTargets(data, save) {
@@ -2703,11 +2705,11 @@
       const steps = data.chapters[ch]?.steps;
       if (!Array.isArray(steps)) continue;
       const byItem = new Map();
-      const add = (step, item, kind, fields = {}) => {
-        let t = byItem.get(item);
+      const add = (step, item, kind, fields = {}, key = item) => {
+        let t = byItem.get(key);
         if (!t) {
           t = { ch, item, kind, p: fields.p, upTo: fields.upTo, once: fields.once, zones: [], steps: [], conds: [] };
-          byItem.set(item, t);
+          byItem.set(key, t);
         }
         if (!t.zones.includes(step.name)) t.zones.push(step.name);
         t.steps.push(step);
@@ -2724,11 +2726,14 @@
           add(step, q.item, 'quest', { p: q.p, upTo: q.upTo, once: q.until });
         }
         if (step.kind === 'find' && step.item) add(step, step.item, 'find', { once: step.once });
+        // shortcut: candy and find-step once ids are disjoint namespaces today, so farmKey values cannot shadow; if the game reuses an id across kinds in one chapter, the first option shadows the second (same goal, maybe a different zone boundary) — revisit then.
+        // a route candy is a guaranteed one-time rare-candy find, one entry per candy
+        if (step.candy) add(step, 'rare-candy', 'find', { once: step.candy }, 'candy:' + step.candy);
       }
       for (const t of byItem.values()) {
         t.phase = t.steps.some(s => s.night || s.day || s.tide);
         t.done = t.kind === 'loot' ? !!save.adv.gifts?.[t.item]
-          : t.kind === 'quest' ? (save.items?.[t.item] || 0) >= t.upTo
+          : t.kind === 'quest' ? ((save.items?.[t.item] || 0) >= t.upTo || !!save.adv.gifts?.[t.once])
             : !!save.adv.gifts?.[t.once];
         if (t.kind === 'loot') {
           const reasons = t.conds.map(c => lootBlockedReason(save, c)).filter(Boolean);
@@ -2761,7 +2766,7 @@
         ? zoneIdxs.some(i => nodes[i].find?.item === target.item)
         : true;
     const done = target.kind === 'loot' ? !!save?.adv?.gifts?.[target.item]
-      : target.kind === 'quest' ? (save?.items?.[target.item] || 0) >= target.upTo
+      : target.kind === 'quest' ? ((save?.items?.[target.item] || 0) >= target.upTo || !!save?.adv?.gifts?.[target.once])
         : !!save?.adv?.gifts?.[target.once];
     return { zoneIdxs, restartNode: zoneIdxs.length ? zoneIdxs[zoneIdxs.length - 1] + 1 : 0, canYield, done };
   }
@@ -4827,6 +4832,7 @@
           { kind: 'route', name: 'Zone A', item: true, loot: { orb: { p: .05, owns: [1, 2] } } },
           { kind: 'route', name: 'Zone B', item: true, questFind: { item: 'tusk', p: .1, upTo: 10, until: 'nest' } },
           { kind: 'find', name: 'Zone C', item: 'amber', once: 'amber' },
+          { kind: 'route', name: 'Candy Zone', item: true, candy: 'rc-test' },
           { kind: 'route', name: 'Night Zone', night: true, item: true, loot: { moon: .1 } },
         ] },
         { name: 'Test Two', steps: [{ kind: 'route', name: 'Locked Zone', item: true, loot: { key: .1 } }] },
@@ -4836,10 +4842,24 @@
       const orbT = loopList.find(t => t.item === 'orb');
       const tuskT = loopList.find(t => t.item === 'tusk');
       const moonT = loopList.find(t => t.item === 'moon');
+      const amberT = loopList.find(t => t.item === 'amber');
+      const candyT = loopList.find(t => t.item === 'rare-candy');
       check('farm list marks obtained loot items done',
         farmTargets(loopData, { ...loopBase, adv: { ...loopBase.adv, gifts: { orb: true } } }).find(t => t.item === 'orb')?.done === true);
       check('questFind goal reads the bag count',
         farmTargets(loopData, { ...loopBase, items: { tusk: 10 } }).find(t => t.item === 'tusk')?.done === true);
+      const closedQuest = { ...loopBase, items: { tusk: 2 }, adv: { ...loopBase.adv, gifts: { nest: true } } };
+      check('questFind gift closes the quest',
+        farmTargets(loopData, closedQuest).find(t => t.item === 'tusk')?.done === true
+        && loopPlan(loopData, closedQuest, tuskT).done === true);
+      check('find reward reads the once gift',
+        amberT?.done === false
+        && farmTargets(loopData, { ...loopBase, adv: { ...loopBase.adv, gifts: { amber: true } } })
+          .find(t => t.item === 'amber')?.done === true);
+      check('route candy is a find target',
+        candyT?.kind === 'find' && candyT.once === 'rc-test' && candyT.done === false
+        && farmTargets(loopData, { ...loopBase, adv: { ...loopBase.adv, gifts: { 'rc-test': true } } })
+          .find(t => t.item === 'rare-candy' && t.once === 'rc-test')?.done === true);
       check('locked chapters are not offered', !loopList.some(t => t.ch === 1), loopList.map(t => t.ch));
       const zoneNodes = [
         { type: 'wild', name: 'Elsewhere' },
@@ -4861,6 +4881,18 @@
       check('phase-gated zone waits',
         loopDecision(freshSave, { target: moonT }, phasePlan).act === 'wait-phase', phasePlan);
       check('owns-gated loot is blocked', !!orbT?.blocked && /needs/.test(orbT.why), orbT && orbT.why);
+      const dexOnly = { ...loopBase, dex: { 1: {}, 2: {} } };
+      check('released dex entry does not satisfy owns',
+        farmTargets(loopData, dexOnly).find(t => t.item === 'orb')?.blocked === true);
+      const ownedElsewhere = { ...loopBase, pension: { mons: [{ mon: { id: 1 } }] }, under: { slots: [{ mons: [{ id: 2 }] }] } };
+      check('pension and underground mons satisfy owns',
+        farmTargets(loopData, ownedElsewhere).find(t => t.item === 'orb')?.blocked === false);
+      const driftSave = { ...freshSave, adv: { ...freshSave.adv, chapter: 1 } };
+      check('chapter drift restarts the target',
+        loopDecision(driftSave, { target: orbT }, loopPlan(loopData, driftSave, orbT)).act === 'restart-drift');
+      const pausedSave = { ...freshSave, adv: { ...freshSave.adv, paused: true } };
+      check('paused adventure waits',
+        loopDecision(pausedSave, { target: orbT }, loopPlan(loopData, pausedSave, orbT)).act === 'wait-paused');
     } catch (e) {
       check('selftest crashed', false, e.message);
       logError('selftest', e);

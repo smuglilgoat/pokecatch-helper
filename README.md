@@ -38,13 +38,13 @@ The file is one IIFE with numbered sections. This table is the map:
 | 1807 | 6b. Legendary fights |
 | 2130 | 7. Roamer hunt |
 | 2674 | 7b. Zone looper |
-| 2955 | 8. Team editing (drag and drop) |
-| 3047 | 8b. PokéAPI cross-check and the moves panel |
-| 3097 | 8b. Shiny raids |
-| 3273 | 8c. Controls inside the game's screens |
-| 3417 | 9. UI state |
-| 3835 | 9b. UI blocks mounted in the game's screens |
-| 4343 | 10. Boot and actions |
+| 2960 | 8. Team editing (drag and drop) |
+| 3052 | 8b. PokéAPI cross-check and the moves panel |
+| 3102 | 8b. Shiny raids |
+| 3278 | 8c. Controls inside the game's screens |
+| 3422 | 9. UI state |
+| 3840 | 9b. UI blocks mounted in the game's screens |
+| 4348 | 10. Boot and actions |
 
 Section numbers are the file's own labels; the table follows file order, and 8b is used twice.
 
@@ -106,9 +106,9 @@ The server pacing is one restart per 10–14 s and at most 120 per rolling hour;
 
 ### Zone looper
 
-The dashboard lists every farmable story item of the unlocked chapters, one entry per chapter and item: repeatable loot rolls with their chance (`Adamant Orb · 5%`), quest finds with their goal (`Broken Tusk · ×10`), and one-time pickups. Item names come from the bundle's own table and the English pack, so a French id reads in English. Pick one and press **Loop**: the script watches the save and restarts the chapter as soon as the item's zones are past, pacing every restart through the same 10–14 s / 120-per-hour machinery as the roamer hunt and turning the game's chapter loop switch on so a completion never drifts the run.
+The dashboard lists every farmable story item of the unlocked chapters, one entry per pickup (each route candy is its own entry): repeatable loot rolls with their chance (`Adamant Orb · 5%`), quest finds with their goal (`Broken Tusk · ×10`), and one-time pickups, candies included. Item names come from the bundle's own table and the English pack, so a French id reads in English. Pick one and press **Loop**: the script watches the save and restarts the chapter as soon as the item's zones are past, pacing every restart through the same 10–14 s / 120-per-hour machinery as the roamer hunt and turning the game's chapter loop switch on so a completion never drifts the run.
 
-It stops the moment the goal is met: the loot gift, the quest's bag count, or the once flag. Entries already obtained stay listed with ✓; entries whose `owns` or `badge` gate is unmet are disabled with the reason (team and time-of-day gates only make the item harder, so they do not block). A pass with no node that can still drop the item is restarted at once instead of played to the end. A night, day or tide-gated zone that is absent from the live pass waits for the phase rather than burning restarts, and an adventure pause or an event, legend zone, league or tower run stops the loop. Starting either the hunt or the looper stops the other, and neither survives a reload. The save is only read.
+It stops the moment the goal is met: the loot gift, the quest's bag count or closing gift, or the once flag. Entries already obtained stay listed with ✓; entries whose `owns` or `badge` gate is unmet are disabled with the reason (team and time-of-day gates only make the item harder, so they do not block). A pass with no node that can still drop the item is restarted at once instead of played to the end. A night, day or tide-gated zone that is absent from the live pass waits for the phase rather than burning restarts, waits out an adventure pause, and stops on an event, legend zone, league or tower run. Starting either the hunt or the looper stops the other, and neither survives a reload. The save is only read.
 
 ### The dashboard
 
@@ -169,11 +169,18 @@ It logs one `[pcopt] selftest:` line per check and returns `{ ok, ms, results }`
 - `caught roamer is not a boss`
 - `farm list marks obtained loot items done`
 - `questFind goal reads the bag count`
+- `questFind gift closes the quest`
+- `find reward reads the once gift`
+- `route candy is a find target`
 - `locked chapters are not offered`
 - `zone finished triggers the restart decision`
 - `fruitless pass restarts immediately`
 - `phase-gated zone waits`
 - `owns-gated loot is blocked`
+- `released dex entry does not satisfy owns`
+- `pension and underground mons satisfy owns`
+- `chapter drift restarts the target`
+- `paused adventure waits`
 
 Actions are logged to the console with a `[pcopt]` prefix: bundle tables, cache hits, chart source, optimizer runs and teams, applied slots, picker mounts, refine gains and errors. The last 400 entries are in `window.__pcopt.logs`.
 
