@@ -3,14 +3,14 @@
 ![Version](https://img.shields.io/badge/version-1.7.0-2f6fe4?style=flat)
 ![Platform](https://img.shields.io/badge/Tampermonkey-userscript-00a94f?style=flat)
 
-A single-file Tampermonkey userscript for [Poke'Catch](https://pokecatch-online.netlify.app/) ([mirror](https://pokecatch-online.pages.dev/)). It reads the game's code bundle, the file the page has already loaded, simulates fights with the game's formulas, and fields the result by dragging Pokémon into the game's own team slots. The save is read but not written.
+A single-file Tampermonkey userscript for [Poke'Catch](https://pokecatch-online.netlify.app/). It reads the game's code bundle, the file the page has already loaded, simulates fights with the game's formulas, and fields the result by dragging Pokémon into the game's own team slots. The save is read but not written.
 
 ## Technology stack
 
 - Vanilla JavaScript, one userscript file. No dependencies and no build step.
 - Tampermonkey APIs: `GM_getValue` and `GM_setValue` for storage (cached bundle tables, the type chart, the English pack URL and the prepared segments), `GM_xmlhttpRequest` for cross-origin requests, with a `fetch` fallback when the Tampermonkey APIs are unavailable.
 - `@connect` hosts: `pokemondb.net`, `pokeapi.co`, `pokecatch-online.pages.dev`.
-- `@match` on `https://pokecatch-online.netlify.app/*` and `https://pokecatch-online.pages.dev/*`, at `document-idle`.
+- `@match` on `https://pokecatch-online.netlify.app/*`, at `document-idle`.
 
 ## Architecture
 
