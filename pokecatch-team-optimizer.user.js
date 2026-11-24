@@ -3046,7 +3046,9 @@
     const stage = target?.stage || target;
     const step = stage?.step;
     if (!W || !step || ch == null) return null;
-    // shortcut: chapter-level fixed weather and day flags are not modelled (none in live data); add branches here if the game starts using them
+    // shortcut: fixed chapter weather and node-level weather overrides are not modelled
+    // ("La crise" around Route 128 forces weather:["storm","sun"]; the Red Gyarados static forces "storm").
+    // No hunter-visible target sits behind either today; if one does, the "now" status misreports its weather.
     // a placed roamer forces its chapter's weather while it is still out
     for (const [id, r] of Object.entries(save?.roam?.at || {}))
       if (+r.ch === +ch && +r.until > slotMs) {
@@ -3082,55 +3084,68 @@
     return out;
   }
 
-  function weatherHours(data, save, target, fromSlot, count) {
-    const W = data?.cfg?.WEATHER;
-    if (!W) return [];
-    const out = [];
-    for (let i = 0; i < count; i++) out.push(weatherAt(data, save, target, (fromSlot + i) * W.SLOT_MS));
-    return out;
+  /** One wild source: any of its conditions admits the slot; a season entry replaces them. */
+  function sourceMatches(data, save, target, src, at) {
+    const phase = phaseKey(data, at);
+    if (src.notPhase && phase === src.notPhase) return false;
+    if (src.seasons?.length) return src.seasons.includes(seasonAt(at));
+    if (src.phases?.includes(phase)) return true;
+    if (!src.weathers?.length) return false;
+    const w = weatherAt(data, save, { ch: target.ch, step: src.step }, at);
+    return !!w && src.weathers.includes(w);
   }
 
-  function slotMatches(data, save, target, at) {
-    const stage = target?.stage;
-    if (!stage?.step) return false;
+  /** The static path keeps the game's AND gates (night && skies && caught && chance). */
+  function staticMatches(data, save, target, stage, at) {
     if (stage.phase && phaseKey(data, at) !== stage.phase) return false;
     if (stage.seasons && !stage.seasons.includes(seasonAt(at))) return false;
     if (stage.skies) {
-      const w = weatherAt(data, save, target, at);
+      const w = weatherAt(data, save, { ch: target.ch, step: stage.step }, at);
       if (!w || !stage.skies.includes(w)) return false;
     }
     return true;
   }
+
+  /** The first source/stage that admits this slot, or null. */
+  function matchStage(data, save, target, at) {
+    const stage = target?.stage;
+    if (!stage) return null;
+    if (stage.sources) {
+      for (const src of stage.sources) if (sourceMatches(data, save, target, src, at)) return src;
+      return null;
+    }
+    return staticMatches(data, save, target, stage, at) ? stage : null;
+  }
+
+  const slotMatches = (data, save, target, at) => !!matchStage(data, save, target, at);
 
   const windowOpen = (data, save, target, now = Date.now()) => {
     const W = data?.cfg?.WEATHER;
     return !!W && slotMatches(data, save, target, Math.floor(now / W.SLOT_MS) * W.SLOT_MS);
   };
 
-  /** The next run of slots that satisfy the target's active stage (72 h scan). */
+  /** The next run of slots that satisfy one of the target's sources (72 h scan). */
   function nextWindow(data, save, target, now = Date.now(), count = 72) {
     const W = data?.cfg?.WEATHER;
     if (!W || !target?.stage) return null;
     const ms = W.SLOT_MS, start = Math.floor(now / ms);
-    let from = null;
+    let from = null, src = null;
     for (let s = start; s < start + count; s++) {
       const at = s * ms;
-      if (slotMatches(data, save, target, at)) { if (from == null) from = at; }
-      else if (from != null) return { from, to: at, key: weatherAt(data, save, target, from) };
+      const hit = matchStage(data, save, target, at);
+      if (hit) { if (from == null) { from = at; src = hit; } }
+      else if (from != null) return { from, to: at, src };
     }
-    return from == null ? null : { from, to: (start + count) * ms, key: weatherAt(data, save, target, from) };
+    return from == null ? null : { from, to: (start + count) * ms, src };
   }
 
-  /** The stage to hunt: the one-time static until its gift is set, then the wild pool. */
+  /** The stage to hunt: the one-time static until its gift is set, then the unlocked wild sources. */
   function pokeStage(target, save) {
     const gifts = save?.adv?.gifts || {};
     if (target?.static && !(target.static.once && gifts[target.static.once])) return target.static;
-    const wild = target?.wild;
-    if (wild && (target.wildLocked || []).every(q => gifts[q])) return wild;
-    return null;
+    const sources = (target?.sources || []).filter(s => s.locks.every(q => gifts[q]));
+    return sources.length ? { kind: 'wild', sources } : null;
   }
-
-  const union = (a, b) => (a && b ? [...new Set([...a, ...b])] : a || b || null);
 
   /** A display name for base species, form ids (absent from the dex literal) and Unown letters. */
   function pokeName(data, id) {
@@ -3143,13 +3158,22 @@
     return '#' + id;
   }
 
-  function mergeStage(into, src) {
-    if (!into) return { ...src, skies: src.skies ? [...src.skies] : null, seasons: src.seasons ? [...src.seasons] : null };
-    into.skies = union(into.skies, src.skies);
-    into.seasons = union(into.seasons, src.seasons);
-    if (!into.phase) into.phase = src.phase;
-    return into;
-  }
+  /** Conditions for one source (or a static stage), in the same any-of reading the game uses. */
+  const condsText = src => {
+    if (!src) return 'any weather';
+    if (Array.isArray(src.weathers) || Array.isArray(src.phases)) {
+      if (src.seasons?.length) return src.seasons.join('/');
+      const pos = [...(src.phases || []), ...(src.weathers || [])].join('/');
+      const need = src.notPhase === 'day' ? 'night' : src.notPhase === 'night' ? 'day' : null;
+      return [pos, need].filter(Boolean).join(' · ') || 'any weather';
+    }
+    return [src.skies?.join('/'), src.phase, src.seasons?.join('/')].filter(Boolean).join(' · ') || 'any weather';
+  };
+  const stageConds = stage => {
+    if (!stage) return 'any weather';
+    const list = stage.sources ? stage.sources.map(condsText) : [condsText(stage)];
+    return [...new Set(list)].join(' or ') || 'any weather';
+  };
 
   /**
    * The missing species with a weather/phase/season-only spawn, from the gated static
@@ -3166,10 +3190,10 @@
     const add = (ch, id, step, fields) => {
       const key = ch + '|' + id;
       let e = by.get(key);
-      if (!e) { e = { id: +id, ch, zones: [], sources: [], static: null, wild: null, wildLocked: [] }; by.set(key, e); }
+      if (!e) { e = { id: +id, ch, zones: [], sources: [], static: null, wildLocked: [] }; by.set(key, e); }
       if (!e.zones.includes(step.name)) e.zones.push(step.name);
       if (fields.static) e.static = fields.static;
-      if (fields.wild) e.sources.push({ ...fields.wild, locks: fields.locks || [] });
+      if (fields.wild) e.sources.push(fields.wild);
     };
     for (let ch = 0; ch <= unlocked; ch++) {
       for (const step of data.chapters[ch]?.steps || []) {
@@ -3187,44 +3211,46 @@
         const base = hab.base || {};
         const quests = Object.entries(hab).filter(([k]) => k.startsWith('quest:')).map(([k, ids]) => ({ key: k.slice(6), ids: ids || {} }));
         const locksOf = id => quests.filter(q => (q.ids[id] || 0) > 0 && !gifts[q.key]).map(q => q.key);
+        // one source per step: the game's pool admits when any of its conds is active
+        const groups = new Map();
+        const groupOf = id => {
+          let g = groups.get(id);
+          if (!g) { g = { step, weathers: [], phases: [], seasons: [], notPhase: null, locks: locksOf(id) }; groups.set(id, g); }
+          return g;
+        };
         for (const [cond, table] of Object.entries(hab)) {
           if (cond === 'base' || cond.startsWith('quest:') || !table || typeof table !== 'object') continue;
           for (const [sid, weight] of Object.entries(table)) {
             const id = +sid;
             if (!(weight > 0) || (base[id] || 0) > 0 || !pokeName(data, id)) continue;
-            const wild = { step, skies: null, phase: null, seasons: null };
-            if (cond === 'day' || cond === 'night') wild.phase = cond;
-            else if (W.TYPES?.[cond]) wild.skies = [cond];
-            else if (SEASON_KEYS.includes(cond)) wild.seasons = [cond];
-            else continue;
-            add(ch, id, step, { wild, locks: locksOf(id) });
+            if (cond === 'day' || cond === 'night') groupOf(id).phases.push(cond);
+            else if (W.TYPES?.[cond]) groupOf(id).weathers.push(cond);
+            else if (SEASON_KEYS.includes(cond)) groupOf(id).seasons.push(cond);
           }
         }
-        // a zero-weight day/night entry means the species is suppressed in that phase
+        // a zero-weight day/night entry suppresses the species in that phase
         for (const cond of ['day', 'night']) {
           const table = hab[cond];
           if (!table) continue;
           for (const [sid, weight] of Object.entries(table)) {
-            const e = by.get(ch + '|' + sid);
-            if (weight !== 0 || !e) continue;
-            for (const src of e.sources) if (!src.step || src.step === step) { if (!src.phase) src.phase = cond === 'day' ? 'night' : 'day'; }
+            const g = weight === 0 && groups.get(+sid);
+            if (g) g.notPhase = cond;
           }
+        }
+        for (const [id, g] of groups) {
+          if (g.seasons.length) { g.weathers = []; g.phases = []; } // the season entry overwrites the other conds
+          add(ch, id, step, { wild: g });
         }
       }
     }
     for (const e of by.values()) {
       if (!pokeName(data, e.id) || save.dex?.[e.id]) continue;
-      const open = e.sources.filter(s => !s.locks.length);
-      const use = open.length ? open : e.sources;
-      for (const src of use) e.wild = mergeStage(e.wild, src);
-      const locked = open.length ? [] : [...new Set(e.sources.flatMap(s => s.locks))];
-      e.wildLocked = locked;
-      if (e.wild) delete e.wild.step; // step is per merged source; the first step's climate is enough
-      if (use.length) e.wild.step = use[0].step;
+      e.wildLocked = [...new Set(e.sources.flatMap(s => s.locks))];
       e.stage = pokeStage(e, save);
       let why = '';
       if (!e.stage) {
-        why = e.static ? 'one-time encounter burned, no wild path'
+        const locked = e.wildLocked.filter(q => !gifts[q]);
+        why = e.static && !locked.length ? 'one-time encounter burned, no wild path'
           : 'quest ' + (locked.join('/') || '?') + ' not unlocked';
       } else if (e.stage === e.static) {
         const missing = (e.static.caught || []).filter(id => !save.dex?.[id]);
@@ -3272,7 +3298,8 @@
     }
     const mode = stage === t.static ? 'static' : 'wild';
     if (!poke.hunting) return poke.open ? { act: 'start', mode } : { act: 'wait-window', mode };
-    if (adv.chapter !== t.ch) return { act: 'restart-drift', ch: t.ch, mode };
+    // the player left the chapter by hand: only chase it back inside a window
+    if (adv.chapter !== t.ch) return poke.open ? { act: 'restart-drift', ch: t.ch, mode } : { act: 'watch', mode };
     if (mode === 'static') {
       const hasNode = (adv.nodes || []).some(n => n.type === 'static' && +n.id === +t.id);
       if (!hasNode) return poke.open ? { act: 'restart-fruitless', mode } : { act: 'watch', mode };
@@ -3351,7 +3378,8 @@
       this.target.stage = pokeStage(this.target, save);
       this.open = windowOpen(state.data, save, this.target, now);
       this.window = nextWindow(state.data, save, this.target, now);
-      this.weather = weatherAt(state.data, save, this.target, now);
+      const step = this.window?.src?.step || this.target.stage?.sources?.[0]?.step || this.target.stage?.step;
+      this.weather = step ? weatherAt(state.data, save, { ch: this.target.ch, step }, now) : null;
       const active = !!save.adv.battle && (save.adv.battle.kind === 'wild' || save.adv.battle.kind === 'static')
         && +save.adv.battle.enemies?.[0]?.id === +this.target.id;
       if (active && !this.sawFight) {
@@ -3378,6 +3406,8 @@
         case 'fight':
           break;
         case 'resolve-missed': {
+          // the window closed while the fight ended: go back to watching, no restart slot spent
+          if (!this.open) { await this.toWatch(gen); break; }
           const pace = huntPacing.canRestart(now);
           if (!pace.ok) { this.paced(pace); break; }
           this.attempts++;
@@ -3387,7 +3417,6 @@
           this.last = `missed (attempt ${this.attempts})`;
           log('info', 'poke: missed, restarting', { id: this.target.id, attempts: this.attempts });
           refreshUi();
-          if (!this.open) { await this.toWatch(gen); break; }
           this.working = true;
           this.restart(this.target.ch, false, gen, true)
             .catch(e => logError('poke: restart', e))
@@ -3456,9 +3485,9 @@
       if (!t) return;
       const cur = this.weather || weatherAt(state.data, readSave(), t, now) || 'clear';
       const w = this.window;
-      const conds = t.stage?.skies?.join('/') || t.stage?.phase || 'any weather';
+      const conds = w?.src ? condsText(w.src) : stageConds(t.stage);
       const when = w ? hhmm(new Date(w.from)) + ' (in ' + Math.max(0, Math.ceil((w.from - now) / 60000)) + ' min)' : 'no window in 3 days';
-      const text = `watching · now ${cur} · next ${w?.key || conds} ${when}`;
+      const text = `watching · now ${cur} · next ${conds} ${when}`;
       if (this.status === 'watching' && this.last === text) return;
       this.status = 'watching';
       this.last = text;
@@ -4590,7 +4619,7 @@
   function pokeLabel(t, now) {
     const chap = englishText(state.data?.chapters?.[t.ch]?.name || '');
     const zones = t.zones.map(englishText).join(', ');
-    const conds = [t.stage?.skies?.join('/'), t.stage?.phase, t.stage?.seasons?.join('/')].filter(Boolean).join(' · ') || 'any weather';
+    const conds = t.window?.src ? condsText(t.window.src) : stageConds(t.stage);
     const w = t.window;
     const when = w
       ? (w.from <= now ? 'window open' : hhmm(new Date(w.from)) + ' (in ' + Math.max(1, Math.ceil((w.from - now) / 60000)) + ' min)')
@@ -5611,13 +5640,14 @@
         hList.map(t => t.id));
       check('special spawns exclude a caught mon', !specialSpawns(hData, { ...hSave, dex: { 4: {} } }).some(t => t.id === 4));
       check('special spawns keep the static-only and habitat-only shapes',
-        !!byId(2)?.static && !byId(2)?.wild && !byId(4)?.static && !!byId(4)?.wild && byId(4)?.stage?.phase === 'night');
+        !!byId(2)?.static && !byId(2)?.sources?.length && !byId(4)?.static
+        && byId(4)?.sources?.length === 1 && byId(4)?.stage?.sources?.[0]?.phases?.includes('night'));
       check('special spawns block an unmet dex requirement', byId(6)?.blocked === true && /needs/.test(byId(6)?.why || ''), byId(6)?.why);
       check('special spawns note the quest gate', byId(3)?.blocked === true && /quest q3/.test(byId(3)?.why || ''), byId(3)?.why);
       check('special spawns unlock the wild pool with the quest gift',
         specialSpawns(hData, { ...hSave, adv: { ...hSave.adv, gifts: { q5: true } } }).find(t => t.id === 5)?.blocked === false);
 
-      const pTarget = { id: 2, ch: 0, static: { step: hData.chapters[0].steps[1], phase: 'night', once: 'g2' }, wild: null, wildLocked: [] };
+      const pTarget = { id: 2, ch: 0, static: { step: hData.chapters[0].steps[1], phase: 'night', once: 'g2' }, sources: [], wildLocked: [] };
       const pSave = { adv: { chapter: 0, nodes: [], gifts: {} }, dex: {} };
       check('hunter waits outside the window', pokeDecision(pSave, { target: pTarget, hunting: false, open: false }).act === 'wait-window');
       check('hunter starts inside the window', pokeDecision(pSave, { target: pTarget, hunting: false, open: true }).act === 'start');
@@ -5631,6 +5661,55 @@
         pokeDecision({ adv: { chapter: 0, nodes: [], gifts: {} }, dex: { 2: {} } }, { target: pTarget, hunting: true, open: true }).act === 'stop-caught');
       check('hunter watches when the window closes before a rebuild',
         pokeDecision({ adv: { chapter: 0, nodes: [{ type: 'wild' }], gifts: {} }, dex: {} }, { target: pTarget, hunting: true, open: false }).act === 'watch');
+      const burnedTarget = { ...pTarget, sources: [], wildLocked: [] };
+      check('hunter stops when the burned static has no wild path',
+        pokeDecision({ adv: { chapter: 0, nodes: [], gifts: { g2: true } }, dex: {} }, { target: burnedTarget, hunting: true, open: true }).act === 'stop-burned');
+      const lockedSource = { step: hData.chapters[0].steps[0], weathers: ['rain'], phases: [], seasons: [], notPhase: null, locks: ['q2'] };
+      const lockedTarget = { ...pTarget, sources: [lockedSource], wildLocked: ['q2'] };
+      check('hunter reports a locked wild pool after the static burned',
+        pokeDecision({ adv: { chapter: 0, nodes: [], gifts: { g2: true } }, dex: {} }, { target: lockedTarget, hunting: true, open: true }).act === 'stop-locked');
+      const pDriftSave = { adv: { chapter: 1, nodes: [], gifts: {} }, dex: {} };
+      check('hunter chases a drifted chapter only inside the window',
+        pokeDecision(pDriftSave, { target: pTarget, hunting: true, open: true }).act === 'restart-drift'
+        && pokeDecision(pDriftSave, { target: pTarget, hunting: true, open: false }).act === 'watch');
+
+      // window semantics: wild sources OR their conds, seasons overwrite them, statics still AND
+      const beachStep = hData.chapters[1].steps[0];
+      const atOf = s => s * W.SLOT_MS;
+      let nightAt = null, dayRainAt = null, dayClearAt = null, nightWetAt = null, nightClearAt = null;
+      for (let s = wNow; s < wNow + 400 && !(nightAt && dayRainAt && dayClearAt && nightWetAt && nightClearAt); s++) {
+        const at = atOf(s), ph = phaseKey(hData, at);
+        const wet = weatherAt(hData, {}, { ch: 1, step: beachStep }, at);
+        if (ph === 'night' && !nightAt) nightAt = at;
+        if (ph === 'night' && (wet === 'rain' || wet === 'storm') && !nightWetAt) nightWetAt = at;
+        if (ph === 'night' && !wet && !nightClearAt) nightClearAt = at;
+        if (ph === 'day' && wet === 'rain' && !dayRainAt) dayRainAt = at;
+        if (ph === 'day' && !wet && !dayClearAt) dayClearAt = at;
+      }
+      const anyOfSrc = { step: beachStep, weathers: ['rain', 'storm'], phases: ['night'], seasons: [], notPhase: null, locks: [] };
+      const anyOf = { ch: 1, stage: { kind: 'wild', sources: [anyOfSrc] } };
+      check('a wild window admits any active condition',
+        !!nightAt && !!dayRainAt && !!dayClearAt && condsText(anyOfSrc) === 'night/rain/storm'
+        && !!matchStage(hData, {}, anyOf, nightAt) && !!matchStage(hData, {}, anyOf, dayRainAt)
+        && matchStage(hData, {}, anyOf, dayClearAt) === null);
+      const seasonSrc = { step: beachStep, weathers: [], phases: [], seasons: ['winter'], notPhase: null, locks: [] };
+      const seasonTarget = { ch: 1, stage: { kind: 'wild', sources: [seasonSrc] } };
+      const seasonSlot = want => {
+        for (let s = wNow; s < wNow + 24 * 30; s++) if (seasonAt(atOf(s)) === want) return atOf(s);
+        return null;
+      };
+      const winterAt = seasonSlot('winter'), summerAt = seasonSlot('summer');
+      check('a season entry overwrites the wild conditions',
+        !!winterAt && !!summerAt && condsText(seasonSrc) === 'winter'
+        && !!matchStage(hData, {}, seasonTarget, winterAt)
+        && matchStage(hData, {}, seasonTarget, summerAt) === null);
+      const staticStage = { step: beachStep, skies: ['rain', 'storm'], phase: 'night', seasons: null };
+      const staticTarget = { ch: 1, stage: staticStage };
+      check('static windows still require every gate',
+        !!nightWetAt && !!nightClearAt && !!dayRainAt
+        && !!matchStage(hData, {}, staticTarget, nightWetAt)
+        && matchStage(hData, {}, staticTarget, nightClearAt) === null
+        && matchStage(hData, {}, staticTarget, dayRainAt) === null);
     } catch (e) {
       check('selftest crashed', false, e.message);
       logError('selftest', e);
@@ -5702,7 +5781,7 @@
     chapterPlan, segmentPlans, prepareSegments, switchSegment, freeTemplates, switchTemplate, simulateChapter, searchChapterTeam, rollBattleFoes, simBattle, simAct, simOhko, simGeneric, autoScore, ensureEnglish,
     raidDps, raidBoss, raidPicks, raidRankScore, annotateRaidSuggestions, huntDecision, huntPlacement, roamList, huntPacing,
     farmTargets, loopPlan, loopDecision, startZoneLoop, ZoneLooper,
-    wHash, weatherAt, weatherHours, nextWindow, specialSpawns, pokeDecision, startPokemonHunt, PokemonHunter,
+    wHash, weatherAt, nextWindow, specialSpawns, pokeDecision, startPokemonHunt, PokemonHunter,
     undergroundContext, undergroundFoes, pickVsFoes, roamerBoss, selftest
   };
 })();
