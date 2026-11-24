@@ -2731,6 +2731,8 @@
         if (step.candy) add(step, 'rare-candy', 'find', { once: step.candy }, 'candy:' + step.candy);
       }
       for (const t of byItem.values()) {
+        // Rare Candies are one-time route/find pickups: never a farm target, keep them out of the list
+        if (t.item === 'rare-candy') continue;
         t.phase = t.steps.some(s => s.night || s.day || s.tide);
         t.done = t.kind === 'loot' ? !!save.adv.gifts?.[t.item]
           : t.kind === 'quest' ? ((save.items?.[t.item] || 0) >= t.upTo || !!save.adv.gifts?.[t.once])
@@ -4843,7 +4845,6 @@
       const tuskT = loopList.find(t => t.item === 'tusk');
       const moonT = loopList.find(t => t.item === 'moon');
       const amberT = loopList.find(t => t.item === 'amber');
-      const candyT = loopList.find(t => t.item === 'rare-candy');
       check('farm list marks obtained loot items done',
         farmTargets(loopData, { ...loopBase, adv: { ...loopBase.adv, gifts: { orb: true } } }).find(t => t.item === 'orb')?.done === true);
       check('questFind goal reads the bag count',
@@ -4856,10 +4857,10 @@
         amberT?.done === false
         && farmTargets(loopData, { ...loopBase, adv: { ...loopBase.adv, gifts: { amber: true } } })
           .find(t => t.item === 'amber')?.done === true);
-      check('route candy is a find target',
-        candyT?.kind === 'find' && candyT.once === 'rc-test' && candyT.done === false
+      check('rare candies are not farm targets',
+        loopList.every(t => t.item !== 'rare-candy')
         && farmTargets(loopData, { ...loopBase, adv: { ...loopBase.adv, gifts: { 'rc-test': true } } })
-          .find(t => t.item === 'rare-candy' && t.once === 'rc-test')?.done === true);
+          .every(t => t.item !== 'rare-candy'));
       check('locked chapters are not offered', !loopList.some(t => t.ch === 1), loopList.map(t => t.ch));
       const zoneNodes = [
         { type: 'wild', name: 'Elsewhere' },
