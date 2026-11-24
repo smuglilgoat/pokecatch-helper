@@ -3165,7 +3165,7 @@
       if (src.seasons?.length) return src.seasons.join('/');
       const pos = [...(src.phases || []), ...(src.weathers || [])].join('/');
       const need = src.notPhase === 'day' ? 'night' : src.notPhase === 'night' ? 'day' : null;
-      return [pos, need].filter(Boolean).join(' · ') || 'any weather';
+      return [pos, need && !src.phases?.includes(need) ? need : null].filter(Boolean).join(' · ') || 'any weather';
     }
     return [src.skies?.join('/'), src.phase, src.seasons?.join('/')].filter(Boolean).join(' · ') || 'any weather';
   };
@@ -3237,6 +3237,9 @@
             if (g) g.notPhase = cond;
           }
         }
+        // shortcut: zero entries in weather/season tables on non-base ids are unmodeled, and the game's quest
+        // exclusion set adds every key of an incomplete quest table even at weight 0 (locksOf needs weight > 0);
+        // none in today's HABITATS, so revisit when such an entry appears.
         for (const [id, g] of groups) {
           if (g.seasons.length) { g.weathers = []; g.phases = []; } // the season entry overwrites the other conds
           add(ch, id, step, { wild: g });
