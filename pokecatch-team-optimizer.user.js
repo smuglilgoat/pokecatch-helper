@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Poke'Catch Team Optimizer
 // @namespace    pokecatch-helper
-// @version      1.8.0
+// @version      1.9.0
 // @description  Reads the current chapter events, then builds an optimal team of 6 from the PC with Defense / Offense / Balanced presets, optimizes legendary, elite, underground and raid teams, and prepares per-segment template teams.
 // @author       GrumpyOwl
 // @match        https://pokecatch-online.netlify.app/*
@@ -27,7 +27,7 @@
    * 0. Small helpers
    * ------------------------------------------------------------------ */
   const SAVE_KEY = 'gachamon-save-v1';
-  const VERSION = '1.8.0';
+  const VERSION = '1.9.0';
   const UPDATE_URL = 'https://raw.githubusercontent.com/smuglilgoat/pokecatch-helper/main/pokecatch-team-optimizer.user.js';
   const $ = (sel, root = document) => root.querySelector(sel);
   const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
@@ -250,6 +250,20 @@
       try { return evalLit(lit); } catch { return evalSandbox(lit); }
     });
     const leagueTeams = table('LEAGUE_TEAMS', false, read('a.LEAGUE_TEAMS=')) || {};
+    // optional: a missing table disables only the special-spawn hunter
+    const habitats = table('HABITATS', false, read('a.HABITATS=')) || {};
+    // the dex literal has no forms: the bundle pushes them from its FORMS array at boot
+    const forms = table('FORMS', false, () => {
+      const out = {};
+      for (const f of evalLit(literalAfter(src, 'a.FORMS=function(){const g='))) out[f.id] = { base: f.base, form: f.form };
+      return out;
+    }) || {};
+    // phase boundaries: the bundle literal; the defaults are the values it has always carried
+    const daytime = table('DAYTIME', false, () => {
+      const at = src.indexOf('[{key:"morning",from:');
+      if (at < 0) throw new Error('marker not found');
+      return evalSandbox(literalAt(src, at)).map(p => ({ key: p.key, from: +p.from }));
+    }) || [{ key: 'morning', from: 8 }, { key: 'day', from: 10 }, { key: 'night', from: 20 }];
     const baseExp = table('BASE_EXP', false, read('a.BASE_EXP=')) || {};
     // item names: the base table, then the game's own story/berry extension
     const itemNames = table('ITEM_NAMES', false, () => {
@@ -303,6 +317,9 @@
       itemNames,
       statusMoves,
       legends,
+      habitats,
+      forms,
+      daytime,
       cfg: {
         LEVEL_GAP: cfg.LEVEL_GAP, CRIT_MULT: cfg.CRIT_MULT, CRIT_CHANCE: cfg.CRIT_CHANCE,
         ENEMY_DAMAGE: cfg.ENEMY_DAMAGE, GYM_DAMAGE: cfg.GYM_DAMAGE, GYM_HP_MULT: cfg.GYM_HP_MULT,
@@ -336,6 +353,7 @@
         LEAGUE_BELOW: cfg.LEAGUE_TRAINERS?.below || [6, 5, 4, 3],
         LEGEND_ZONE: cfg.LEGEND_ZONE, ELITE: cfg.ELITE, RANK_STAT: cfg.UNDERGROUND?.RANK_STAT ?? 1,
         UNDERGROUND: cfg.UNDERGROUND || null, ROAMING: cfg.ROAMING || { MIN_LEVEL: 100, CATCH: .04 },
+        WEATHER: cfg.WEATHER || null,
         BOSS_STATUS: cfg.BOSS_STATUS || null,
         STATUS_TEAM: cfg.STATUS_TEAM || [1, .5],
         STATUS_PARA_COST: cfg.STATUS_PARA_COST ?? 1,
@@ -2960,6 +2978,554 @@
   }
 
   /* ------------------------------------------------------------------ *
+   * 7c. Pokémon hunter: wait for a special spawn's weather/phase window,
+   *     then restart its chapter until the mon is caught
+   * ------------------------------------------------------------------ */
+  const SEASON_KEYS = ['spring', 'summer', 'autumn', 'winter'];
+  const weatherCache = new WeakMap();
+
+  /** The game's FNV-1a hash (U in the bundle), used by its weather roll. */
+  function wHash(str) {
+    let z = 2166136261;
+    for (const c of str) z = Math.imul(z ^ c.charCodeAt(0), 16777619);
+    z ^= z >>> 16; z = Math.imul(z, 2246822507);
+    z ^= z >>> 13; z = Math.imul(z, 3266489909);
+    z ^= z >>> 16;
+    return (z >>> 0) / 4294967296;
+  }
+
+  /** A step's own climate (step.climate or its bg), with the region's off/weight tweaks. */
+  function stepClimate(data, step, ch) {
+    const W = data?.cfg?.WEATHER;
+    if (!W || !step) return null;
+    let z = (typeof step.climate === 'string' ? W.CLIMATES?.[step.climate] : step.climate) || W.CLIMATES?.[step.bg];
+    if (!z) return null;
+    const reg = data.chapters?.[ch]?.reg || 'kanto';
+    const off = W.REGION_OFF?.[reg], extra = W.REGION_WEIGHTS?.[reg];
+    if (off || extra) {
+      z = { ...z };
+      for (const k of off || []) delete z[k];
+      for (const part of [extra?.all, extra?.[step.bg]])
+        for (const [k, m] of Object.entries(part || {})) if (z[k]) z[k] *= m;
+    }
+    return Object.keys(z).length ? z : null;
+  }
+
+  /** The chapter's summed route climate: the pool the weather type is drawn from. */
+  function chapterClimate(data, ch) {
+    let z = null;
+    for (const s of data?.chapters?.[ch]?.steps || []) {
+      if (s.kind !== 'route' || s.indoor) continue;
+      const c = stepClimate(data, s, ch);
+      if (!c) continue;
+      z ||= {};
+      for (const [k, v] of Object.entries(c)) z[k] = (z[k] || 0) + v;
+    }
+    return z && Object.keys(z).length ? z : null;
+  }
+
+  /** The game re-aliases morning to day; only night matters to its spawn filters. */
+  function phaseKey(data, ms) {
+    const phases = data?.daytime || [];
+    const from = k => phases.find(p => p.key === k)?.from;
+    const night = from('night') ?? 20, morning = from('morning') ?? 8;
+    const h = new Date(ms).getHours();
+    return h >= night || h < morning ? 'night' : 'day';
+  }
+
+  const seasonAt = ms => {
+    const d = new Date(ms);
+    const DAY = 864e5;
+    return SEASON_KEYS[Math.floor(Math.floor(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) / DAY) / 3) % 4];
+  };
+
+  /** The weather the game computes for this node at this slot, or null (clear/indoor). */
+  function weatherAt(data, save, target, slotMs) {
+    const W = data?.cfg?.WEATHER;
+    const ch = target?.ch;
+    const stage = target?.stage || target;
+    const step = stage?.step;
+    if (!W || !step || ch == null) return null;
+    // shortcut: chapter-level fixed weather and day flags are not modelled (none in live data); add branches here if the game starts using them
+    // a placed roamer forces its chapter's weather while it is still out
+    for (const [id, r] of Object.entries(save?.roam?.at || {}))
+      if (+r.ch === +ch && +r.until > slotMs) {
+        const forced = data.cfg.ROAMING?.WEATHER?.[id];
+        if (forced) return forced;
+      }
+    const own = stepClimate(data, step, ch);
+    if (!own || step.indoor) return null;
+    let byStep = weatherCache.get(data);
+    if (!byStep) weatherCache.set(data, byStep = new WeakMap());
+    let bySlot = byStep.get(step);
+    if (!bySlot) byStep.set(step, bySlot = new Map());
+    const slot = Math.floor(slotMs / W.SLOT_MS);
+    if (bySlot.has(slot)) return bySlot.get(slot);
+    const B = chapterClimate(data, ch) || own;
+    const key = 'ch' + ch;
+    let run = 0;
+    while (run < 64 && wHash(key + '|' + (slot - run)) < W.CHANCE) run++;
+    let out = null;
+    if (run % 2 === 1) {
+      const night = phaseKey(data, slot * W.SLOT_MS) === 'night';
+      const avail = Object.entries(B).filter(([k]) => !(night && W.TYPES?.[k]?.daylight));
+      if (avail.length) {
+        let v = wHash(slot + '|' + key) * avail.reduce((s, [, w]) => s + w, 0);
+        let pick = avail[0][0];
+        for (const [k, w] of avail) if ((v -= w) <= 0) { pick = k; break; }
+        // the game tests the translation against the node's own climate, not the chapter pool
+        const ok = k => own[k] && !(night && W.TYPES?.[k]?.daylight);
+        out = ok(pick) ? pick : (W.TRANSLATE?.[pick] || []).find(ok) || null;
+      }
+    }
+    bySlot.set(slot, out);
+    return out;
+  }
+
+  function weatherHours(data, save, target, fromSlot, count) {
+    const W = data?.cfg?.WEATHER;
+    if (!W) return [];
+    const out = [];
+    for (let i = 0; i < count; i++) out.push(weatherAt(data, save, target, (fromSlot + i) * W.SLOT_MS));
+    return out;
+  }
+
+  function slotMatches(data, save, target, at) {
+    const stage = target?.stage;
+    if (!stage?.step) return false;
+    if (stage.phase && phaseKey(data, at) !== stage.phase) return false;
+    if (stage.seasons && !stage.seasons.includes(seasonAt(at))) return false;
+    if (stage.skies) {
+      const w = weatherAt(data, save, target, at);
+      if (!w || !stage.skies.includes(w)) return false;
+    }
+    return true;
+  }
+
+  const windowOpen = (data, save, target, now = Date.now()) => {
+    const W = data?.cfg?.WEATHER;
+    return !!W && slotMatches(data, save, target, Math.floor(now / W.SLOT_MS) * W.SLOT_MS);
+  };
+
+  /** The next run of slots that satisfy the target's active stage (72 h scan). */
+  function nextWindow(data, save, target, now = Date.now(), count = 72) {
+    const W = data?.cfg?.WEATHER;
+    if (!W || !target?.stage) return null;
+    const ms = W.SLOT_MS, start = Math.floor(now / ms);
+    let from = null;
+    for (let s = start; s < start + count; s++) {
+      const at = s * ms;
+      if (slotMatches(data, save, target, at)) { if (from == null) from = at; }
+      else if (from != null) return { from, to: at, key: weatherAt(data, save, target, from) };
+    }
+    return from == null ? null : { from, to: (start + count) * ms, key: weatherAt(data, save, target, from) };
+  }
+
+  /** The stage to hunt: the one-time static until its gift is set, then the wild pool. */
+  function pokeStage(target, save) {
+    const gifts = save?.adv?.gifts || {};
+    if (target?.static && !(target.static.once && gifts[target.static.once])) return target.static;
+    const wild = target?.wild;
+    if (wild && (target.wildLocked || []).every(q => gifts[q])) return wild;
+    return null;
+  }
+
+  const union = (a, b) => (a && b ? [...new Set([...a, ...b])] : a || b || null);
+
+  /** A display name for base species, form ids (absent from the dex literal) and Unown letters. */
+  function pokeName(data, id) {
+    if (id == null) return '';
+    if (data?.species?.[id]) return displayName(id);
+    const form = data?.forms?.[id];
+    if (form) return displayName(form.base) + ' · ' + englishText(form.form);
+    const u = UNOWN_IDS.indexOf(id);
+    if (u > 0) return 'Unown ' + 'ABCDEFGHIJKLMNOPQRSTUVWXYZ!?'[u - 1];
+    return '#' + id;
+  }
+
+  function mergeStage(into, src) {
+    if (!into) return { ...src, skies: src.skies ? [...src.skies] : null, seasons: src.seasons ? [...src.seasons] : null };
+    into.skies = union(into.skies, src.skies);
+    into.seasons = union(into.seasons, src.seasons);
+    if (!into.phase) into.phase = src.phase;
+    return into;
+  }
+
+  /**
+   * The missing species with a weather/phase/season-only spawn, from the gated static
+   * steps and the habitat tables. One entry per (species, chapter), sorted so an open
+   * window comes first, then the soonest one.
+   */
+  function specialSpawns(data, save, now = Date.now()) {
+    const out = [];
+    const W = data?.cfg?.WEATHER;
+    if (!data?.chapters || !save?.adv || !W) return out;
+    const gifts = save.adv.gifts || {};
+    const unlocked = Math.min(data.chapters.length - 1, save.adv.unlocked ?? 0);
+    const by = new Map();
+    const add = (ch, id, step, fields) => {
+      const key = ch + '|' + id;
+      let e = by.get(key);
+      if (!e) { e = { id: +id, ch, zones: [], sources: [], static: null, wild: null, wildLocked: [] }; by.set(key, e); }
+      if (!e.zones.includes(step.name)) e.zones.push(step.name);
+      if (fields.static) e.static = fields.static;
+      if (fields.wild) e.sources.push({ ...fields.wild, locks: fields.locks || [] });
+    };
+    for (let ch = 0; ch <= unlocked; ch++) {
+      for (const step of data.chapters[ch]?.steps || []) {
+        if (step.kind === 'static' && (step.skies || step.night || step.day) && step.id != null) {
+          add(ch, step.id, step, { static: {
+            step, skies: step.skies || null,
+            phase: step.night ? 'night' : step.day ? 'day' : null, seasons: null,
+            once: step.once || null, caught: step.caught || null,
+            needs: step.needs || null, needN: step.needN || 1, after: step.after || null,
+          } });
+        }
+        const key = step.habitat || (step.areas?.length ? step.name + '|' + step.areas.join('+') : null);
+        const hab = key && data.habitats?.[key];
+        if (!hab) continue;
+        const base = hab.base || {};
+        const quests = Object.entries(hab).filter(([k]) => k.startsWith('quest:')).map(([k, ids]) => ({ key: k.slice(6), ids: ids || {} }));
+        const locksOf = id => quests.filter(q => (q.ids[id] || 0) > 0 && !gifts[q.key]).map(q => q.key);
+        for (const [cond, table] of Object.entries(hab)) {
+          if (cond === 'base' || cond.startsWith('quest:') || !table || typeof table !== 'object') continue;
+          for (const [sid, weight] of Object.entries(table)) {
+            const id = +sid;
+            if (!(weight > 0) || (base[id] || 0) > 0 || !pokeName(data, id)) continue;
+            const wild = { step, skies: null, phase: null, seasons: null };
+            if (cond === 'day' || cond === 'night') wild.phase = cond;
+            else if (W.TYPES?.[cond]) wild.skies = [cond];
+            else if (SEASON_KEYS.includes(cond)) wild.seasons = [cond];
+            else continue;
+            add(ch, id, step, { wild, locks: locksOf(id) });
+          }
+        }
+        // a zero-weight day/night entry means the species is suppressed in that phase
+        for (const cond of ['day', 'night']) {
+          const table = hab[cond];
+          if (!table) continue;
+          for (const [sid, weight] of Object.entries(table)) {
+            const e = by.get(ch + '|' + sid);
+            if (weight !== 0 || !e) continue;
+            for (const src of e.sources) if (!src.step || src.step === step) { if (!src.phase) src.phase = cond === 'day' ? 'night' : 'day'; }
+          }
+        }
+      }
+    }
+    for (const e of by.values()) {
+      if (!pokeName(data, e.id) || save.dex?.[e.id]) continue;
+      const open = e.sources.filter(s => !s.locks.length);
+      const use = open.length ? open : e.sources;
+      for (const src of use) e.wild = mergeStage(e.wild, src);
+      const locked = open.length ? [] : [...new Set(e.sources.flatMap(s => s.locks))];
+      e.wildLocked = locked;
+      if (e.wild) delete e.wild.step; // step is per merged source; the first step's climate is enough
+      if (use.length) e.wild.step = use[0].step;
+      e.stage = pokeStage(e, save);
+      let why = '';
+      if (!e.stage) {
+        why = e.static ? 'one-time encounter burned, no wild path'
+          : 'quest ' + (locked.join('/') || '?') + ' not unlocked';
+      } else if (e.stage === e.static) {
+        const missing = (e.static.caught || []).filter(id => !save.dex?.[id]);
+        if (missing.length) why = 'needs ' + missing.map(id => '#' + id + ' ' + displayName(id)).join(', ');
+        else if (e.static.needs && (save.items?.[e.static.needs] || 0) < e.static.needN) why = 'needs ' + e.static.needN + ' ' + displayItem(e.static.needs);
+        else if (e.static.after && !gifts[e.static.after]) why = 'after ' + e.static.after;
+      }
+      e.blocked = !!why;
+      e.why = why;
+      e.window = e.stage ? nextWindow(data, save, e, now) : null;
+      e.open = !!e.window && e.window.from <= now;
+      out.push(e);
+    }
+    return out.sort((a, b) => (b.open ? 1 : 0) - (a.open ? 1 : 0)
+      || (a.window?.from ?? Infinity) - (b.window?.from ?? Infinity) || a.ch - b.ch || a.id - b.id);
+  }
+
+  const pokeKey = t => t.ch + '|' + t.id;
+
+  /**
+   * Pure hunter state machine. `poke` carries target, open, hunting, sawFight, graceAt; never mutated here.
+   * Acts: stop-caught | stop-event | stop-burned | stop-locked | wait-paused | fight |
+   *       resolve-missed | restart-drift | restart-fruitless | start | watch | wait-window | wait
+   */
+  function pokeDecision(save, poke, now = Date.now()) {
+    const adv = save?.adv;
+    const t = poke?.target;
+    if (!adv || !t) return { act: 'wait', why: 'no save' };
+    if (save.dex?.[t.id]) return { act: 'stop-caught' };
+    if (adv.event || adv.zone || adv.league || adv.tower) return { act: 'stop-event', why: 'event / zone / league / tower active' };
+    if (adv.paused) return { act: 'wait-paused' };
+    const battle = adv.battle;
+    if (battle && (battle.kind === 'wild' || battle.kind === 'static') && +battle.enemies?.[0]?.id === +t.id)
+      return { act: 'fight' };
+    if (poke.sawFight) {
+      if (!poke.graceAt || now - poke.graceAt < HUNT_GRACE_MS) return { act: 'wait', why: 'grace' };
+      return { act: 'resolve-missed' };
+    }
+    const stage = pokeStage(t, save);
+    if (!stage) {
+      const burned = !!(t.static?.once && save.adv.gifts?.[t.static.once]);
+      return burned ? { act: 'stop-burned' } : { act: 'stop-locked', why: 'quest ' + (t.wildLocked || []).join('/') + ' not unlocked' };
+    }
+    const mode = stage === t.static ? 'static' : 'wild';
+    if (!poke.hunting) return poke.open ? { act: 'start', mode } : { act: 'wait-window', mode };
+    if (adv.chapter !== t.ch) return { act: 'restart-drift', ch: t.ch, mode };
+    if (mode === 'static') {
+      const hasNode = (adv.nodes || []).some(n => n.type === 'static' && +n.id === +t.id);
+      if (!hasNode) return poke.open ? { act: 'restart-fruitless', mode } : { act: 'watch', mode };
+      return { act: 'wait', mode };
+    }
+    return poke.open ? { act: 'wait', mode } : { act: 'watch', mode };
+  }
+
+  const hhmm = d => String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+
+  /** 700 ms poll: watch the weather, then drive the map only inside a window. */
+  class PokemonHunter {
+    constructor() {
+      this.target = null;
+      this.running = false;
+      this.hunting = false;
+      this.resume = null;
+      this.open = false;
+      this.attempts = 0;
+      this.sawFight = false;
+      this.graceAt = 0;
+      this.loopOn = null;
+      this.gen = 0;
+      this.status = 'idle';
+      this.last = '';
+      this.working = false;
+      this.timer = null;
+      this.window = null;
+      this.weather = null;
+    }
+    start(target) {
+      if (this.running || !target) return;
+      const gen = ++this.gen;
+      Object.assign(this, {
+        target, running: true, hunting: false, resume: null, attempts: 0, sawFight: false, graceAt: 0,
+        loopOn: null, status: 'watching', last: 'watching the weather', working: false,
+      });
+      const save = readSave();
+      if (save?.adv) {
+        for (const old of [...HUNT_LOOPS]) if (old !== target.ch && !save.adv.loops?.includes(old)) HUNT_LOOPS.delete(old);
+        if (save.adv.loops?.includes(target.ch) && HUNT_LOOPS.has(target.ch)) this.loopOn = target.ch;
+      }
+      log('info', 'poke: started', { id: target.id, ch: target.ch, mode: target.stage === target.static ? 'static' : 'wild' });
+      refreshUi();
+      this.timer = setInterval(() => { this.poll().catch(e => logError('poke: poll', e)); }, 700);
+      this.poll().catch(e => logError('poke: poll', e));
+    }
+    stop(why = 'stopped', status = 'stopped') {
+      if (!this.running) return;
+      const gen = ++this.gen;
+      this.running = false;
+      this.working = false;
+      this.hunting = false;
+      this.resume = null;
+      if (this.timer) clearInterval(this.timer);
+      this.timer = null;
+      this.status = status;
+      this.last = why;
+      const owned = new Set(HUNT_LOOPS);
+      if (this.loopOn != null) owned.add(this.loopOn);
+      this.loopOn = null;
+      log('info', 'poke: stopped', { why, id: this.target?.id, attempts: this.attempts });
+      refreshUi();
+      if (owned.size) {
+        this.drainOwned([...owned], gen)
+          .then(stuck => { if (stuck != null) this.warnLoopStuck(gen); })
+          .catch(e => logError('poke: loop cleanup', e));
+      }
+    }
+    async poll() {
+      if (!this.running || this.working || state.busy) return;
+      const gen = this.gen;
+      const save = readSave();
+      if (!save?.adv || !this.target) return;
+      const now = Date.now();
+      this.target.stage = pokeStage(this.target, save);
+      this.open = windowOpen(state.data, save, this.target, now);
+      this.window = nextWindow(state.data, save, this.target, now);
+      this.weather = weatherAt(state.data, save, this.target, now);
+      const active = !!save.adv.battle && (save.adv.battle.kind === 'wild' || save.adv.battle.kind === 'static')
+        && +save.adv.battle.enemies?.[0]?.id === +this.target.id;
+      if (active && !this.sawFight) {
+        this.sawFight = true;
+        this.graceAt = 0;
+        this.status = 'fighting';
+        this.last = 'waiting for the capture';
+        log('info', 'poke: target battle', { id: this.target.id, kind: save.adv.battle.kind });
+        refreshUi();
+      }
+      if (this.sawFight && !active && !this.graceAt) this.graceAt = now;
+      const d = pokeDecision(save, this, now);
+      switch (d.act) {
+        case 'stop-caught':
+          this.stop('caught!', 'caught'); return;
+        case 'stop-event':
+          this.stop('event / legend zone / league / tower active'); return;
+        case 'stop-burned':
+          this.stop('the one-time encounter is burned and no wild path is left'); return;
+        case 'stop-locked':
+          this.stop(d.why || 'the wild pool is still locked'); return;
+        case 'wait-paused':
+          this.setWait('adventure paused'); break;
+        case 'fight':
+          break;
+        case 'resolve-missed': {
+          const pace = huntPacing.canRestart(now);
+          if (!pace.ok) { this.paced(pace); break; }
+          this.attempts++;
+          this.sawFight = false;
+          this.graceAt = 0;
+          this.status = 'missed';
+          this.last = `missed (attempt ${this.attempts})`;
+          log('info', 'poke: missed, restarting', { id: this.target.id, attempts: this.attempts });
+          refreshUi();
+          if (!this.open) { await this.toWatch(gen); break; }
+          this.working = true;
+          this.restart(this.target.ch, false, gen, true)
+            .catch(e => logError('poke: restart', e))
+            .finally(() => { if (gen === this.gen) this.working = false; });
+          break;
+        }
+        case 'restart-drift':
+        case 'restart-fruitless':
+        case 'start': {
+          const pace = huntPacing.canRestart(now);
+          if (!pace.ok) { this.paced(pace); break; }
+          if (d.act === 'start') {
+            // the window is open: take the map over now, not while watching
+            if (state.hunt?.running) state.hunt.stop('pokémon hunter started');
+            if (state.loop?.running) { this.resume = state.loop.target; state.loop.stop('pokémon hunter started'); }
+            this.hunting = true;
+          }
+          this.status = 'restarting';
+          this.last = d.act === 'start' ? `window open, restarting chapter ${this.target.ch}`
+            : d.act === 'restart-drift' ? 'chapter drifted, restarting'
+              : 'no special encounter this pass, restarting';
+          refreshUi();
+          this.working = true;
+          this.restart(this.target.ch, false, gen, true)
+            .catch(e => logError('poke: restart', e))
+            .finally(() => { if (gen === this.gen) this.working = false; });
+          break;
+        }
+        case 'watch':
+          await this.toWatch(gen);
+          break;
+        default:
+          if (this.hunting) this.setWait('waiting for the special encounter');
+          else this.setWatch(now);
+      }
+    }
+    /** Window closed: drain the script's loops, hand the map back, resume the item hunter. */
+    async toWatch(gen) {
+      if (gen !== this.gen) return;
+      this.hunting = false;
+      this.sawFight = false;
+      this.graceAt = 0;
+      const owned = new Set(HUNT_LOOPS);
+      if (this.loopOn != null) owned.add(this.loopOn);
+      this.loopOn = null;
+      this.setWatch(Date.now());
+      if (!owned.size) { this.resumeLoop(gen); return; }
+      this.working = true;
+      try {
+        const stuck = await this.drainOwned([...owned], gen);
+        if (gen !== this.gen) return;
+        if (stuck != null) this.warnLoopStuck(gen);
+        this.resumeLoop(gen);
+      } catch (e) { logError('poke: loop cleanup', e); }
+      finally { if (gen === this.gen) this.working = false; }
+      this.setWatch(Date.now());
+    }
+    resumeLoop(gen) {
+      if (gen !== this.gen) return;
+      const t = this.resume;
+      this.resume = null;
+      if (t && state.loop && !state.loop.running) state.loop.start(t);
+    }
+    setWatch(now) {
+      const t = this.target;
+      if (!t) return;
+      const cur = this.weather || weatherAt(state.data, readSave(), t, now) || 'clear';
+      const w = this.window;
+      const conds = t.stage?.skies?.join('/') || t.stage?.phase || 'any weather';
+      const when = w ? hhmm(new Date(w.from)) + ' (in ' + Math.max(0, Math.ceil((w.from - now) / 60000)) + ' min)' : 'no window in 3 days';
+      const text = `watching · now ${cur} · next ${w?.key || conds} ${when}`;
+      if (this.status === 'watching' && this.last === text) return;
+      this.status = 'watching';
+      this.last = text;
+      log('info', 'poke: watching the weather', { id: t.id, now: cur, next: w?.from || null });
+      refreshUi();
+    }
+    setWait(text) {
+      if (this.status === 'waiting' && this.last === text) return;
+      this.status = 'waiting';
+      this.last = text;
+      log('info', 'poke: ' + text, { id: this.target?.id });
+      refreshUi();
+    }
+    /** Show a server-pacing pause without touching the hunter state machine. */
+    paced(pace) {
+      const resting = pace.why === 'rest';
+      const status = resting ? 'resting (server pacing)' : 'waiting';
+      const last = resting ? 'auto-resume after 10 min' : 'waiting for the server pacing window';
+      if (this.status === status && this.last === last) return;
+      this.status = status;
+      this.last = last;
+      log('info', resting ? 'poke: resting (server pacing)' : 'poke: waiting for the server pacing window', { id: this.target?.id });
+      refreshUi();
+    }
+    /** Rebuild the target chapter; stop when a guard says the hunt cannot continue. */
+    async restart(ch, first = false, gen = this.gen, paced = false) {
+      if (!this.running || gen !== this.gen) return;
+      if (!paced) {
+        const pace = huntPacing.canRestart();
+        if (!pace.ok) { this.paced(pace); return; }
+      }
+      this.status = 'restarting';
+      this.last = `restarting chapter ${ch}`;
+      refreshUi();
+      const res = await restartChapterViaMap(ch, this.target.id, () => gen === this.gen, save => {
+        if (save?.adv?.event || save?.adv?.zone || save?.adv?.league || save?.adv?.tower) return { why: 'event' };
+        if (save?.adv?.battle) return { why: 'battle' };
+        return null;
+      });
+      if (gen !== this.gen) return;
+      if (res.loopSet != null) this.loopOn = res.loopSet;
+      else if (res.loopWas && HUNT_LOOPS.has(ch)) this.loopOn = ch;
+      if (res.ok) {
+        this.sawFight = false;
+        this.graceAt = 0;
+        this.status = this.hunting ? 'waiting' : 'watching';
+        this.last = `chapter ${ch} restarted${res.loopSet != null || res.loopWas ? ' · loop on' : ''}`;
+        refreshUi();
+        return;
+      }
+      if (res.why === 'event') { this.stop('event / legend zone / league / tower active'); return; }
+      if (res.why === 'button' || res.why === 'row') { this.stop('chapter not reachable on the map'); return; }
+      // transient (map/battle/verify): the next poll retries after the pacing window
+      this.status = this.hunting ? 'waiting' : 'watching';
+      this.last = first ? 'restart failed; retrying' : 'waiting to retry the restart';
+      log('warn', 'poke: restart failed, retrying', { ch, why: res.why });
+      refreshUi();
+    }
+    async drainOwned(loops, gen) {
+      return drainChapterLoops(loops, () => gen === this.gen);
+    }
+    warnLoopStuck(gen) {
+      if (gen !== this.gen) return;
+      this.last = 'loop still on — turn it off on the map';
+      refreshUi();
+    }
+  }
+
+  /* ------------------------------------------------------------------ *
    * 8. Team editing (drag & drop, the way the game does it)
    * ------------------------------------------------------------------ */
   /** Open the Team/PC screen (resuming the game first, and waiting out a running battle). */
@@ -3952,6 +4518,27 @@
     state.loop.start(target);
   }
 
+  /** Start the pokémon hunter on one special-spawn entry (the same list the dropdown shows). */
+  function startPokemonHunt(key) {
+    if (!state.poke) state.poke = new PokemonHunter();
+    const save = readSave();
+    const target = key ? specialSpawns(state.data, save).find(t => pokeKey(t) === key) : null;
+    let why = null;
+    if (!save?.adv) why = 'no save';
+    else if (!state.data?.cfg?.WEATHER) why = 'the weather table is missing from the bundle';
+    else if (!target) why = 'pick a special spawn';
+    else if (save.dex?.[target.id]) why = 'already caught';
+    else if (target.blocked) why = target.why;
+    if (why) {
+      state.poke.last = 'not started: ' + why;
+      log('warn', 'poke: not started', { why, key });
+      refreshUi();
+      return;
+    }
+    state.pokeSel = key;
+    state.poke.start(target);
+  }
+
   /** Keep the roam dropdown's countdown fresh without rebuilding the whole block every tick. */
   function refreshHuntSelect(el, save, now) {
     const sel = el?.querySelector('[data-act="roamer"]');
@@ -3997,6 +4584,34 @@
       : t.kind === 'loot' ? `${Math.round((t.p || 0) * 100)}% ${displayItem(t.item)}`
         : displayItem(t.item);
 
+  /** One hunter line: species, chapter and zone, the window's conditions, and when it opens. */
+  function pokeLabel(t, now) {
+    const chap = englishText(state.data?.chapters?.[t.ch]?.name || '');
+    const zones = t.zones.map(englishText).join(', ');
+    const conds = [t.stage?.skies?.join('/'), t.stage?.phase, t.stage?.seasons?.join('/')].filter(Boolean).join(' · ') || 'any weather';
+    const w = t.window;
+    const when = w
+      ? (w.from <= now ? 'window open' : hhmm(new Date(w.from)) + ' (in ' + Math.max(1, Math.ceil((w.from - now) / 60000)) + ' min)')
+      : 'no window in 3 days';
+    return `${pokeName(state.data, t.id)} · ch ${t.ch}${chap ? ' ' + chap : ''} · ${zones} · ${conds} · ${when}`
+      + (t.why ? ' · ' + t.why : '');
+  }
+
+  /** Keep the special-spawn dropdown fresh; only rewrite its options when the list changes. */
+  function refreshPokeSelect(el, save, now, poke) {
+    const sel = el?.querySelector('[data-act="pokespawn"]');
+    if (!sel || sel === document.activeElement || !state.data) return;
+    const options = poke.length
+      ? poke.map(t => `<option value="${esc(pokeKey(t))}"${t.blocked ? ' disabled' : ''}>${esc(pokeLabel(t, now))}</option>`).join('')
+      : '<option value="">nothing special missing yet</option>';
+    const sig = options + '|' + (state.pokeSel || '');
+    if (sel.dataset.sig !== sig) { sel.dataset.sig = sig; sel.innerHTML = options; }
+    const selected = poke.find(t => pokeKey(t) === state.pokeSel && !t.blocked);
+    const pick = selected || poke.find(t => !t.blocked) || poke.find(t => pokeKey(t) === state.pokeSel) || poke[0];
+    sel.value = pick ? pokeKey(pick) : '';
+    if (pick && !selected && state.poke?.running !== true) state.pokeSel = pokeKey(pick);
+  }
+
   /** The Progress screen dashboard: chapter, data, quick actions, segments and the roamer hunt.
    *  Mounted above #map-root so the game's own map render never replaces it. */
   function mountDashboard() {
@@ -4023,6 +4638,12 @@
         + (loopProgress(loop.target || loopTarget, save) ? ' · ' + esc(loopProgress(loop.target || loopTarget, save)) : '')
       : esc(loop?.last || 'pick a story item, then Loop');
     const farmable = farm.some(t => !t.done && !t.blocked);
+    const poke = state.data ? specialSpawns(state.data, save, now) : [];
+    const pokeHuntable = poke.some(t => !t.blocked);
+    const pokeRun = state.poke;
+    const pokeLine = pokeRun?.running
+      ? `${esc(pokeRun.status)} · ${esc(pokeName(state.data, pokeRun.target?.id))}${pokeRun.attempts ? ' · pass ' + pokeRun.attempts : ''}${pokeRun.last ? ' · ' + esc(pokeRun.last) : ''}`
+      : esc(pokeRun?.last || 'pick a missing special spawn, then Run');
     const html = `
       <div class="pcopt-title"><span>Chapter dashboard <small>v${VERSION}</small></span>
         <span class="pcopt-mut">${state.events ? esc(state.events.name) + ' · step ' + (adv?.node ?? '-') + ' / ' + (adv?.nodes || []).length : 'no chapter data'}</span></div>
@@ -4049,13 +4670,20 @@
         <button class="btn small ${hunt?.running ? '' : 'ghost'}" data-act="hunt">${hunt?.running ? 'Stop' : 'Hunt'}</button>
       </div>
       <div class="pcopt-mut">${huntLine}${adv?.paused ? ' · adventure paused' : ''}</div>
-      <div class="pcopt-title" style="margin-top:8px"><span>Zone looper</span>
+      <div class="pcopt-title" style="margin-top:8px"><span>Item Hunter</span>
         <span class="pcopt-mut">${loop?.running ? esc(loop.status) : ''}</span></div>
       <div class="pcopt-row">
         <select data-act="farmitem" aria-label="Story item to farm" ${farm.length ? '' : 'disabled'}></select>
         <button class="btn small ${loop?.running ? '' : 'ghost'}" data-act="loop" ${farmable || loop?.running ? '' : 'disabled'}>${loop?.running ? 'Stop' : 'Loop'}</button>
       </div>
-      <div class="pcopt-mut">${loopLine}${adv?.paused ? ' · adventure paused' : ''}</div>`;
+      <div class="pcopt-mut">${loopLine}${adv?.paused ? ' · adventure paused' : ''}</div>
+      <div class="pcopt-title" style="margin-top:8px"><span>Pokémon hunter</span>
+        <span class="pcopt-mut">${pokeRun?.running ? esc(pokeRun.status) : ''}</span></div>
+      <div class="pcopt-row">
+        <select data-act="pokespawn" aria-label="Special spawn to hunt" ${poke.length ? '' : 'disabled'}></select>
+        <button class="btn small ${pokeRun?.running ? '' : 'ghost'}" data-act="pokehunt" ${pokeHuntable || pokeRun?.running ? '' : 'disabled'}>${pokeRun?.running ? 'Stop' : 'Run'}</button>
+      </div>
+      <div class="pcopt-mut">${pokeLine}${adv?.paused ? ' · adventure paused' : ''}</div>`;
     const sig = JSON.stringify([adv?.chapter, adv?.node, node?.name, state.enemies?.length,
       state.eligible, state.chartSource, state.errors, state.update?.repo, state.leagueInfo, state.waiting, adv?.paused,
       state.preset, state.busy, state.team && state.team.map(t => t.mon.uid).join(','), state.roamer && state.roamer.id,
@@ -4063,7 +4691,9 @@
       hunt?.running, hunt?.id, hunt?.ch, hunt?.attempts, hunt?.status, hunt?.last, state.huntSel,
       roam.map(r => r.id + ':' + r.ch).join(','),
       loop?.running, loop?.target && farmKey(loop.target), loop?.attempts, loop?.status, loop?.last, state.loopSel,
-      farm.map(t => farmKey(t) + (t.done ? 'd' : '') + (t.blocked ? 'b' : '')).join(',')]);
+      farm.map(t => farmKey(t) + (t.done ? 'd' : '') + (t.blocked ? 'b' : '')).join(','),
+      pokeRun?.running, pokeRun?.target && pokeKey(pokeRun.target), pokeRun?.attempts, pokeRun?.status, pokeRun?.last, state.pokeSel,
+      poke.map(t => pokeKey(t) + (t.blocked ? 'b' : '') + (t.open ? 'o' : '')).join(',')]);
     const el = mountBlock(host, 'dashboard', sig, html, el => {
       el.querySelectorAll('[data-preset]').forEach(b => b.onclick = () => { state.preset = b.dataset.preset; refreshUi(); });
       el.querySelector('[data-act="run"]').onclick = () => runOptimizer();
@@ -4089,9 +4719,19 @@
         if (state.loop?.running) { state.loop.stop('stopped by hand'); return; }
         startZoneLoop(farmSel ? farmSel.value : state.loopSel);
       };
+      const pokeSel = el.querySelector('[data-act="pokespawn"]');
+      if (pokeSel) pokeSel.onchange = () => {
+        state.pokeSel = pokeSel.value || null;
+        refreshUi();
+      };
+      el.querySelector('[data-act="pokehunt"]').onclick = () => {
+        if (state.poke?.running) { state.poke.stop('stopped by hand'); return; }
+        startPokemonHunt(pokeSel ? pokeSel.value : state.pokeSel);
+      };
     }, { before: '#map-root' });
     if (el) refreshHuntSelect(el, save, now);
     if (el) refreshLoopSelect(el, save);
+    if (el) refreshPokeSelect(el, save, now, poke);
   }
 
   /** The Adventure screen: the game's own team-template bar, between the route timeline and the arena.
@@ -4366,7 +5006,7 @@
         for (let waited = 0; !url && waited < 30000; waited += 250) { await sleep(250); url = bundleUrl(); }
       }
       if (!url) { state.errors = ['game bundle not loaded yet']; log('warn', 'data: the game bundle is not on the page yet'); return; }
-      const cacheKey = 'bundle:v13:' + url;
+      const cacheKey = 'bundle:v15:' + url;
       let data = store.get(cacheKey, null);
       if (data && !dataLooksValid(data)) {
         log('warn', 'data: the cached tables are invalid, parsing the bundle again');
@@ -4895,6 +5535,100 @@
       const pausedSave = { ...freshSave, adv: { ...freshSave.adv, paused: true } };
       check('paused adventure waits',
         loopDecision(pausedSave, { target: orbT }, loopPlan(loopData, pausedSave, orbT)).act === 'wait-paused');
+
+      // pokémon hunter: weather model, special-spawn list, decision machine
+      const W = data.cfg.WEATHER;
+      const wNow = Math.floor(Date.now() / W.SLOT_MS);
+      const slotOf = s => s * W.SLOT_MS;
+      check('weather hash is the game FNV roll', Math.abs(wHash('ch0|0') - 0.8750208753626794) < 1e-12, wHash('ch0|0'));
+      const wSteps = [
+        { kind: 'route', name: 'W1', bg: 'forest' },
+        { kind: 'route', name: 'W2', climate: { rain: 1 } },
+        { kind: 'route', name: 'W3', climate: { storm: 1 } },
+        { kind: 'static', name: 'W4', bg: 'cave' },
+      ];
+      const wData = { cfg: { WEATHER: W, ROAMING: { WEATHER: { 243: 'storm' } } }, chapters: [{ reg: 'kanto', steps: wSteps }], daytime: data.daytime };
+      const win = (s, save = {}) => weatherAt(wData, save, { ch: 0, step: wSteps[1] }, slotOf(s));
+      const hits = s => wHash('ch0|' + s) < W.CHANCE;
+      const runOf = s => { let n = 0; while (n < 64 && hits(s - n)) n++; return n; };
+      let oddS = null, evenS = null;
+      for (let s = wNow; s < wNow + 600 && (oddS == null || evenS == null); s++) {
+        if (oddS == null && runOf(s) % 2 === 1) oddS = s;
+        if (evenS == null && runOf(s) % 2 === 0) evenS = s;
+      }
+      check('weather uses an odd run and clears an even one',
+        oddS != null && evenS != null && win(evenS) === null && win(oddS) != null, { oddS, evenS, odd: win(oddS) });
+      check('a node with no climate is always clear', weatherAt(wData, {}, { ch: 0, step: wSteps[3] }, slotOf(wNow)) === null);
+      const wRoamSave = { roam: { at: { 243: { ch: 0, until: slotOf(wNow + 5) } } } };
+      check('a placed roamer forces its chapter weather',
+        win(wNow, wRoamSave) === 'storm' && win(wNow + 6, wRoamSave) !== 'storm', { now: win(wNow, wRoamSave), after: win(wNow + 6, wRoamSave) });
+      const nData = { cfg: { WEATHER: { ...W, CLIMATES: { town: { sun: 1 } } }, ROAMING: { WEATHER: {} } },
+        chapters: [{ reg: 'sinnoh', steps: [{ kind: 'route', name: 'N1', bg: 'town' }] }], daytime: data.daytime };
+      const nStep = nData.chapters[0].steps[0];
+      let nightS = null, dayS = null;
+      for (let s = wNow; s < wNow + 300 && (nightS == null || dayS == null); s++) {
+        if (runOf(s) % 2 !== 1) continue;
+        const h = new Date(slotOf(s)).getHours();
+        if (h >= 20 || h < 8) nightS = nightS ?? s;
+        else dayS = dayS ?? s;
+      }
+      check('a night slot drops the daylight type',
+        nightS != null && dayS != null
+        && weatherAt(nData, {}, { ch: 0, step: nStep }, slotOf(nightS)) === null
+        && weatherAt(nData, {}, { ch: 0, step: nStep }, slotOf(dayS)) === 'sun', { nightS, dayS });
+      const tStep = { kind: 'route', name: 'T1', climate: { rain: 1 } };
+      const tData = { cfg: { WEATHER: W, ROAMING: { WEATHER: {} } },
+        chapters: [{ reg: 'kanto', steps: [{ kind: 'route', name: 'T2', climate: { storm: 1 } }, tStep] }], daytime: data.daytime };
+      let trS = null;
+      for (let s = wNow; s < wNow + 500 && trS == null; s++)
+        if (runOf(s) % 2 === 1 && wHash(s + '|ch0') * 2 > 1) trS = s;
+      check('a type missing from the node falls back through TRANSLATE',
+        trS != null && weatherAt(tData, {}, { ch: 0, step: tStep }, slotOf(trS)) === 'rain', trS);
+
+      const hData = {
+        cfg: { WEATHER: W, ROAMING: { WEATHER: {} } },
+        daytime: data.daytime,
+        species: { 1: { id: 1 }, 2: { id: 2 }, 3: { id: 3 }, 4: { id: 4 }, 5: { id: 5 }, 6: { id: 6 } },
+        chapters: [
+          { reg: 'kanto', steps: [
+            { kind: 'route', name: 'Zone A', areas: ['a'], bg: 'forest' },
+            { kind: 'static', name: 'Cave', id: 2, bg: 'cave', night: true, once: 'g2', chance: 1 },
+            { kind: 'static', name: 'Gate', id: 6, bg: 'cave', night: true, once: 'g6', caught: [9] },
+          ] },
+          { reg: 'kanto', steps: [{ kind: 'route', name: 'Zone B', areas: ['b'], bg: 'beach' }] },
+        ],
+        habitats: {
+          'Zone A|a': { base: { 1: 10 }, rain: { 3: 1 }, night: { 4: 1 }, day: { 4: 0 }, 'quest:q3': { 3: 1 } },
+          'Zone B|b': { base: { 1: 10 }, storm: { 5: 1 }, 'quest:q5': { 5: 1 } },
+        },
+      };
+      const hSave = { adv: { unlocked: 1, chapter: 0, nodes: [], gifts: {} }, dex: {} };
+      const hList = specialSpawns(hData, hSave);
+      const byId = id => hList.find(t => t.id === id);
+      check('special spawns list missing conditional mons only', !byId(1) && !!byId(2) && !!byId(3) && !!byId(4) && !!byId(5),
+        hList.map(t => t.id));
+      check('special spawns exclude a caught mon', !specialSpawns(hData, { ...hSave, dex: { 4: {} } }).some(t => t.id === 4));
+      check('special spawns keep the static-only and habitat-only shapes',
+        !!byId(2)?.static && !byId(2)?.wild && !byId(4)?.static && !!byId(4)?.wild && byId(4)?.stage?.phase === 'night');
+      check('special spawns block an unmet dex requirement', byId(6)?.blocked === true && /needs/.test(byId(6)?.why || ''), byId(6)?.why);
+      check('special spawns note the quest gate', byId(3)?.blocked === true && /quest q3/.test(byId(3)?.why || ''), byId(3)?.why);
+      check('special spawns unlock the wild pool with the quest gift',
+        specialSpawns(hData, { ...hSave, adv: { ...hSave.adv, gifts: { q5: true } } }).find(t => t.id === 5)?.blocked === false);
+
+      const pTarget = { id: 2, ch: 0, static: { step: hData.chapters[0].steps[1], phase: 'night', once: 'g2' }, wild: null, wildLocked: [] };
+      const pSave = { adv: { chapter: 0, nodes: [], gifts: {} }, dex: {} };
+      check('hunter waits outside the window', pokeDecision(pSave, { target: pTarget, hunting: false, open: false }).act === 'wait-window');
+      check('hunter starts inside the window', pokeDecision(pSave, { target: pTarget, hunting: false, open: true }).act === 'start');
+      const pFight = { adv: { chapter: 0, nodes: [], gifts: {}, battle: { kind: 'static', enemies: [{ id: 2 }] } }, dex: {} };
+      check('hunter waits out the target battle', pokeDecision(pFight, { target: pTarget, hunting: true, open: true }).act === 'fight');
+      check('hunter restarts after a missed capture',
+        pokeDecision(pSave, { target: pTarget, hunting: true, open: true, sawFight: true, graceAt: Date.now() - HUNT_GRACE_MS - 1 }).act === 'resolve-missed');
+      check('hunter restarts a fruitless static pass',
+        pokeDecision({ adv: { chapter: 0, nodes: [{ type: 'wild' }], gifts: {} }, dex: {} }, { target: pTarget, hunting: true, open: true }).act === 'restart-fruitless');
+      check('hunter stops once the dex gains the mon',
+        pokeDecision({ adv: { chapter: 0, nodes: [], gifts: {} }, dex: { 2: {} } }, { target: pTarget, hunting: true, open: true }).act === 'stop-caught');
+      check('hunter watches when the window closes before a rebuild',
+        pokeDecision({ adv: { chapter: 0, nodes: [{ type: 'wild' }], gifts: {} }, dex: {} }, { target: pTarget, hunting: true, open: false }).act === 'watch');
     } catch (e) {
       check('selftest crashed', false, e.message);
       logError('selftest', e);
@@ -4932,6 +5666,7 @@
       log('info', 'templates: manual pick in the game', { slot: +b.dataset.set });
     }, true);
     state.hunt = new RoamerHunt();
+    state.poke = new PokemonHunter();
     refreshUi();
     ensureData().then(() => {
       refreshUi();
@@ -4965,6 +5700,7 @@
     chapterPlan, segmentPlans, prepareSegments, switchSegment, freeTemplates, switchTemplate, simulateChapter, searchChapterTeam, rollBattleFoes, simBattle, simAct, simOhko, simGeneric, autoScore, ensureEnglish,
     raidDps, raidBoss, raidPicks, raidRankScore, annotateRaidSuggestions, huntDecision, huntPlacement, roamList, huntPacing,
     farmTargets, loopPlan, loopDecision, startZoneLoop, ZoneLooper,
+    wHash, weatherAt, weatherHours, nextWindow, specialSpawns, pokeDecision, startPokemonHunt, PokemonHunter,
     undergroundContext, undergroundFoes, pickVsFoes, roamerBoss, selftest
   };
 })();
