@@ -3266,7 +3266,9 @@
     const stage = pokeStage(t, save);
     if (!stage) {
       const burned = !!(t.static?.once && save.adv.gifts?.[t.static.once]);
-      return burned ? { act: 'stop-burned' } : { act: 'stop-locked', why: 'quest ' + (t.wildLocked || []).join('/') + ' not unlocked' };
+      const locked = (t.wildLocked || []).filter(q => !save.adv.gifts?.[q]);
+      if (!burned || locked.length) return { act: 'stop-locked', why: 'quest ' + (locked.join('/') || '?') + ' not unlocked' };
+      return { act: 'stop-burned' };
     }
     const mode = stage === t.static ? 'static' : 'wild';
     if (!poke.hunting) return poke.open ? { act: 'start', mode } : { act: 'wait-window', mode };
