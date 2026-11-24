@@ -6,6 +6,7 @@
 // @author       GrumpyOwl
 // @match        https://pokecatch-online.netlify.app/*
 // @match        https://pokecatch-online.pages.dev/*
+// @match        https://pokecatch-online.app/*
 // @updateURL    https://raw.githubusercontent.com/smuglilgoat/pokecatch-helper/main/pokecatch-team-optimizer.user.js
 // @downloadURL  https://raw.githubusercontent.com/smuglilgoat/pokecatch-helper/main/pokecatch-team-optimizer.user.js
 // @grant        GM_getValue
