@@ -257,7 +257,10 @@
     const forms = table('FORMS', false, () => {
       const out = {};
       // keep types/stats too: the elite chart scores form-only legend zones
-      for (const f of evalLit(literalAfter(src, 'a.FORMS=function(){const g='))) out[f.id] = { base: f.base, form: f.form, types: f.types, stats: f.stats };
+      // the array's minified name changes every update: anchor on the shape, as FORM_SINGLES does
+      const anchor = src.indexOf('a.FORMS=function(){');
+      if (anchor < 0) throw new Error('marker not found');
+      for (const f of evalLit(literalAt(src, src.indexOf('[', anchor)))) out[f.id] = { base: f.base, form: f.form, types: f.types, stats: f.stats };
       return out;
     }) || {};
     // the forms the picker collapses to their base species (Deoxys, Kyurem, ...): FORMS.single
