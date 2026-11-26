@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Poke'Catch Team Optimizer
 // @namespace    pokecatch-helper
-// @version      1.10.0
+// @version      1.11.0
 // @description  Reads the current chapter events, then builds an optimal team of 6 from the PC with an offense preset, optimizes legendary, elite, underground and raid teams, and prepares per-segment template teams.
 // @author       GrumpyOwl
 // @match        https://pokecatch-online.netlify.app/*
@@ -27,7 +27,7 @@
    * 0. Small helpers
    * ------------------------------------------------------------------ */
   const SAVE_KEY = 'gachamon-save-v1';
-  const VERSION = '1.10.0';
+  const VERSION = '1.11.0';
   const UPDATE_URL = 'https://raw.githubusercontent.com/smuglilgoat/pokecatch-helper/main/pokecatch-team-optimizer.user.js';
   const $ = (sel, root = document) => root.querySelector(sel);
   const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
@@ -4013,7 +4013,7 @@
       return;
     }
     const ctx = pickerContext();
-    if (ctx) { mountLegendBox(ctx); markRecommended(); return; }
+    if (ctx) { mountLegendBox(ctx); if (ctx.tier > 0) mountEliteOptButton(ctx); markRecommended(); return; }
     const ug = undergroundContext();
     if (ug) { mountUndergroundBox(ug); markRecommended(); }
   }
@@ -4854,6 +4854,33 @@
     }, { after: '.rp-side' });
   }
 
+  /** The game hides its Optimize button on elite picks: put a look-alike back in the header,
+   *  wired to my optimizer. Rides the existing refresh: the game wipes the header on every change. */
+  function mountEliteOptButton(ctx, head = document.querySelector('#evt-pick-head')) {
+    if (!head) return;
+    const sum = head.querySelector('.map-sum');
+    if (!sum) return;
+    const mine = head.querySelector('[data-pcopt="elite-opt"]');
+    // the game's own button always wins; outside elite there is nothing to replace
+    if (head.querySelector('#evt-opt') || !(ctx?.tier > 0)) { mine?.remove(); return; }
+    if (mine) return;
+    const lang = document.documentElement.lang;
+    const map = window.I18N?.[lang] || window.I18n?.[lang] || {};
+    const btn = document.createElement('button');
+    btn.className = 'btn small gold';
+    btn.dataset.pcopt = 'elite-opt';
+    btn.textContent = map['Optimiser'] || 'Optimiser';
+    btn.onclick = async () => {
+      if (state.busy) return;
+      btn.disabled = true;
+      log('info', 'elite ui: optimize clicked', { boss: state.legBoss, tier: state.legTier });
+      await runLegendOptimizer();
+      if (state.legTeam?.length && state.legTeamKey === ctx.zone.id + ':' + ctx.tier) await applyTeamFromPanel(state.legTeam, true);
+    };
+    const x = sum.querySelector('.evt-x');
+    if (x) sum.insertBefore(btn, x); else sum.appendChild(btn);
+  }
+
   /** The raid picker: fastest clear and the total DPS line. */  function mountRaidBox(rc) {
     const boss = state.raidBoss;
     const key = 'raid:' + rc.id;
@@ -5677,6 +5704,24 @@
         && kids[3]?.classList.contains('lz-lock') && kids[4]?.textContent === 'Arènes'
         && once === mapList.innerHTML,
         kids.map(k => k.outerHTML));
+
+      // elite picks hide the game's Optimize button: mine puts one back, once, and never over the game's own
+      const optHead = document.createElement('div');
+      optHead.innerHTML = '<div class="map-sum"><span>Nv. 100</span><button class="evt-x">×</button></div>';
+      mountEliteOptButton({ tier: 1 }, optHead);
+      const optBtn = optHead.querySelector('[data-pcopt="elite-opt"]');
+      const placed = !!optBtn && optBtn.nextElementSibling === optHead.querySelector('.evt-x') && optBtn.className === 'btn small gold';
+      mountEliteOptButton({ tier: 1 }, optHead);
+      const deduped = optHead.querySelectorAll('[data-pcopt="elite-opt"]').length === 1;
+      optHead.querySelector('.map-sum').insertAdjacentHTML('afterbegin', '<button id="evt-opt">Optimiser</button>');
+      mountEliteOptButton({ tier: 1 }, optHead);
+      const gameWins = !optHead.querySelector('[data-pcopt="elite-opt"]');
+      const plainHead = document.createElement('div');
+      plainHead.innerHTML = '<div class="map-sum"><span>Nv. 100</span><button class="evt-x">×</button></div>';
+      mountEliteOptButton({ tier: 0 }, plainHead);
+      const outsideElite = !plainHead.querySelector('[data-pcopt="elite-opt"]');
+      check('the elite picker gets one Optimize button, the game\'s own wins',
+        placed && deduped && gameWins && outsideElite, { placed, deduped, gameWins, outsideElite });
     } catch (e) {
       check('selftest crashed', false, e.message);
       logError('selftest', e);
