@@ -41,7 +41,7 @@ Open `http://localhost:8765/pokecatch-team-optimizer.user.js`, accept Tampermonk
 - **Pokémon hunter**: pick a missing mon with a weather, night/day or season spawn and the script restarts its chapter inside the next window, then goes back to watching
 - **Dashboard**: run state, data source, errors, and the hunts on the Progress screen
 - **English names**: bundle ids read through the game's English language pack
-- **Selftest**: 60 optimizer invariants against the live save and synthetic cases
+- **Selftest**: 66 optimizer invariants against the live save and synthetic cases
 
 ## Where the blocks appear
 
@@ -50,7 +50,7 @@ Open `http://localhost:8765/pokecatch-team-optimizer.user.js`, accept Tampermonk
 | Progress | Dashboard with chapter and step, level cap, eligible mons, data source, errors, and the roamer hunt, item hunter and Pokémon hunter card rows |
 | Team/PC | Chapter optimizer with simulate line, team rows, template select and apply, segment rows |
 | Adventure | A copy of the game's template bar; one click loads a template. The chapter list shows legend zones first |
-| Legend, elite, underground and raid pickers | The optimizer beside the game's own Optimize button, with odds and apply to team. Elite fights also get the gold Optimize button back in the picker header, wired to the script's optimizer |
+| Legend, elite, underground and raid pickers | The optimizer beside the game's own Optimize button, with odds and apply to team. Elite fights also get the gold Optimize button back in the picker header, wired to a faithful port of the game's own Optimize: its counter-value greedy with the elite legend cap, not the script's refined optimizer |
 | PC grid | A blue marker on each mon the script picked, gold when the game's own ranking agrees |
 
 ## Pacing
@@ -71,7 +71,7 @@ No build step and no dependencies: one file, `pokecatch-team-optimizer.user.js`.
 node --check pokecatch-team-optimizer.user.js
 ```
 
-The script logs every action with `[pcopt]`, and the last 400 entries stay in `window.__pcopt.logs`. In the game console, `window.__pcopt.selftest()` runs the 60 checks and returns `{ ok, ms, results }`. `window.__pcopt.compareWithPokeApi(uid, info)` cross-checks one mon against PokeAPI; no button calls it.
+The script logs every action with `[pcopt]`, and the last 400 entries stay in `window.__pcopt.logs`. In the game console, `window.__pcopt.selftest()` runs the 66 checks and returns `{ ok, ms, results }`. `window.__pcopt.compareWithPokeApi(uid, info)` cross-checks one mon against PokeAPI; no button calls it.
 
 Two places carry the version: `@version` in the header and the `VERSION` constant near the top.
 

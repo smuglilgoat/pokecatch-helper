@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Poke'Catch Team Optimizer
 // @namespace    pokecatch-helper
-// @version      1.11.0
+// @version      1.12.0
 // @description  Reads the current chapter events, then builds an optimal team of 6 from the PC with an offense preset, optimizes legendary, elite, underground and raid teams, and prepares per-segment template teams.
 // @author       GrumpyOwl
 // @match        https://pokecatch-online.netlify.app/*
@@ -27,7 +27,7 @@
    * 0. Small helpers
    * ------------------------------------------------------------------ */
   const SAVE_KEY = 'gachamon-save-v1';
-  const VERSION = '1.11.0';
+  const VERSION = '1.12.0';
   const UPDATE_URL = 'https://raw.githubusercontent.com/smuglilgoat/pokecatch-helper/main/pokecatch-team-optimizer.user.js';
   const $ = (sel, root = document) => root.querySelector(sel);
   const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
@@ -243,7 +243,8 @@
     });
     const cfg = table('CONFIG', true, read('a.CONFIG='));
     // the boss-status knobs drive the legend credit: say it once when the bundle lost them
-    for (const knob of ['BOSS_STATUS', 'STATUS_TEAM', 'STATUS_PARA_COST', 'STATUS_SURE', 'ROAMING', 'UNDERGROUND'])
+    for (const knob of ['BOSS_STATUS', 'STATUS_TEAM', 'STATUS_PARA_COST', 'STATUS_SURE', 'ROAMING', 'UNDERGROUND',
+      'TEAM_APART', 'STATUS_RESIST', 'SIGNATURE_POWER'])
       if (cfg[knob] == null) log('warn', 'bundle: knob missing — feature off', { knob });
     const chapters = table('CHAPTERS', true, () => {
       const lit = literalAfter(src, 'CHAPTERS:[').replace(/a\.UNOWN\.ids/g, JSON.stringify(UNOWN_IDS));
@@ -327,8 +328,9 @@
         HP_LEVEL_SCALE: cfg.HP_LEVEL_SCALE, HP_LEVEL_MAX: cfg.HP_LEVEL_MAX, HP_BOOST: cfg.HP_BOOST,
         SHINY_STAT_BONUS: cfg.SHINY_STAT_BONUS, TYPE_EFF_MAX: cfg.TYPE_EFF_MAX, TYPE_EFF_MIN: cfg.TYPE_EFF_MIN,
         MOVE_BLACKLIST: cfg.MOVE_BLACKLIST || [], MOVE_RECHARGE: cfg.MOVE_RECHARGE || [],
-        MOVE_POWER_OVERRIDES: cfg.MOVE_POWER_OVERRIDES || {},
+        MOVE_POWER_OVERRIDES: cfg.MOVE_POWER_OVERRIDES || {}, SIGNATURE_POWER: cfg.SIGNATURE_POWER || {},
         MULTI_HIT: cfg.MULTI_HIT || {}, MULTI_HIT_ODDS: cfg.MULTI_HIT_ODDS || [],
+        TEAM_APART: cfg.TEAM_APART || [],
         MOVE_LEVELS: cfg.MOVE_LEVELS || [], MOVE_FLOOR_FROM: cfg.MOVE_FLOOR_FROM ?? 100,
         MOVE_GAP_MAX: cfg.MOVE_GAP_MAX ?? 20, MOVE_STEP: cfg.MOVE_STEP || [4, 5],
         TIME_EVOLUTIONS: cfg.TIME_EVOLUTIONS || {}, TIER_MIN: cfg.TIER_MIN || {},
@@ -357,6 +359,7 @@
         BOSS_STATUS: cfg.BOSS_STATUS || null,
         STATUS_TEAM: cfg.STATUS_TEAM || [1, .5],
         STATUS_PARA_COST: cfg.STATUS_PARA_COST ?? 1,
+        STATUS_RESIST: cfg.STATUS_RESIST || null,
         STATUS_SURE: cfg.STATUS_SURE ?? .15,
         CAPTURE_BONUS: cfg.CAPTURE_BONUS, CAPTURE_MAX: cfg.CAPTURE_MAX,
         LEGENDARY_CAPTURE_RATE: cfg.LEGENDARY_CAPTURE_RATE,
@@ -2143,6 +2146,247 @@
       if (!improved) break;
     }
     return { team: best, gain: base > 0 ? bestScore / base - 1 : 0 };
+  }
+
+  /* ------------------------------------------------------------------ *
+   * 6d. The game's own Optimize, for the elite zone picker
+   *     A direct port of the bundle's Jt -> counterTeam greed: the pool
+   *     filter (r), the species dedupe (De), the counterParts value (wt,
+   *     Oa, $n, Ea) and the four teamApart passes (Kn). Only the elite
+   *     zone context is reproduced; the gold button runs this.
+   * ------------------------------------------------------------------ */
+  /** The allowed side of the game's can(mon,"zone",zoneId): the zone's region and the mon's must sit on the same side of the link target. */
+  function gameCanJoinZone(save, mon, zoneRegion, data) {
+    const link = save?.link;
+    if (!link) return true;
+    const norm = key => {
+      const k = key === 'kanto2' ? 'johto' : key;
+      return data.regions.some(r => r.key === k) ? k : 'kanto';
+    };
+    const to = norm(link.to);
+    return (norm(zoneRegion) === to) === (norm(mon?.reg) === to);
+  }
+
+  /** The game's movePower: SIGNATURE_POWER wins while the picker's mon carries no `.learn` (the game's aa). */
+  const gameMovePower = (key, cfg, learn) => cfg.SIGNATURE_POWER?.[key] ?? learn.movePower(key);
+  /** The game's moveAcc: the same accuracy curve, on the game's power (the game's Ue). */
+  const gameMoveAcc = (key, cfg, learn, data) => {
+    const power = gameMovePower(key, cfg, learn);
+    if (power <= 0) return data.moves[key]?.acc || 100;
+    const [o, r, l] = cfg.ACC_CURVE || [40, 150, 80];
+    return 100 - (100 - l) * Math.min(1, Math.max(0, (power - o) / (r - o)));
+  };
+
+  /** The game's Ea with one fixed move, before the 0.925 roll (the engine's moveDamage keeps it). */
+  function gameEaFixed(att, def, key, eng, data, learn) {
+    const mv = data.moves[key];
+    if (!mv) return 0;
+    const power = gameMovePower(key, data.cfg, learn);
+    if (power <= 0) return 0;
+    return eng.moveDamage(att, def, { type: mv.type, cat: mv.cat, power, acc: gameMoveAcc(key, data.cfg, learn, data) }) / 0.925;
+  }
+
+  /** The game's mn/Ea move choice: the best damaging move the mon knows at its level (the same argmax). */
+  function gameBestMove(att, def, eng, data, learn) {
+    let best = null;
+    for (const [lv, key] of learn.learnAll[att.id] || []) {
+      if (lv > att.level) continue;
+      if (data.cfg.MOVE_BLACKLIST.includes(key)) continue;
+      if (gameMovePower(key, data.cfg, learn) <= 0) continue;
+      const value = gameEaFixed(att, def, key, eng, data, learn);
+      if (!best || value > best.value) best = { key, value, acc: gameMoveAcc(key, data.cfg, learn, data) };
+    }
+    return best;
+  }
+
+  /** The game's Ea: Ditto copies the foe's species before the maths (Zs = 132). */
+  function gameEa(att, def, eng, data, learn) {
+    const a = att.id === 132 && def.id !== 132 ? { ...att, id: def.id } : att;
+    return gameBestMove(a, def, eng, data, learn)?.value || 0;
+  }
+
+  /** The game's Gs: the zone's counter move, else the boss's strongest off-type attack that is not its best one. */
+  function gameCounterKey(boss, target, configured, eng, data, learn) {
+    if (configured && data.moves[configured]) return configured;
+    const best = gameBestMove(boss, target, eng, data, learn);
+    const targetTypes = data.species[target.id]?.types || [];
+    const bossTypes = data.species[boss.id]?.types || [];
+    const list = (learn.learnAll[boss.id] || [])
+      .filter(([lv, key]) => lv <= boss.level && !data.cfg.MOVE_BLACKLIST.includes(key) && data.moves[key]
+        && gameMovePower(key, data.cfg, learn) > 0 && key !== best?.key
+        && effRaw(data.moves[key].type, targetTypes) !== 0)
+      .map(([, key]) => key);
+    const offType = list.filter(key => !bossTypes.includes(data.moves[key].type));
+    const pick = (offType.length ? offType : list).slice()
+      .sort((a, b) => gameMovePower(b, data.cfg, learn) - gameMovePower(a, data.cfg, learn))[0];
+    return pick || best?.key || null;
+  }
+
+  /** The game's Oa: the boss's expected riposte per round against one mon. */
+  function gameRiposte(boss, target, zone, eng, data, learn) {
+    const cfg = data.cfg, lz = cfg.LEGEND_ZONE || {}, team = cfg.TEAM_SIZE ?? 6;
+    const counter = gameCounterKey(boss, target, zone.counter, eng, data, learn);
+    const best = gameBestMove(boss, target, eng, data, learn);
+    const burst = zone.burst || best?.key || null;
+    return gameEa(boss, target, eng, data, learn) / team
+      + (lz.COUNTER ?? .3) * (counter ? gameEaFixed(boss, target, counter, eng, data, learn) : 0)
+      + team / (lz.RAGE ?? 8) * (lz.BURST ?? 1) * (burst ? gameEaFixed(boss, target, burst, eng, data, learn) : 0);
+  }
+
+  /** The game's bs: the last status move the mon can land on the boss, with its landing chance. */
+  function gameStatusMove(att, boss, data, learn) {
+    let found = null;
+    const bossTypes = data.species[boss.id]?.types || [];
+    for (const [lv, key] of learn.learnAll[att.id] || []) {
+      if (lv > att.level) continue;
+      if (gameMovePower(key, data.cfg, learn) > 0) continue;
+      const info = data.statusMoves?.[key], mv = data.moves[key];
+      if (!info || !mv || !canStatus(boss, info[0])) continue;
+      if (effRaw(mv.type, bossTypes) === 0) continue;
+      found = { key, status: info[0], chance: Math.min(mv.acc || info[1], gameStatusCap(key, data)) };
+    }
+    return found;
+  }
+
+  /** The game's capOf: signature 75, damaging 30, pure status 75. */
+  const gameStatusCap = (key, data) => ['spore', 'sacred-fire', 'nuzzle', 'zap-cannon', 'inferno', 'dynamic-punch'].includes(key)
+    ? 75 : (data.moves[key]?.power ? 30 : 75);
+
+  /** The game's $n: the DoT and paralysis credit one mon brings, scaled by the boss's rounds survived. */
+  function gameStatusParts(att, boss, eng, data, learn) {
+    const cfg = data.cfg;
+    if (!cfg.BOSS_STATUS) return { dot: 0, para: 0 };
+    if (!canStatus(boss.mon, 'poison') && !canStatus(boss.mon, 'burn')) return { dot: 0, para: 0 };
+    const tier = boss.tier;
+    const resist = tier ? (cfg.ELITE?.RESIST?.[tier] ?? 1) : 1;
+    const ra = { poison: 0, burn: 0, paralysis: 0 };
+    const sm = gameStatusMove(att, boss.mon, data, learn);
+    const chance = sm ? (cfg.STATUS_MOVE_CHANCE ?? .3) : 0;
+    if (sm && sm.status in ra) ra[sm.status] += chance * sm.chance / 100;
+    const atk = gameBestMove(att, boss.mon, eng, data, learn);
+    const info = atk ? data.statusMoves?.[atk.key] : null;
+    if (info && info[0] in ra && canStatus(boss.mon, info[0]))
+      ra[info[0]] += (1 - chance) * (atk.acc / 100) * Math.min(info[1], gameStatusCap(atk.key, data)) / 100;
+    const sr = cfg.STATUS_RESIST || { STEP: .6, FLOOR: .25, EDGE_LANDS: 6 };
+    const edges = sr.EDGE_LANDS ?? 6;
+    let landSum = 0;
+    for (let k = 0; k < edges; k++) landSum += Math.max(sr.FLOOR ?? .25, Math.pow(sr.STEP ?? .6, k));
+    const paraLand = landSum / Math.max(1, edges);
+    const fade = cfg.BOSS_STATUS.FADE?.paralysis;
+    const paraTurns = fade?.length
+      ? Array.from({ length: edges }, (_, k) => fade[Math.min(k + 1, fade.length) - 1]).reduce((a, b) => a + b, 0) / edges
+      : (cfg.STATUS_FX?.PARA_TURNS ?? 3);
+    const tick = boss.hp / boss.hurt;
+    const share = (p, turns, land) => {
+      const on = p * land;
+      return turns ? turns * on / (turns * on + 1) : Math.min(1, on / (cfg.STATUS_SURE ?? .15));
+    };
+    return {
+      dot: tick * share(ra.poison + ra.burn, cfg.BOSS_STATUS.DOT_TURNS ?? 4, resist),
+      para: tick * share(ra.paralysis, paraTurns, resist * paraLand),
+    };
+  }
+
+  /** One pool mon's counterParts against the boss (the game's wt). */
+  function gamePart(cand, boss, eng, data, learn) {
+    const ea = gameEa(cand.proj, boss.mon, eng, data, learn);
+    const na = cand.hp / Math.max(1, gameRiposte(boss.mon, cand.proj, boss.zone, eng, data, learn));
+    const st = gameStatusParts(cand.proj, boss, eng, data, learn);
+    return {
+      uid: cand.mon.uid, id: cand.species.id,
+      legend: !!(cand.species.legendary || cand.species.mythical),
+      value: ea * na, dot: st.dot * na, para: st.para * na, cand,
+    };
+  }
+
+  /** The game's Ye: Σ value + the sorted dots × STATUS_TEAM, minus the para cost. */
+  function gameTeamScore(parts, cfg) {
+    const coef = cfg.STATUS_TEAM || [1, .5];
+    const dot = parts.map(p => p.dot).sort((a, b) => b - a)
+      .reduce((sum, d, i) => sum + d * (coef[i] ?? 0), 0);
+    const para = parts.reduce((sum, p) => sum + p.para, 0);
+    return parts.reduce((sum, p) => sum + p.value, 0) + dot - (dot > 0 ? (cfg.STATUS_PARA_COST ?? 1) * para : 0);
+  }
+
+  /** The game's wn: greedy argmax over the parts, legendaries capped once the picks reach the cap. */
+  function gameCounterTeam(parts, size, legendCap, cfg) {
+    const chosen = [], pool = parts.slice();
+    while (chosen.length < size && pool.length) {
+      let idx = -1, best = -Infinity;
+      const legendsFull = chosen.filter(p => p.legend).length >= legendCap;
+      pool.forEach((p, i) => {
+        if (legendsFull && p.legend) return;
+        const score = gameTeamScore([...chosen, p], cfg);
+        if (score > best) { best = score; idx = i; }
+      });
+      if (idx < 0) break;
+      chosen.push(pool.splice(idx, 1)[0]);
+    }
+    return chosen;
+  }
+
+  /** The game's Kn: the configured species pairs that may not share a team. */
+  const gameTeamApart = (cfg, a, b) => !!a && !!b && (cfg.TEAM_APART || []).some(([head, list]) =>
+    a.id === head && list.includes(b.id) || b.id === head && list.includes(a.id));
+
+  /** The game's Jt loop: four greedy passes, each dropping the first conflicting mon of the returned team. */
+  function gameTeamApartLoop(parts, size, legendCap, cfg) {
+    let pool = parts.slice();
+    for (let pass = 0; pass < 4; pass++) {
+      const picked = gameCounterTeam(pool, size, legendCap, cfg);
+      const at = picked.findIndex((p, i) => picked.slice(0, i).some(q => gameTeamApart(cfg, p, q)));
+      if (at < 0) return picked;
+      const drop = picked[at].uid;
+      pool = pool.filter(p => p.uid !== drop);
+    }
+    return [];
+  }
+
+  /** The game's elite zone ctx boss: raw stats at MAX_LEVEL, the elite rank multiplier, the ELITE.HP knob. */
+  function gameLegendBoss(zone, tier, eng, data) {
+    const cfg = data.cfg, sp = data.species[zone.id];
+    if (!sp) return null;
+    const rank = Math.min(cfg.UNDERGROUND?.RANK_MAX ?? 5, Math.max(0, Math.floor(+tier || 0)));
+    const mon = { id: zone.id, level: cfg.MAX_LEVEL, types: sp.types, foe: true, statMult: Math.pow(cfg.RANK_STAT ?? 1, rank) };
+    const hpKnob = (zone.hp ?? cfg.LEGEND_ZONE?.HP ?? 3) * (tier ? (cfg.ELITE?.HP?.[tier] ?? 1) : 1);
+    const hp = Math.floor(eng.maxHp(mon) * (1 + (cfg.ENEMY_HP_PER_ALLY ?? .7) * ((cfg.TEAM_SIZE ?? 6) - 1)) * hpKnob);
+    const hurt = tier ? (cfg.ELITE?.HURT?.[tier] ?? cfg.BOSS_STATUS?.HURT ?? 60) : (cfg.BOSS_STATUS?.HURT ?? 60);
+    return { mon, hp, hurt, zone, tier };
+  }
+
+  /** The game's pool: all mons, the zone rule, no sort (elite zeroes it), one per species, each at min(level, MAX_LEVEL). */
+  function gameLegendPool(save, data, eng, learn, zone) {
+    const cfg = data.cfg, seen = new Set(), pool = [];
+    for (const c of projectCandidates(eng, data, save, cfg.MAX_LEVEL, { anyRegion: true, branches: false })) {
+      if (!gameCanJoinZone(save, c.mon, zone.region, data)) continue;
+      const id = c.species.id;
+      if (seen.has(id)) continue;
+      seen.add(id);
+      const rank = Math.min(cfg.UNDERGROUND?.RANK_MAX ?? 5, Math.max(0, Math.floor(+c.mon.rank || 0)));
+      const proj = {
+        ...c.base, status: null, level: Math.min(c.mon.level, cfg.MAX_LEVEL),
+        statMult: (c.mon.statMult || 1) * Math.pow(cfg.RANK_STAT ?? 1, rank), hpMult: c.mon.hpMult,
+      };
+      pool.push({ ...c, proj, hp: eng.maxHp(proj) });
+    }
+    return pool;
+  }
+
+  /** The game's default Optimize for an elite zone picker: the team in the game's pick order, [] when it gives up. */
+  function gameLegendTeam(ctx, save) {
+    const data = state.data, eng = state.engine, learn = state.learnAll;
+    if (!data || !eng || !learn || !ctx?.zone || !(ctx.tier > 0)) return [];
+    const boss = gameLegendBoss(ctx.zone, ctx.tier, eng, data);
+    if (!boss) return [];
+    const pool = gameLegendPool(save, data, eng, learn, ctx.zone);
+    if (!pool.length) return [];
+    const cache = new Map();
+    const partOf = c => {
+      if (!cache.has(c)) cache.set(c, gamePart(c, boss, eng, data, learn));
+      return cache.get(c);
+    };
+    const picked = gameTeamApartLoop(pool.map(partOf), data.cfg.TEAM_SIZE ?? 6, data.cfg.ELITE?.LEGENDS ?? 1, data.cfg);
+    return picked.map(p => p.cand);
   }
 
   /* ------------------------------------------------------------------ *
@@ -4855,7 +5099,7 @@
   }
 
   /** The game hides its Optimize button on elite picks: put a look-alike back in the header,
-   *  wired to my optimizer. Rides the existing refresh: the game wipes the header on every change. */
+   *  running the game's own Optimize. Rides the existing refresh: the game wipes the header on every change. */
   function mountEliteOptButton(ctx, head = document.querySelector('#evt-pick-head')) {
     if (!head) return;
     const sum = head.querySelector('.map-sum');
@@ -4873,9 +5117,29 @@
     btn.onclick = async () => {
       if (state.busy) return;
       btn.disabled = true;
-      log('info', 'elite ui: optimize clicked', { boss: state.legBoss, tier: state.legTier });
-      await runLegendOptimizer();
-      if (state.legTeam?.length && state.legTeamKey === ctx.zone.id + ':' + ctx.tier) await applyTeamFromPanel(state.legTeam, true);
+      log('info', 'elite ui: optimize clicked', { boss: ctx.zone.id, tier: ctx.tier });
+      try {
+        await ensureData();
+        // the picker can close or switch while the bundle loads: apply only to the ctx we were opened for
+        const live = pickerContext();
+        if (!live || live.zone.id !== ctx.zone.id || live.tier !== ctx.tier) {
+          log('info', 'elite ui: picker changed, skip', { boss: live?.zone.id ?? null, tier: live?.tier ?? null });
+          return;
+        }
+        const save = readSave();
+        if (!save) return;
+        const team = gameLegendTeam(ctx, save);
+        if (!team.length) { log('warn', 'elite ui: no team picked', { boss: ctx.zone.id, tier: ctx.tier }); return; }
+        const uids = team.map(c => String(c.mon.uid));
+        const current = (save.eventTeams?.['zone:' + ctx.zone.id] || []).map(String);
+        if (uids.join(',') === current.join(',')) {
+          log('info', 'elite ui: already the strongest team', { boss: ctx.zone.id, tier: ctx.tier });
+          return;
+        }
+        await applyTeamFromPanel(team, true);
+      } finally {
+        btn.disabled = false;
+      }
     };
     const x = sum.querySelector('.evt-x');
     if (x) sum.insertBefore(btn, x); else sum.appendChild(btn);
@@ -5450,6 +5714,77 @@
           check('no legend cap outside elite', open.filter(isLegend).length === 2, open.map(c => c.species.id));
         }
       }
+
+      // the game's own elite Optimize: its greedy, teamApart passes and value formula
+      const gcfg = data.cfg;
+      const gparts = [
+        { uid: 'g-a', id: 1, legend: false, value: 10, dot: 0, para: 0 },
+        { uid: 'g-b', id: 2, legend: false, value: 9, dot: 0, para: 0 },
+        { uid: 'g-c', id: 3, legend: false, value: 1, dot: 100, para: 0 },
+      ];
+      check('game greedy takes the best marginal value first',
+        gameCounterTeam(gparts, 3, Infinity, gcfg).map(p => p.uid).join(',') === 'g-c,g-a,g-b');
+      const gdots = [{ value: 0, dot: 10, para: 0 }, { value: 0, dot: 9, para: 0 }];
+      check('game team score weights the sorted dots by STATUS_TEAM',
+        Math.abs(gameTeamScore(gdots, gcfg) - (10 * (gcfg.STATUS_TEAM?.[0] ?? 1) + 9 * (gcfg.STATUS_TEAM?.[1] ?? .5))) < 1e-9);
+      const glegends = [
+        { uid: 'l-1', id: 643, legend: true, value: 100, dot: 0, para: 0 },
+        { uid: 'l-2', id: 644, legend: true, value: 90, dot: 0, para: 0 },
+        { uid: 'n-1', id: 1, legend: false, value: 1, dot: 0, para: 0 },
+      ];
+      const gcap = gameCounterTeam(glegends, 2, gcfg.ELITE?.LEGENDS ?? 1, gcfg);
+      check('game greedy caps the legendaries',
+        gcap.filter(p => p.legend).length <= (gcfg.ELITE?.LEGENDS ?? 1)
+        && gcap.some(p => p.uid === 'n-1') && !gcap.some(p => p.uid === 'l-2'), gcap.map(p => p.uid));
+      const apart = (gcfg.TEAM_APART || [])[0];
+      check('game teamApart reads the bundle pairs',
+        !!apart && gameTeamApart(gcfg, { id: apart[0] }, { id: apart[1][0] })
+        && gameTeamApart(gcfg, { id: apart[1][0] }, { id: apart[0] })
+        && !gameTeamApart(gcfg, { id: apart[0] }, { id: apart[0] }));
+      const pairCfg = apart ? gcfg : { ...gcfg, TEAM_APART: [[643, [646]]] };
+      const pair = pairCfg.TEAM_APART[0];
+      const loopParts = [
+        { uid: 'p-a', id: pair[0], legend: false, value: 100, dot: 0, para: 0 },
+        { uid: 'p-b', id: pair[1][0], legend: false, value: 90, dot: 0, para: 0 },
+        { uid: 'p-c', id: 1, legend: false, value: 1, dot: 0, para: 0 },
+        { uid: 'p-d', id: 2, legend: false, value: 1, dot: 0, para: 0 },
+      ];
+      const looped = gameTeamApartLoop(loopParts, 3, Infinity, pairCfg);
+      check('game teamApart drops the first conflicting mon and retries',
+        !looped.some(p => p.uid === 'p-b') && looped.some(p => p.uid === 'p-a')
+        && looped.every((p, i) => looped.slice(0, i).every(q => !gameTeamApart(pairCfg, p, q))), looped.map(p => p.uid));
+
+      // one synthetic mon against a synthetic Mewtwo: Ea × maxHp / Oa, recomputed from the tables
+      const vzone = { id: 150, hp: 4.87, power: .415, region: 'kanto', level: cap, counter: 'psychic', burst: 'psystrike' };
+      const vboss = gameLegendBoss(vzone, 1, eng, data);
+      const vsp = data.species[25];
+      const vproj = { id: 25, shiny: false, status: null, level: cap, types: vsp.types, statMult: 1 };
+      const vcand = { mon: { uid: 'v-25', id: 25, level: cap }, base: vproj, proj: vproj, species: vsp, hp: eng.maxHp(vproj) };
+      const vpart = gamePart(vcand, vboss, eng, data, state.learnAll);
+      const vEa = (att, def, fixed) => {
+        const keys = fixed ? [fixed] : (state.learnAll.learnAll[att.id] || [])
+          .filter(([lv, key]) => lv <= att.level && !gcfg.MOVE_BLACKLIST.includes(key) && gameMovePower(key, gcfg, state.learnAll) > 0)
+          .map(([, key]) => key);
+        let best = 0;
+        for (const key of keys) {
+          const mv = data.moves[key], power = gameMovePower(key, gcfg, state.learnAll);
+          if (!mv || power <= 0) continue;
+          const st = eng.statsOf(att), dt = eng.statsOf(def), phys = mv.cat === 'phys';
+          const stab = (data.species[att.id]?.types || []).includes(mv.type) ? 1.5 : 1;
+          const term = (2 * att.level / 5 + 2) * power * (phys ? st.atk : st.spa)
+            / Math.max(1, phys ? dt.def : dt.spd) / 50 + 2;
+          best = Math.max(best, term * (gameMoveAcc(key, gcfg, state.learnAll, data) / 100) * stab
+            * eng.typeEff(mv.type, data.species[def.id].types));
+        }
+        return best * Math.pow(gcfg.LEVEL_GAP, att.level - def.level);
+      };
+      const vteam = gcfg.TEAM_SIZE ?? 6, vlz = gcfg.LEGEND_ZONE || {};
+      const voa = vEa(vboss.mon, vproj) / vteam
+        + (vlz.COUNTER ?? .3) * vEa(vboss.mon, vproj, 'psychic')
+        + vteam / (vlz.RAGE ?? 8) * (vlz.BURST ?? 1) * vEa(vboss.mon, vproj, 'psystrike');
+      const vwant = vEa(vproj, vboss.mon) * vcand.hp / Math.max(1, voa);
+      check('game part value is Ea x maxHp / Oa', Math.abs(vpart.value - vwant) <= 1e-9 * Math.max(1, Math.abs(vwant)),
+        { got: vpart.value, want: vwant });
 
       // raids: survival-weighted picks, level-100 pool, game size
       if (data.cfg.RAID) {
