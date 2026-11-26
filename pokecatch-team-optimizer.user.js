@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         Poke'Catch Team Optimizer
 // @namespace    pokecatch-helper
-// @version      1.9.0
-// @description  Reads the current chapter events, then builds an optimal team of 6 from the PC with Defense / Offense / Balanced presets, optimizes legendary, elite, underground and raid teams, and prepares per-segment template teams.
+// @version      1.10.0
+// @description  Reads the current chapter events, then builds an optimal team of 6 from the PC with an offense preset, optimizes legendary, elite, underground and raid teams, and prepares per-segment template teams.
 // @author       GrumpyOwl
 // @match        https://pokecatch-online.netlify.app/*
 // @match        https://pokecatch-online.pages.dev/*
@@ -27,7 +27,7 @@
    * 0. Small helpers
    * ------------------------------------------------------------------ */
   const SAVE_KEY = 'gachamon-save-v1';
-  const VERSION = '1.9.0';
+  const VERSION = '1.10.0';
   const UPDATE_URL = 'https://raw.githubusercontent.com/smuglilgoat/pokecatch-helper/main/pokecatch-team-optimizer.user.js';
   const $ = (sel, root = document) => root.querySelector(sel);
   const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
@@ -3770,7 +3770,7 @@
       const tag = document.createElement('span');
       tag.className = 'pcopt-atk';
       tag.textContent = 'atk ' + (dps >= 1000 ? (dps / 1000).toFixed(1) + 'k' : Math.round(dps));
-      tag.style.cssText = 'position:absolute;left:3px;top:3px;font-size:10px;padding:1px 5px;border-radius:4px;background:color-mix(in srgb,var(--c) 72%,#000c);color:#fff;z-index:2';
+      tag.style.cssText = 'position:absolute;left:3px;top:3px;font-size:15px;padding:2px 7px;border-radius:4px;background:color-mix(in srgb,var(--c) 72%,#000c);color:#fff;z-index:2';
       card.style.position = 'relative';
       card.prepend(tag);
     });
@@ -3790,7 +3790,7 @@
       const tag = document.createElement('span');
       tag.className = 'pcopt-atk';
       tag.textContent = 'atk ' + (dps >= 1000 ? (dps / 1000).toFixed(1) + 'k' : Math.round(dps));
-      tag.style.cssText = 'position:absolute;right:-3px;bottom:-3px;font-size:10px;padding:1px 4px;border-radius:4px;background:color-mix(in srgb,var(--c) 72%,#000c);color:#fff;z-index:2;pointer-events:none';
+      tag.style.cssText = 'position:absolute;right:-3px;bottom:-3px;font-size:15px;padding:2px 6px;border-radius:4px;background:color-mix(in srgb,var(--c) 72%,#000c);color:#fff;z-index:2;pointer-events:none';
       const port = row.querySelector('.ra-port') || row;
       port.style.position = 'relative';
       port.appendChild(tag);
@@ -4027,7 +4027,7 @@
   const state = {
     data: null, chart: null, chartSource: '', engine: null, learnAll: null,
     events: null, enemies: null, scored: null, team: null,
-    preset: 'balanced', errors: [], busy: false, eligible: 0,
+    preset: 'offense', errors: [], busy: false, eligible: 0,
     apiCache: {}, info: {}, legends: null, legBoss: null, legTier: 0, legTeam: null, waiting: null,
     evtOdds: null, loading: null,
     league: false, leagueInfo: null, legOdds: null,
@@ -4121,19 +4121,6 @@
   /** The game's own type badge (same markup as the rest of the UI). */
   const typeBadge = t => `<span class="type sm" data-type="${t}" style="--tc:${typeColor(t)};background:var(--tc)">${t}</span>`;
 
-  function typeChips(enemies, data) {
-    if (!enemies || !data) return '<span class="pcopt-mut">no data</span>';
-    const counts = {};
-    for (const e of enemies) {
-      const types = data.species[e.id]?.types || [];
-      const w = (KIND_WEIGHT[e.kind] || 1) * (e.weight || 1);
-      for (const t of types) counts[t] = (counts[t] || 0) + w;
-    }
-    const entries = Object.entries(counts).sort((a, b) => b[1] - a[1]);
-    const total = entries.reduce((a, [, c]) => a + c, 0) || 1;
-    return entries.map(([t, c]) => `${typeBadge(t)}<span class="pcopt-mut">${Math.round(c / total * 100)}%</span>`).join('');
-  }
-
   const legendZones = () => (state.legends?.zones || []);
 
 
@@ -4198,24 +4185,20 @@
     const zone = legendZone();
     const boss = zone && state.engine ? legendBoss(zone, state.legTier, team, state.engine, state.data) : null;
     const inTeam = eventTeamIds(zone ? 'zone:' + zone.id : null);
+    // the game's "Les plus choisis" card size, so the two rows read at the same scale
+    const m = matchMedia('(max-width: 640px)').matches ? 52 : 72;
     return `<div class="rp-pks">${team.map(s => {
       const p = boss ? legendParts(s, boss, state.legTier, state.engine, state.data) : null;
       const has = inTeam.has(s.species.id);
       const title = `${displayName(s.species.id)}: ${has ? 'already in the team' : 'add your Lv. ' + s.proj.level}`;
       // the game's own community-button markup: its #evt-pop click delegation adds the mon
-      return `<button class="rp-pk${has ? ' in' : ''}"${has ? '' : ` data-pop="${s.species.id}"`} title="${esc(title)}"><span class="dc-hero fr-mon" style="--m:36">${sprOf(s.species.id, 36)}</span><small>atk ${Math.round(p?.dps || 0)} · def ${Math.round(p?.alive || 0)}</small><span class="mine">${has ? 'in the team' : 'ton Nv. ' + s.proj.level}</span></button>`;
+      return `<button class="rp-pk${has ? ' in' : ''}"${has ? '' : ` data-pop="${s.species.id}"`} title="${esc(title)}"><span class="dc-hero fr-mon" style="--m:${m}">${sprOf(s.species.id, m - 2)}</span><small>atk ${Math.round(p?.dps || 0)} · def ${Math.round(p?.alive || 0)}</small><span class="mine">${has ? 'in the team' : 'ton Nv. ' + s.proj.level}</span></button>`;
     }).join('')}</div>`;
   }
 
   /** The picker's community host: "Les plus choisis" sits on the side only for 2-slot pickers. */
   const pickerHost = size => (size <= 2 ? document.querySelector('#evt-pop-side') : document.querySelector('#evt-pop'))
     || document.querySelector('#evt-pick-head');
-
-  /** The Defense / Offense / Balanced switch (same preset for both optimizers). */
-  const presetSeg = () => `<div class="seg" data-presets>
-    <button data-preset="defense" class="${state.preset === 'defense' ? 'on' : ''}">Defense</button>
-    <button data-preset="offense" class="${state.preset === 'offense' ? 'on' : ''}">Offense</button>
-    <button data-preset="balanced" class="${state.preset === 'balanced' ? 'on' : ''}">Balanced</button></div>`;
 
   /** The game's sprite box, so the rows read as native (assets/pokemon/{id}.png). */
   const sprOf = (id, h = 36) => `<div class="sprbox" style="height:${h}px;width:${h}px;flex:0 0 auto"><img src="assets/pokemon/${id}.png" alt="" data-id="${id}" style="width:100%;height:100%;object-fit:contain"></div>`;
@@ -4531,7 +4514,7 @@
     state.hunt.start(id, +at.ch);
   }
 
-  /** Start the zone looper on one farm entry (the same farmTargets entry the dropdown lists). */
+  /** Start the zone looper on one farm entry (the same farmTargets entry the cards list). */
   function startZoneLoop(key) {
     if (!state.loop) state.loop = new ZoneLooper();
     const save = readSave();
@@ -4552,7 +4535,7 @@
     state.loop.start(target);
   }
 
-  /** Start the pokémon hunter on one special-spawn entry (the same list the dropdown shows). */
+  /** Start the pokémon hunter on one special-spawn entry (the same list the cards show). */
   function startPokemonHunt(key) {
     if (!state.poke) state.poke = new PokemonHunter();
     const save = readSave();
@@ -4573,20 +4556,24 @@
     state.poke.start(target);
   }
 
-  /** Keep the roam dropdown's countdown fresh without rebuilding the whole block every tick. */
-  function refreshHuntSelect(el, save, now) {
-    const sel = el?.querySelector('[data-act="roamer"]');
-    if (!sel || sel === document.activeElement) return;
+  /** Keep the roamer cards' countdown fresh without rebuilding the whole block every tick. */
+  function refreshHuntCards(el, save, now) {
     const roam = roamList(save, now);
-    const options = roam.length
-      ? roam.map(r => `<option value="${r.id}">${esc(displayName(r.id))} · ch ${r.ch} ${esc(state.data?.chapters?.[r.ch]?.name || '')} · ${mmss(r.until - now)}${save?.roam?.at?.[r.id]?.x2 ? ' ×2' : ''}</option>`).join('')
-      : '<option value="">no roamer out right now</option>';
-    if (sel.dataset.sig !== options) { sel.dataset.sig = options; sel.innerHTML = options; }
-    const pick = state.huntSel;
-    sel.value = roam.some(r => r.id === pick) ? String(pick) : (roam[0] ? String(roam[0].id) : '');
+    for (const b of el?.querySelectorAll('[data-roam]') || []) {
+      const r = roam.find(x => String(x.id) === b.dataset.roam);
+      if (!r) continue;
+      const left = mmss(r.until - now) + (save?.roam?.at?.[r.id]?.x2 ? ' ×2' : '');
+      const small = b.querySelector('small');
+      if (small) small.textContent = `ch ${r.ch} · ${left}`;
+      b.title = `${displayName(r.id)} · ch ${r.ch} ${state.data?.chapters?.[r.ch]?.name || ''} · ${left}`;
+    }
   }
 
-  /** One dropdown line: item, chapter, zone(s), chance or goal, and why it is unavailable. */
+  const itemSrc = item => item === 'coin' ? 'assets/ui/coin-case.png'
+    : item === 'link-cable' ? 'assets/ui/link-cable.svg'
+      : `assets/items/${item}.png`;
+
+  /** One card's tooltip: item, chapter, zone(s), chance or goal, and why it is unavailable. */
   function farmLabel(t) {
     const chap = englishText(state.data?.chapters?.[t.ch]?.name || '');
     const zones = t.zones.map(englishText).join(', ');
@@ -4594,23 +4581,6 @@
       : t.kind === 'quest' ? '×' + t.upTo : 'once';
     return `${displayItem(t.item)} · ch ${t.ch} ${chap} · ${zones} · ${goal}`
       + (t.done ? ' ✓' : '') + (t.blocked ? ' · ' + t.why : '');
-  }
-
-  /** Keep the item dropdown fresh; only rewrite its options when the list changes. */
-  function refreshLoopSelect(el, save) {
-    const sel = el?.querySelector('[data-act="farmitem"]');
-    if (!sel || sel === document.activeElement || !state.data) return;
-    const list = farmTargets(state.data, save);
-    const options = list.length
-      ? list.map(t => `<option value="${esc(farmKey(t))}"${t.done || t.blocked ? ' disabled' : ''}>${esc(farmLabel(t))}</option>`).join('')
-      : '<option value="">nothing farmable yet</option>';
-    const sig = options + '|' + (state.loopSel || '');
-    if (sel.dataset.sig !== sig) { sel.dataset.sig = sig; sel.innerHTML = options; }
-    const selected = list.find(t => farmKey(t) === state.loopSel && !t.done && !t.blocked);
-    const pick = selected || list.find(t => !t.done && !t.blocked)
-      || list.find(t => farmKey(t) === state.loopSel) || list[0];
-    sel.value = pick ? farmKey(pick) : '';
-    if (pick && !selected && state.loop?.running !== true) state.loopSel = farmKey(pick);
   }
 
   const loopProgress = (t, save) => !t ? ''
@@ -4631,35 +4601,27 @@
       + (t.why ? ' · ' + t.why : '');
   }
 
-  /** Keep the special-spawn dropdown fresh; only rewrite its options when the list changes. */
-  function refreshPokeSelect(el, save, now, poke) {
-    const sel = el?.querySelector('[data-act="pokespawn"]');
-    if (!sel || sel === document.activeElement || !state.data) return;
-    const options = poke.length
-      ? poke.map(t => `<option value="${esc(pokeKey(t))}"${t.blocked ? ' disabled' : ''}>${esc(pokeLabel(t, now))}</option>`).join('')
-      : '<option value="">nothing special missing yet</option>';
-    const sig = options + '|' + (state.pokeSel || '');
-    if (sel.dataset.sig !== sig) { sel.dataset.sig = sig; sel.innerHTML = options; }
-    const selected = poke.find(t => pokeKey(t) === state.pokeSel && !t.blocked);
-    const pick = selected || poke.find(t => !t.blocked) || poke.find(t => pokeKey(t) === state.pokeSel) || poke[0];
-    sel.value = pick ? pokeKey(pick) : '';
-    if (pick && !selected && state.poke?.running !== true) state.pokeSel = pokeKey(pick);
-  }
-
-  /** The Progress screen dashboard: chapter, data, quick actions, segments and the roamer hunt.
+  /** The Progress screen dashboard: chapter state, data and the three hunter card rows.
    *  Mounted above #map-root so the game's own map render never replaces it. */
   function mountDashboard() {
     const host = document.querySelector('#screen-map');
     if (!host || !document.querySelector('#map-root')) return;
     const save = readSave();
     const adv = save?.adv;
-    const node = adv?.nodes?.[adv.node];
     const now = Date.now();
     const roam = roamList(save, now);
     const hunt = state.hunt;
-    const huntOptions = roam.length
-      ? roam.map(r => `<option value="${r.id}"${r.id === state.huntSel ? ' selected' : ''}>${esc(displayName(r.id))} · ch ${r.ch} ${esc(state.data?.chapters?.[r.ch]?.name || '')} · ${mmss(r.until - now)}${save?.roam?.at?.[r.id]?.x2 ? ' ×2' : ''}</option>`).join('')
-      : '<option value="">no roamer out right now</option>';
+    if (!roam.some(r => r.id === state.huntSel)) state.huntSel = roam[0]?.id ?? null;
+    // one card row per hunter, at the game's "Les plus choisis" card size
+    const m = matchMedia('(max-width: 640px)').matches ? 52 : 72;
+    const roamCards = roam.length
+      ? `<div class="rp-pks">${roam.map(r => {
+          const chName = englishText(state.data?.chapters?.[r.ch]?.name || '');
+          const left = mmss(r.until - now) + (save?.roam?.at?.[r.id]?.x2 ? ' ×2' : '');
+          const title = `${displayName(r.id)} · ch ${r.ch} ${state.data?.chapters?.[r.ch]?.name || ''} · ${left}`;
+          return `<button class="rp-pk${r.id === state.huntSel ? ' in' : ''}" data-roam="${r.id}" title="${esc(title)}"><span class="dc-hero fr-mon" style="--m:${m}">${sprOf(r.id, m - 2)}</span><small>ch ${r.ch} · ${left}</small><span class="mine">${esc(chName)}</span></button>`;
+        }).join('')}</div>`
+      : '<div class="pcopt-mut">no roamer out right now</div>';
     const huntLine = hunt?.running
       ? `${esc(hunt.status)} · attempt ${hunt.attempts}${hunt.last ? ' · ' + esc(hunt.last) : ''}`
       : esc(hunt?.last || 'pick a roamer, then Hunt');
@@ -4667,12 +4629,38 @@
     const farm = state.data ? farmTargets(state.data, save) : [];
     const loopTarget = farm.find(t => farmKey(t) === state.loopSel)
       || farm.find(t => !t.done && !t.blocked) || farm[0] || null;
+    if (!farm.some(t => farmKey(t) === state.loopSel && !t.done && !t.blocked) && state.loop?.running !== true) {
+      const first = farm.find(t => !t.done && !t.blocked);
+      if (first) state.loopSel = farmKey(first);
+    }
+    const farmCards = farm.length
+      ? `<div class="rp-pks">${farm.map(t => {
+          const key = farmKey(t);
+          const chap = englishText(state.data?.chapters?.[t.ch]?.name || '');
+          const goal = t.kind === 'loot' ? Math.round((t.p || 0) * 100) + '%' : t.kind === 'quest' ? '×' + t.upTo : 'once';
+          const off = t.done || t.blocked;
+          return `<button class="rp-pk${key === state.loopSel ? ' in' : ''}${off ? ' miss' : ''}" data-farm="${esc(key)}"${off ? ' disabled' : ''} title="${esc(farmLabel(t))}"><span class="dc-hero fr-mon" style="--m:${m}"><img src="${esc(itemSrc(t.item))}" alt="" style="width:100%;height:100%;object-fit:contain"></span><small>${goal}${t.done ? ' ✓' : ''}</small><span class="mine">ch ${t.ch} ${esc(chap)}</span></button>`;
+        }).join('')}</div>`
+      : '<div class="pcopt-mut">nothing farmable yet</div>';
     const loopLine = loop?.running
       ? `${esc(loop.status)} · pass ${Math.max(1, loop.attempts)}${loop.last ? ' · ' + esc(loop.last) : ''}`
         + (loopProgress(loop.target || loopTarget, save) ? ' · ' + esc(loopProgress(loop.target || loopTarget, save)) : '')
       : esc(loop?.last || 'pick a story item, then Loop');
     const farmable = farm.some(t => !t.done && !t.blocked);
     const poke = state.data ? specialSpawns(state.data, save, now) : [];
+    if (!poke.some(t => pokeKey(t) === state.pokeSel && !t.blocked) && state.poke?.running !== true) {
+      const first = poke.find(t => !t.blocked);
+      if (first) state.pokeSel = pokeKey(first);
+    }
+    const pokeCards = poke.length
+      ? `<div class="rp-pks">${poke.map(t => {
+          const key = pokeKey(t);
+          const chap = englishText(state.data?.chapters?.[t.ch]?.name || '');
+          const w = t.window;
+          const when = w ? (w.from <= now ? 'window open' : 'opens in ' + Math.max(1, Math.ceil((w.from - now) / 60000)) + ' min') : 'no window in 3 days';
+          return `<button class="rp-pk${key === state.pokeSel ? ' in' : ''}${t.blocked ? ' miss' : ''}" data-spawn="${esc(key)}"${t.blocked ? ' disabled' : ''} title="${esc(pokeLabel(t, now))}"><span class="dc-hero fr-mon" style="--m:${m}">${sprOf(t.id, m - 2)}</span><small>${when}</small><span class="mine">ch ${t.ch} ${esc(chap)}</span></button>`;
+        }).join('')}</div>`
+      : '<div class="pcopt-mut">nothing special missing yet</div>';
     const pokeHuntable = poke.some(t => !t.blocked);
     const pokeRun = state.poke;
     const pokeLine = pokeRun?.running
@@ -4687,41 +4675,30 @@
       ${state.leagueInfo ? `<div class="pcopt-mut">${esc(state.leagueInfo)}</div>` : ''}
       ${state.waiting ? `<div class="pcopt-mut">${esc(state.waiting)}</div>` : ''}
       ${updateLine()}${errLine()}
-      <div class="pcopt-title" style="margin-top:8px"><span>Chapter events</span>
-        <span class="pcopt-mut">${state.enemies ? state.enemies.length + ' foes · ' + esc(node?.name || '') : ''}</span></div>
-      <div class="pcopt-row" style="margin:4px 0">${typeChips(state.enemies, state.data)}</div>
-      <div class="pcopt-row" style="margin-top:6px">${presetSeg()}
-        <button class="btn small" data-act="run">simulate</button>
-        <button class="btn small ghost" data-act="apply" ${state.team && state.team.length ? '' : 'disabled'}>apply to team</button>
-        <button class="btn small ghost" data-act="segments" ${state.busy ? 'disabled' : ''}>prepare segments</button>
-        <button class="btn small ghost" data-act="free" ${state.busy ? 'disabled' : ''}>empty templates</button>
-      </div>
-      ${segmentRows()}
       <div class="pcopt-title" style="margin-top:8px"><span>Roamer hunt</span>
         <span class="pcopt-mut">${hunt?.running ? esc(hunt.status) : ''}</span></div>
-      <div class="pcopt-row">
-        <select data-act="roamer" aria-label="Roaming legendary" ${roam.length ? '' : 'disabled'}>${huntOptions}</select>
+      ${roamCards}
+      <div class="pcopt-row" style="margin-top:6px">
         <button class="btn small ${hunt?.running ? '' : 'ghost'}" data-act="hunt">${hunt?.running ? 'Stop' : 'Hunt'}</button>
       </div>
       <div class="pcopt-mut">${huntLine}${adv?.paused ? ' · adventure paused' : ''}</div>
       <div class="pcopt-title" style="margin-top:8px"><span>Item Hunter</span>
         <span class="pcopt-mut">${loop?.running ? esc(loop.status) : ''}</span></div>
-      <div class="pcopt-row">
-        <select data-act="farmitem" aria-label="Story item to farm" ${farm.length ? '' : 'disabled'}></select>
+      ${farmCards}
+      <div class="pcopt-row" style="margin-top:6px">
         <button class="btn small ${loop?.running ? '' : 'ghost'}" data-act="loop" ${farmable || loop?.running ? '' : 'disabled'}>${loop?.running ? 'Stop' : 'Loop'}</button>
       </div>
       <div class="pcopt-mut">${loopLine}${adv?.paused ? ' · adventure paused' : ''}</div>
       <div class="pcopt-title" style="margin-top:8px"><span>Pokémon hunter</span>
         <span class="pcopt-mut">${pokeRun?.running ? esc(pokeRun.status) : ''}</span></div>
-      <div class="pcopt-row">
-        <select data-act="pokespawn" aria-label="Special spawn to hunt" ${poke.length ? '' : 'disabled'}></select>
+      ${pokeCards}
+      <div class="pcopt-row" style="margin-top:6px">
         <button class="btn small ${pokeRun?.running ? '' : 'ghost'}" data-act="pokehunt" ${pokeHuntable || pokeRun?.running ? '' : 'disabled'}>${pokeRun?.running ? 'Stop' : 'Run'}</button>
       </div>
       <div class="pcopt-mut">${pokeLine}${adv?.paused ? ' · adventure paused' : ''}</div>`;
-    const sig = JSON.stringify([adv?.chapter, adv?.node, node?.name, state.enemies?.length,
+    const sig = JSON.stringify([adv?.chapter, adv?.node, !!state.data,
       state.eligible, state.chartSource, state.errors, state.update?.repo, state.leagueInfo, state.waiting, adv?.paused,
-      state.preset, state.busy, state.team && state.team.map(t => t.mon.uid).join(','), state.roamer && state.roamer.id,
-      state.segments && state.segments.list.map(s => s.slot + ':' + s.team.join('/')).join(','),
+      state.roamer && state.roamer.id,
       hunt?.running, hunt?.id, hunt?.ch, hunt?.attempts, hunt?.status, hunt?.last, state.huntSel,
       roam.map(r => r.id + ':' + r.ch).join(','),
       loop?.running, loop?.target && farmKey(loop.target), loop?.attempts, loop?.status, loop?.last, state.loopSel,
@@ -4729,43 +4706,24 @@
       pokeRun?.running, pokeRun?.target && pokeKey(pokeRun.target), pokeRun?.attempts, pokeRun?.status, pokeRun?.last, state.pokeSel,
       poke.map(t => pokeKey(t) + (t.blocked ? 'b' : '') + (t.open ? 'o' : '')).join(',')]);
     const el = mountBlock(host, 'dashboard', sig, html, el => {
-      el.querySelectorAll('[data-preset]').forEach(b => b.onclick = () => { state.preset = b.dataset.preset; refreshUi(); });
-      el.querySelector('[data-act="run"]').onclick = () => runOptimizer();
-      el.querySelector('[data-act="apply"]').onclick = () => applyTeamFromPanel();
-      el.querySelector('[data-act="segments"]').onclick = () => prepareSegments();
-      el.querySelector('[data-act="free"]').onclick = () => freeTemplates();
-      el.querySelectorAll('[data-seg]').forEach(b => b.onclick = () => switchTemplate(+b.dataset.seg));
-      const sel = el.querySelector('[data-act="roamer"]');
-      if (sel) sel.onchange = () => {
-        state.huntSel = sel.value === '' ? null : +sel.value;
-        refreshUi();
-      };
+      el.querySelectorAll('[data-roam]').forEach(b => b.onclick = () => { state.huntSel = +b.dataset.roam; refreshUi(); });
+      el.querySelectorAll('[data-farm]').forEach(b => b.onclick = () => { state.loopSel = b.dataset.farm; refreshUi(); });
+      el.querySelectorAll('[data-farm] img').forEach(img => img.onerror = () => { img.style.display = 'none'; });
+      el.querySelectorAll('[data-spawn]').forEach(b => b.onclick = () => { state.pokeSel = b.dataset.spawn; refreshUi(); });
       el.querySelector('[data-act="hunt"]').onclick = () => {
         if (state.hunt?.running) { state.hunt.stop('stopped by hand'); return; }
-        startRoamerHunt(sel ? sel.value : null);
-      };
-      const farmSel = el.querySelector('[data-act="farmitem"]');
-      if (farmSel) farmSel.onchange = () => {
-        state.loopSel = farmSel.value || null;
-        refreshUi();
+        startRoamerHunt(state.huntSel);
       };
       el.querySelector('[data-act="loop"]').onclick = () => {
         if (state.loop?.running) { state.loop.stop('stopped by hand'); return; }
-        startZoneLoop(farmSel ? farmSel.value : state.loopSel);
-      };
-      const pokeSel = el.querySelector('[data-act="pokespawn"]');
-      if (pokeSel) pokeSel.onchange = () => {
-        state.pokeSel = pokeSel.value || null;
-        refreshUi();
+        startZoneLoop(state.loopSel);
       };
       el.querySelector('[data-act="pokehunt"]').onclick = () => {
         if (state.poke?.running) { state.poke.stop('stopped by hand'); return; }
-        startPokemonHunt(pokeSel ? pokeSel.value : state.pokeSel);
+        startPokemonHunt(state.pokeSel);
       };
     }, { before: '#map-root' });
-    if (el) refreshHuntSelect(el, save, now);
-    if (el) refreshLoopSelect(el, save);
-    if (el) refreshPokeSelect(el, save, now, poke);
+    if (el) refreshHuntCards(el, save, now);
   }
 
   /** The Adventure screen: the game's own team-template bar, between the route timeline and the arena.
@@ -4828,7 +4786,6 @@
       ${sim ? `<div class="pcopt-mut">chapter sim: win ${Math.round(sim.rate * 100)}% · clears ${sim.avgCleared}/${sim.battles} battles · ${sim.evaluated} teams in ${(sim.ms / 1000).toFixed(1)}s${Object.keys(sim.wipeAt || {}).length ? ' · wipe at step ' + Object.entries(sim.wipeAt).sort((a, b) => b[1] - a[1]).slice(0, 2).map(([i, n]) => '#' + i + '×' + n).join(', ') : ''}</div>` : ''}
       ${state.roamer ? `<div class="pcopt-mut">roamer boss on this chapter: ${esc(displayName(state.roamer.id))} · Nv. ${state.roamer.level} · catch ${(state.roamer.catch * 100).toFixed(1)}%/K.O.</div>` : ''}
       <div class="pcopt-row" style="margin-top:6px">
-        ${presetSeg()}
         <button class="btn small" data-act="run" ${state.busy ? 'disabled' : ''}>${state.busy ? 'working…' : 'simulate'}</button>
         <div id="pcopt-simbar" style="display:none;flex:1 1 160px;align-items:center;gap:6px"><div style="flex:1;height:10px;border-radius:5px;background:var(--line);overflow:hidden"><div style="height:100%;width:0%;background:var(--c);transition:width .15s"></div></div><span class="pcopt-mut" style="font-size:11px;white-space:nowrap"></span></div>
         <button class="btn small ghost" data-act="apply" ${state.team && state.team.length && !state.busy ? '' : 'disabled'}>apply to team</button>
@@ -4843,17 +4800,12 @@
       <div data-team>${renderTeam()}</div>
       ${state.waiting ? `<div class="pcopt-mut">${esc(state.waiting)}</div>` : ''}
       ${errLine()}`;
-    const sig = JSON.stringify([state.preset, state.busy, activeSet,
+    const sig = JSON.stringify([state.busy, activeSet,
       state.team && state.team.map(t => t.mon.uid + ':' + t.hpCur).join(','),
       sim && [sim.rate, sim.avgCleared, sim.evaluated, sim.ms], state.errors, state.waiting, state.events?.index, cap,
       state.roamer && state.roamer.id,
       state.segments && state.segments.list.map(s => s.slot + ':' + s.team.join('/')).join(','), state.segments && state.segments.total]);
     mountBlock(host, 'chapter', sig, html, el => {
-      el.querySelectorAll('[data-preset]').forEach(b => b.onclick = () => {
-        state.preset = b.dataset.preset;
-        el.querySelectorAll('[data-preset]').forEach(x => x.classList.toggle('on', x.dataset.preset === state.preset));
-        refreshUi();
-      });
       el.querySelector('[data-act="run"]').onclick = () => runOptimizer();
       el.querySelector('[data-act="apply"]').onclick = () => applyTeamFromPanel();
       el.querySelector('[data-act="segments"]').onclick = () => prepareSegments();
@@ -4895,24 +4847,19 @@
     const team = state.legTeamKey === ctx.zone.id + ':' + ctx.tier ? state.legTeam : null;
     const html = `
       <div class="pcopt-row" style="margin-top:6px">
-        ${presetSeg()}
-        <button class="btn small" data-act="run" ${state.busy ? 'disabled' : ''}>✨ Optimize (mine)</button>
+        <button class="btn small" data-act="run" ${state.busy ? 'disabled' : ''}>✨ Optimize</button>
         <button class="btn small ghost" data-act="apply" ${team && team.length && !state.busy ? '' : 'disabled'}>apply to team</button>
       </div>
       <div class="pcopt-mut">${legendInfo()}</div>
       <div class="pcopt-mut">${legendOddsLine()}</div>
       <div data-team>${renderLegendTeam(team)}</div>
       ${errLine()}`;
-    const sig = JSON.stringify([key, state.preset, state.busy,
+    const sig = JSON.stringify([key, state.busy,
       team && team.map(t => t.mon.uid).join(','),
       [...eventTeamIds('zone:' + ctx.zone.id)].join(','),
       state.legOdds && state.legOdds.key === ctx.zone.id + ':' + ctx.tier && [state.legOdds.winChance, state.legOdds.rounds, state.legOdds.pCatch, state.legOdds.attempts],
       state.errors]);
     mountBlock(pickerHost(6), 'legend', sig, html, el => {
-      el.querySelectorAll('[data-preset]').forEach(b => b.onclick = () => {
-        state.preset = b.dataset.preset;
-        refreshUi();
-      });
       el.querySelector('[data-act="run"]').onclick = () => runLegendOptimizer();
       el.querySelector('[data-act="apply"]').onclick = () => applyTeamFromPanel(team, true);
     }, { after: '.rp-side' });
@@ -5008,10 +4955,25 @@
     });
   }
 
+  /** The map screen lists the legend zones below the Arènes; put them at the top.
+   *  Moving nodes keeps the game's click handlers. Idempotent: the observer sees our own moves. */
+  function reorderLegendChapters(list = document.querySelector('#screen-map .mp-list')) {
+    if (!list) return;
+    const zones = [...list.querySelectorAll(':scope > [data-ch^="Z"], :scope > .mp-row.lz-lock')];
+    if (!zones.length) return;
+    const heading = [...list.querySelectorAll(':scope > h4')].find(h => /l[ée]gend/i.test(h.textContent))
+      || Object.assign(document.createElement('h4'), { textContent: 'Légendaires' });
+    if (list.firstElementChild === heading && zones.every((z, i) => list.children[i + 1] === z)) return;
+    list.insertBefore(heading, list.firstElementChild);
+    let after = heading;
+    for (const z of zones) { after.after(z); after = z; }
+  }
+
   /** Refresh every block that is currently on screen (cheap: signature-guarded). */
   function refreshUi() {
     try {
       cleanupLegacy();
+      reorderLegendChapters();
       mountDashboard();
       mountTemplates();
       mountChapter();
@@ -5316,27 +5278,23 @@
     const foes = state.data ? undergroundFoes(ctx.theme, state.data, readSave()) : [];
     const team = state.ugTeamKey === ctx.theme.key ? state.ugTeam : null;
     const inTeam = eventTeamIds(ctx.eventKey);
+    const m = matchMedia('(max-width: 640px)').matches ? 52 : 72;
     const rows = team && team.length ? `<div class="rp-pks">${team.map(t => {
       const has = inTeam.has(t.species.id);
       const title = `${displayName(t.species.id)}: ${has ? 'already in the team' : 'add your Lv. ' + t.proj.level}`;
-      return `<button class="rp-pk${has ? ' in' : ''}"${has ? '' : ` data-pop="${t.species.id}"`} title="${esc(title)}"><span class="dc-hero fr-mon" style="--m:36">${sprOf(t.species.id, 36)}</span><small>atk ${Math.round(t.avgDmg || 0)} · def ${Math.round(t.avgRounds || 0)}</small><span class="mine">${has ? 'in the team' : 'ton Nv. ' + t.proj.level}</span></button>`;
+      return `<button class="rp-pk${has ? ' in' : ''}"${has ? '' : ` data-pop="${t.species.id}"`} title="${esc(title)}"><span class="dc-hero fr-mon" style="--m:${m}">${sprOf(t.species.id, m - 2)}</span><small>atk ${Math.round(t.avgDmg || 0)} · def ${Math.round(t.avgRounds || 0)}</small><span class="mine">${has ? 'in the team' : 'ton Nv. ' + t.proj.level}</span></button>`;
     }).join('')}</div>` : '';
     const html = `
       <div class="pcopt-row" style="margin-top:6px">
-        ${presetSeg()}
-        <button class="btn small" data-act="run" ${state.busy ? 'disabled' : ''}>⛏ Optimize (mine)</button>
+        <button class="btn small" data-act="run" ${state.busy ? 'disabled' : ''}>⛏ Optimize</button>
         <button class="btn small ghost" data-act="apply" ${team && team.length && !state.busy ? '' : 'disabled'}>apply to team</button>
       </div>
       <div class="pcopt-mut">${esc(ctx.theme.name)} · ${foes.length} guards · Nv. ${state.data?.cfg?.MAX_LEVEL ?? 100} · team of ${ctx.size}</div>
       ${rows}
       ${errLine()}`;
-    const sig = JSON.stringify([ctx.theme.key, state.preset, state.busy, team && team.map(t => t.mon.uid).join(','),
+    const sig = JSON.stringify([ctx.theme.key, state.busy, team && team.map(t => t.mon.uid).join(','),
       ctx.eventKey && [...eventTeamIds(ctx.eventKey)].join(','), state.errors]);
     mountBlock(pickerHost(ctx.size), 'underground', sig, html, el => {
-      el.querySelectorAll('[data-preset]').forEach(b => b.onclick = () => {
-        state.preset = b.dataset.preset;
-        refreshUi();
-      });
       el.querySelector('[data-act="run"]').onclick = () => runUndergroundOptimizer();
       el.querySelector('[data-act="apply"]').onclick = () => applyTeamFromPanel(team, true);
     }, { after: '.rp-side' });
@@ -5713,6 +5671,23 @@
         && !!matchStage(hData, {}, staticTarget, nightWetAt)
         && matchStage(hData, {}, staticTarget, nightClearAt) === null
         && matchStage(hData, {}, staticTarget, dayRainAt) === null);
+
+      // the map screen's legend zones move above the Arènes, in place and idempotently
+      const mapList = document.createElement('div');
+      mapList.className = 'mp-list';
+      mapList.innerHTML = '<h4>Arènes</h4><button data-ch="0">ch 0</button><button data-ch="1">ch 1</button>'
+        + '<h4>Ligue</h4><h4>Légendaires</h4><button data-ch="Z145">zone 145</button>'
+        + '<button data-ch="Z146">zone 146</button><div class="mp-row lz-lock"></div>';
+      reorderLegendChapters(mapList);
+      const once = mapList.innerHTML;
+      reorderLegendChapters(mapList);
+      const kids = [...mapList.children];
+      check('the map screen lists the legend zones first',
+        kids[0].tagName === 'H4' && /l[ée]gend/i.test(kids[0].textContent)
+        && kids[1]?.dataset.ch === 'Z145' && kids[2]?.dataset.ch === 'Z146'
+        && kids[3]?.classList.contains('lz-lock') && kids[4]?.textContent === 'Arènes'
+        && once === mapList.innerHTML,
+        kids.map(k => k.outerHTML));
     } catch (e) {
       check('selftest crashed', false, e.message);
       logError('selftest', e);
