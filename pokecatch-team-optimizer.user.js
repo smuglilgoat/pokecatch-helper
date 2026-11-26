@@ -4035,13 +4035,6 @@
     hunt: null, huntSel: null, loop: null, loopSel: null
   };
 
-  const TYPE_COLORS = {
-    normal: '#A8A77A', fire: '#EE8130', water: '#6390F0', electric: '#F7D02C', grass: '#7AC74C', ice: '#96D9D6',
-    fighting: '#C22E28', poison: '#A33EA1', ground: '#E2BF65', flying: '#A98FF3', psychic: '#F95587', bug: '#A6B91A',
-    rock: '#B6A136', ghost: '#735797', dragon: '#6F35FC', dark: '#705746', steel: '#B7B7CE', fairy: '#D685AD'
-  };
-  const typeColor = t => TYPE_COLORS[t] || '#888';
-
   function esc(s) {
     return String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
   }
@@ -4117,9 +4110,6 @@
   }
   /** Chapter and zone names from the English pack when it has one. */
   const englishText = s => (window.I18N?.en || window.I18n?.en)?.[s] || s;
-
-  /** The game's own type badge (same markup as the rest of the UI). */
-  const typeBadge = t => `<span class="type sm" data-type="${t}" style="--tc:${typeColor(t)};background:var(--tc)">${t}</span>`;
 
   const legendZones = () => (state.legends?.zones || []);
 
@@ -4451,7 +4441,6 @@
       .pcopt-block .btn.small{font-size:13px;padding:5px 10px}
       .pcopt-block .seg button{font-size:13px;padding:5px 9px}
       .pcopt-block select{font-size:13px;padding:4px 8px;max-width:100%}
-      .pcopt-block .type.sm{font-size:11px}
       .pcopt-rec{position:absolute;right:2px;top:2px;z-index:3;font-size:10px;line-height:14px;padding:0 4px;
         border-radius:4px;background:#2f6fe4;color:#fff;pointer-events:none}
       .pcopt-rec.both{background:#e0a800;color:#111}

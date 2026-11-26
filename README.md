@@ -49,7 +49,7 @@ Open `http://localhost:8765/pokecatch-team-optimizer.user.js`, accept Tampermonk
 |---|---|
 | Progress | Dashboard with chapter and step, level cap, eligible mons, data source, errors, and the roamer hunt, item hunter and Pokémon hunter card rows |
 | Team/PC | Chapter optimizer with simulate line, team rows, template select and apply, segment rows |
-| Adventure | A copy of the game's template bar; one click loads a template. The chapter list shows legendary raids first |
+| Adventure | A copy of the game's template bar; one click loads a template. The chapter list shows legend zones first |
 | Legend, elite, underground and raid pickers | The optimizer beside the game's own Optimize button, with odds and apply to team |
 | PC grid | A blue marker on each mon the script picked, gold when the game's own ranking agrees |
 
