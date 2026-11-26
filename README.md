@@ -7,7 +7,7 @@
 
 Tampermonkey userscript that simulates Poke'Catch's fights and fills the game's own team slots with the result.
 
-[Poke'Catch](https://pokecatch-online.app/) is a browser monster-catching game whose Optimize button fills a team greedily. This script parses the game's bundle, runs the game's battle formulas in the page, and searches for teams that win the fight in front of you: the running chapter, a legendary or elite zone, the underground, or a shiny raid. It clicks the game's buttons and drags mons into its slots. The save is read, never written.
+[Poke'Catch](https://pokecatch-online.app/) is a browser monster-catching game whose Optimize button fills a team greedily. This script parses the game's bundle, runs the game's battle formulas in the page, and searches for teams that win the fight in front of you: the running chapter, a legendary or elite zone, the underground, or a shiny raid. It clicks the game's buttons and drags mons into its slots. It never writes to the save.
 
 ## Install
 
@@ -41,7 +41,7 @@ Open `http://localhost:8765/pokecatch-team-optimizer.user.js`, accept Tampermonk
 - **Pokémon hunter**: pick a missing mon with a weather, night/day or season spawn and the script restarts its chapter inside the next window, then goes back to watching
 - **Dashboard**: run state, data source, errors, and the hunts on the Progress screen
 - **English names**: bundle ids read through the game's English language pack
-- **Selftest**: 70 optimizer invariants against the live save and synthetic cases
+- **Selftest**: 75 checks against the live save and synthetic cases
 
 ## Where the blocks appear
 
@@ -49,13 +49,13 @@ Open `http://localhost:8765/pokecatch-team-optimizer.user.js`, accept Tampermonk
 |---|---|
 | Progress | Dashboard with chapter and step, level cap, eligible mons, data source, errors, and the roamer hunt, item hunter and Pokémon hunter card rows |
 | Team/PC | Chapter optimizer with simulate line, team rows, template select and apply, segment rows |
-| Adventure | A copy of the game's template bar; one click loads a template. The chapter list shows legend zones first |
-| Legend, elite, underground and raid pickers | The optimizer beside the game's own Optimize button, with odds and apply to team. Elite fights also get the gold Optimize button back in the picker header, wired to a faithful port of the game's own Optimize: its counter-value greedy with the elite legend cap, not the script's refined optimizer |
+| Adventure | A copy of the game's template bar; one click loads a template. While the Pokémon hunter runs, a line above the bar shows the hunted mon and its window countdown. The chapter list shows legend zones first |
+| Legend, elite, underground and raid pickers | The optimizer beside the game's own Optimize button, with odds and apply to team. Elite fights also get the gold Optimize button back in the picker header, wired to a port of the game's own Optimize: its counter-value greedy with the elite legend cap, not the script's refined optimizer |
 | PC grid | A blue marker on each mon the script picked, gold when the game's own ranking agrees |
 
 ## Pacing
 
-The roamer hunt, the item hunter and the Pokémon hunter share one restart gate: one chapter restart every 10–14 s, at most 120 per rolling hour, then a 10-minute rest. All three wait out a paused adventure and stop when an event, legend zone, league or tower run starts; the item hunter also waits for a day, night or tide-gated zone. The Pokémon hunter watches outside its spawn window and stops the item hunter while it works, then hands the map back and resumes it when the window closes. None of them survives a reload; the game's chapter loop they switched on stays in the save — turn it off on the map.
+The roamer hunt, the item hunter and the Pokémon hunter share one restart gate: one chapter restart every 10 to 14 s, at most 120 per rolling hour, then a 10-minute rest. All three wait out a paused adventure and stop when an event, legend zone, league or tower run starts; the item hunter also waits for a day, night or tide-gated zone. The Pokémon hunter watches outside its spawn window, stops the item hunter while it works, then hands the map back and resumes it when the window closes. None of them survives a reload; the game's chapter loop they switched on stays in the save, so turn it off on the map.
 
 ## Screenshots
 
@@ -71,11 +71,11 @@ No build step and no dependencies: one file, `pokecatch-team-optimizer.user.js`.
 node --check pokecatch-team-optimizer.user.js
 ```
 
-The script logs every action with `[pcopt]`, and the last 400 entries stay in `window.__pcopt.logs`. In the game console, `window.__pcopt.selftest()` runs the 70 checks and returns `{ ok, ms, results }`. `window.__pcopt.compareWithPokeApi(uid, info)` cross-checks one mon against PokeAPI; no button calls it.
+The script logs every action with `[pcopt]`, and the last 400 entries stay in `window.__pcopt.logs`. In the game console, `window.__pcopt.selftest()` runs the 75 checks and returns `{ ok, ms, results }`. `window.__pcopt.compareWithPokeApi(uid, info)` cross-checks one mon against PokeAPI; no button calls it.
 
 Two places carry the version: `@version` in the header and the `VERSION` constant near the top.
 
-The file is one IIFE in numbered sections: 0 helpers, 1 game data from the bundle, 2 type chart, 3 save access, 4 battle math, 5 chapter events, 6 optimizers (6c chapter simulation, 6b legendary fights), 7 roamer hunt (7b item hunter, 7c Pokémon hunter), 8 team editing (8b PokéAPI cross-check and shiny raids, 8c in-game picker controls), 9 UI (9b blocks mounted in the game's screens), 10 boot and actions. `grep -n '^ *\* [0-9]' pokecatch-team-optimizer.user.js` lists them.
+The file is one IIFE in numbered sections: 0 helpers, 1 game data from the bundle, 2 type chart, 3 save access, 4 battle math, 5 chapter events, 6 optimizers (6c chapter simulation, 6b legendary fights, the elite raid chart, the game's own Optimize), 7 roamer hunt (7b item hunter, 7c Pokémon hunter), 8 team editing (8b PokéAPI cross-check and shiny raids, 8c in-game picker controls), 9 UI (9b blocks mounted in the game's screens), 10 boot and actions. `grep -n '^ *\* [0-9]' pokecatch-team-optimizer.user.js` lists them.
 
 ## Contributing
 
@@ -87,4 +87,4 @@ Small single-file project. Open an issue before a large change, keep the diff in
 
 ## License
 
-MIT — see [LICENSE](LICENSE).
+MIT. See [LICENSE](LICENSE).
