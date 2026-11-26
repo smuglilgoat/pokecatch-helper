@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Poke'Catch Team Optimizer
 // @namespace    pokecatch-helper
-// @version      1.12.1
+// @version      1.12.2
 // @description  Reads the current chapter events, then builds an optimal team of 6 from the PC with an offense preset, optimizes legendary, elite, underground and raid teams, and prepares per-segment template teams.
 // @author       GrumpyOwl
 // @match        https://pokecatch-online.netlify.app/*
@@ -27,7 +27,7 @@
    * 0. Small helpers
    * ------------------------------------------------------------------ */
   const SAVE_KEY = 'gachamon-save-v1';
-  const VERSION = '1.12.1';
+  const VERSION = '1.12.2';
   const UPDATE_URL = 'https://raw.githubusercontent.com/smuglilgoat/pokecatch-helper/main/pokecatch-team-optimizer.user.js';
   const $ = (sel, root = document) => root.querySelector(sel);
   const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
@@ -4988,6 +4988,7 @@
         border-radius:4px;background:#2f6fe4;color:#fff;pointer-events:none}
       .pcopt-rec.both{background:#e0a800;color:#111}
       .pcopt-templates{margin:8px 10px 2px;flex-wrap:wrap}
+      .pcopt-poke-timer{margin:8px 10px 2px;color:var(--muted);font-size:13px;line-height:1.5}
       .pcopt-title{font-weight:700;font-size:15px;margin:0 0 6px;display:flex;justify-content:space-between;
         align-items:center;gap:8px;flex-wrap:wrap}
       .pcopt-title small{color:var(--muted);font-weight:400;font-size:11px}
@@ -5518,6 +5519,29 @@
     });
   }
 
+  /** The Adventure screen: the running pokémon hunter's window countdown, just above the template bar. */
+  function mountPokeTimer() {
+    const adv = document.querySelector('#screen-adventure .adv-main');
+    if (!adv) return;
+    let el = adv.querySelector('[data-pcopt="poke-timer"]');
+    const hunt = state.poke;
+    if (!hunt?.running) { if (el) el.remove(); return; }
+    if (!el) {
+      el = document.createElement('div');
+      el.dataset.pcopt = 'poke-timer';
+      el.className = 'pcopt-poke-timer';
+      const anchor = adv.querySelector('[data-pcopt="templates"]') || adv.querySelector('#arena');
+      if (anchor) adv.insertBefore(el, anchor); else adv.appendChild(el);
+    }
+    const now = Date.now();
+    const w = hunt.window;
+    const line = 'Pokémon hunter · ' + pokeName(state.data, hunt.target?.id) + ' · '
+      + (hunt.open && w ? `window open · closes in ${mmss(w.to - now)}`
+        : w ? `opens in ${mmss(w.from - now)} · ${hhmm(new Date(w.from))}`
+          : 'no window in 3 days');
+    if (el.textContent !== line) el.textContent = line;
+  }
+
   /** The Team/PC screen: the chapter optimizer with its progress bar and the current team. */
   function mountChapter() {
     const host = document.querySelector('#screen-team');
@@ -5769,6 +5793,7 @@
       reorderLegendChapters();
       mountDashboard();
       mountTemplates();
+      mountPokeTimer();
       mountChapter();
       mountFreeAll();
       if (document.querySelector('#evt-pick-head')) injectPickerUi().catch(e => logError('picker ui: inject', e));
