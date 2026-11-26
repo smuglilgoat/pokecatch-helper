@@ -244,7 +244,7 @@
     const cfg = table('CONFIG', true, read('a.CONFIG='));
     // the boss-status knobs drive the legend credit: say it once when the bundle lost them
     for (const knob of ['BOSS_STATUS', 'STATUS_TEAM', 'STATUS_PARA_COST', 'STATUS_SURE', 'ROAMING', 'UNDERGROUND',
-      'TEAM_APART', 'STATUS_RESIST', 'SIGNATURE_POWER'])
+      'TEAM_APART', 'STATUS_RESIST', 'SIGNATURE_POWER', 'TASTES', 'NIGHT_DAMAGE'])
       if (cfg[knob] == null) log('warn', 'bundle: knob missing — feature off', { knob });
     const chapters = table('CHAPTERS', true, () => {
       const lit = literalAfter(src, 'CHAPTERS:[').replace(/a\.UNOWN\.ids/g, JSON.stringify(UNOWN_IDS));
@@ -259,6 +259,18 @@
       for (const f of evalLit(literalAfter(src, 'a.FORMS=function(){const g='))) out[f.id] = { base: f.base, form: f.form };
       return out;
     }) || {};
+    // the forms the picker collapses to their base species (Deoxys, Kyurem, ...): FORMS.single
+    const formSingles = table('FORM_SINGLES', false, () => {
+      const anchor = src.indexOf('a.FORMS=function(){');
+      if (anchor < 0) throw new Error('marker not found');
+      const out = { bases: {}, of: {} };
+      for (const f of evalLit(literalAt(src, src.indexOf('[', anchor)))) {
+        if (!f?.single || f.base == null) continue;
+        out.bases[f.base] = true;
+        out.of[f.id] = f.base;
+      }
+      return out;
+    }) || { bases: {}, of: {} };
     // phase boundaries: the bundle literal; the defaults are the values it has always carried
     const daytime = table('DAYTIME', false, () => {
       const at = src.indexOf('[{key:"morning",from:');
@@ -320,6 +332,7 @@
       legends,
       habitats,
       forms,
+      formSingles,
       daytime,
       cfg: {
         LEVEL_GAP: cfg.LEVEL_GAP, CRIT_MULT: cfg.CRIT_MULT, CRIT_CHANCE: cfg.CRIT_CHANCE,
@@ -331,6 +344,7 @@
         MOVE_POWER_OVERRIDES: cfg.MOVE_POWER_OVERRIDES || {}, SIGNATURE_POWER: cfg.SIGNATURE_POWER || {},
         MULTI_HIT: cfg.MULTI_HIT || {}, MULTI_HIT_ODDS: cfg.MULTI_HIT_ODDS || [],
         TEAM_APART: cfg.TEAM_APART || [],
+        TASTES: cfg.TASTES || null, NIGHT_DAMAGE: cfg.NIGHT_DAMAGE || null,
         MOVE_LEVELS: cfg.MOVE_LEVELS || [], MOVE_FLOOR_FROM: cfg.MOVE_FLOOR_FROM ?? 100,
         MOVE_GAP_MAX: cfg.MOVE_GAP_MAX ?? 20, MOVE_STEP: cfg.MOVE_STEP || [4, 5],
         TIME_EVOLUTIONS: cfg.TIME_EVOLUTIONS || {}, TIER_MIN: cfg.TIER_MIN || {},
@@ -674,10 +688,12 @@
       const sp = species[mon.id];
       if (!sp) return null;
       const lv = mon.level, b = sp.stats;
-      const r = (mon.shiny ? 1 + cfg.SHINY_STAT_BONUS : 1) * (mon.statMult || 1);
-      const f = k => Math.floor((Math.floor(2 * b[k] * lv / 100) + 5) * r);
+      const shiny = mon.shiny ? 1 + cfg.SHINY_STAT_BONUS : 1;
+      // statMult stays a scalar for every existing caller; an object scales one stat at a time (the taste port)
+      const mult = k => shiny * (mon.statMult && typeof mon.statMult === 'object' ? (mon.statMult[k] ?? 1) : (mon.statMult || 1));
+      const f = k => Math.floor((Math.floor(2 * b[k] * lv / 100) + 5) * mult(k));
       return {
-        hp: Math.floor((Math.floor(2 * b.hp * lv / 100) + lv + 10) * r),
+        hp: Math.floor((Math.floor(2 * b.hp * lv / 100) + lv + 10) * mult('hp')),
         atk: f('atk'), def: f('def'), spa: f('spa'), spd: f('spd'), spe: f('spe')
       };
     };
@@ -2177,6 +2193,45 @@
     return 100 - (100 - l) * Math.min(1, Math.max(0, (power - o) / (r - o)));
   };
 
+  /** The game's TASTES.eff curve for one like value (I). */
+  function gameTasteEff(T, value) {
+    const max = T?.MAX ?? 25;
+    const r = Math.min(Math.max(+value || 0, 0), max) / max;
+    const lin = T?.LIN ?? .4;
+    return (T?.CAP ?? .2) * ((1 - lin) * (1 - (1 - r) ** 2) + lin * r);
+  }
+
+  /** The game's TASTES.mult: one stat's multiplier, hp excluded. */
+  function gameTasteMult(cfg, taste, stat) {
+    const T = cfg?.TASTES;
+    if (!T || !taste || !['atk', 'def', 'spa', 'spd', 'spe'].includes(stat)) return 1;
+    return 1 + gameTasteEff(T, taste.up?.[stat] || 0) - (stat === taste.h ? (T.DIS0 ?? .2) : 0);
+  }
+
+  /** The game's night test: the local clock, unless the current chapter forces day. */
+  function gameNight(data, save, at = Date.now()) {
+    const ch = save?.adv?.chapter;
+    if (!!data.chapters?.[ch]?.day && !((save?.adv?.unlocked ?? 0) > ch)) return false;
+    return phaseKey(data, at) === 'night';
+  }
+
+  /** The weather the game's mn reads at the current adventure node (none when the picker has no active node). */
+  function gameNodeWeather(data, save, at = Date.now()) {
+    const adv = save?.adv, node = adv?.nodes?.[adv.node];
+    if (!node) return null;
+    if (node.weather !== undefined) return node.weather;
+    if (node.indoor) return null;
+    const ch = node.ch ?? adv.chapter;
+    if (node.name !== 'Parc de la pension') {
+      const fixed = data.chapters?.[ch]?.weather;
+      if (fixed) {
+        const slot = Math.floor(at / (data.cfg.WEATHER?.SLOT_MS ?? 3600000));
+        return Array.isArray(fixed) ? fixed[slot % fixed.length] : fixed;
+      }
+    }
+    return weatherAt(data, save, { ch, step: node }, at);
+  }
+
   /** The game's Ea with one fixed move, before the 0.925 roll (the engine's moveDamage keeps it). */
   function gameEaFixed(att, def, key, eng, data, learn) {
     const mv = data.moves[key];
@@ -2186,29 +2241,47 @@
     return eng.moveDamage(att, def, { type: mv.type, cat: mv.cat, power, acc: gameMoveAcc(key, data.cfg, learn, data) }) / 0.925;
   }
 
-  /** The game's mn/Ea move choice: the best damaging move the mon knows at its level (the same argmax). */
-  function gameBestMove(att, def, eng, data, learn) {
+  /** The game's mn per-move multiplier: the node's weather damage table times the night bonus (Be). */
+  function gameMnFactor(type, conds, cfg) {
+    const w = conds?.weather;
+    const base = conds?.weatherDamage?.[type]
+      ?? (w != null ? cfg?.WEATHER?.TYPES?.[w]?.damage?.[type] : null)
+      ?? 1;
+    return base * (conds?.night ? (cfg?.NIGHT_DAMAGE?.[type] ?? 1) : 1);
+  }
+
+  /** The game's mn: the best damaging move with the weather/night factor (its own argmax, not Ea's). */
+  function gameMnMove(att, def, eng, data, learn, conds) {
     let best = null;
     for (const [lv, key] of learn.learnAll[att.id] || []) {
       if (lv > att.level) continue;
       if (data.cfg.MOVE_BLACKLIST.includes(key)) continue;
       if (gameMovePower(key, data.cfg, learn) <= 0) continue;
-      const value = gameEaFixed(att, def, key, eng, data, learn);
+      const mv = data.moves[key];
+      const value = gameEaFixed(att, def, key, eng, data, learn) * gameMnFactor(mv.type, conds, data.cfg);
       if (!best || value > best.value) best = { key, value, acc: gameMoveAcc(key, data.cfg, learn, data) };
     }
     return best;
   }
 
-  /** The game's Ea: Ditto copies the foe's species before the maths (Zs = 132). */
+  /** The game's Ea: the max damage per attack, no weather factor; Ditto copies the foe's species (Zs = 132). */
   function gameEa(att, def, eng, data, learn) {
     const a = att.id === 132 && def.id !== 132 ? { ...att, id: def.id } : att;
-    return gameBestMove(a, def, eng, data, learn)?.value || 0;
+    let best = 0;
+    for (const [lv, key] of learn.learnAll[a.id] || []) {
+      if (lv > a.level) continue;
+      if (data.cfg.MOVE_BLACKLIST.includes(key)) continue;
+      if (gameMovePower(key, data.cfg, learn) <= 0) continue;
+      const value = gameEaFixed(a, def, key, eng, data, learn);
+      if (value > best) best = value;
+    }
+    return best;
   }
 
-  /** The game's Gs: the zone's counter move, else the boss's strongest off-type attack that is not its best one. */
-  function gameCounterKey(boss, target, configured, eng, data, learn) {
+  /** The game's Gs: the zone's counter move, else the boss's weakest off-type attack that is not its best one. */
+  function gameCounterKey(boss, target, configured, eng, data, learn, conds) {
     if (configured && data.moves[configured]) return configured;
-    const best = gameBestMove(boss, target, eng, data, learn);
+    const best = gameMnMove(boss, target, eng, data, learn, conds);
     const targetTypes = data.species[target.id]?.types || [];
     const bossTypes = data.species[boss.id]?.types || [];
     const list = (learn.learnAll[boss.id] || [])
@@ -2218,15 +2291,15 @@
       .map(([, key]) => key);
     const offType = list.filter(key => !bossTypes.includes(data.moves[key].type));
     const pick = (offType.length ? offType : list).slice()
-      .sort((a, b) => gameMovePower(b, data.cfg, learn) - gameMovePower(a, data.cfg, learn))[0];
+      .sort((a, b) => gameMovePower(a, data.cfg, learn) - gameMovePower(b, data.cfg, learn))[0];
     return pick || best?.key || null;
   }
 
   /** The game's Oa: the boss's expected riposte per round against one mon. */
-  function gameRiposte(boss, target, zone, eng, data, learn) {
+  function gameRiposte(boss, target, zone, eng, data, learn, conds) {
     const cfg = data.cfg, lz = cfg.LEGEND_ZONE || {}, team = cfg.TEAM_SIZE ?? 6;
-    const counter = gameCounterKey(boss, target, zone.counter, eng, data, learn);
-    const best = gameBestMove(boss, target, eng, data, learn);
+    const counter = gameCounterKey(boss, target, zone.counter, eng, data, learn, conds);
+    const best = gameMnMove(boss, target, eng, data, learn, conds);
     const burst = zone.burst || best?.key || null;
     return gameEa(boss, target, eng, data, learn) / team
       + (lz.COUNTER ?? .3) * (counter ? gameEaFixed(boss, target, counter, eng, data, learn) : 0)
@@ -2253,7 +2326,7 @@
     ? 75 : (data.moves[key]?.power ? 30 : 75);
 
   /** The game's $n: the DoT and paralysis credit one mon brings, scaled by the boss's rounds survived. */
-  function gameStatusParts(att, boss, eng, data, learn) {
+  function gameStatusParts(att, boss, eng, data, learn, conds) {
     const cfg = data.cfg;
     if (!cfg.BOSS_STATUS) return { dot: 0, para: 0 };
     if (!canStatus(boss.mon, 'poison') && !canStatus(boss.mon, 'burn')) return { dot: 0, para: 0 };
@@ -2263,7 +2336,7 @@
     const sm = gameStatusMove(att, boss.mon, data, learn);
     const chance = sm ? (cfg.STATUS_MOVE_CHANCE ?? .3) : 0;
     if (sm && sm.status in ra) ra[sm.status] += chance * sm.chance / 100;
-    const atk = gameBestMove(att, boss.mon, eng, data, learn);
+    const atk = gameMnMove(att, boss.mon, eng, data, learn, conds);
     const info = atk ? data.statusMoves?.[atk.key] : null;
     if (info && info[0] in ra && canStatus(boss.mon, info[0]))
       ra[info[0]] += (1 - chance) * (atk.acc / 100) * Math.min(info[1], gameStatusCap(atk.key, data)) / 100;
@@ -2288,10 +2361,10 @@
   }
 
   /** One pool mon's counterParts against the boss (the game's wt). */
-  function gamePart(cand, boss, eng, data, learn) {
+  function gamePart(cand, boss, eng, data, learn, conds) {
     const ea = gameEa(cand.proj, boss.mon, eng, data, learn);
-    const na = cand.hp / Math.max(1, gameRiposte(boss.mon, cand.proj, boss.zone, eng, data, learn));
-    const st = gameStatusParts(cand.proj, boss, eng, data, learn);
+    const na = cand.hp / Math.max(1, gameRiposte(boss.mon, cand.proj, boss.zone, eng, data, learn, conds));
+    const st = gameStatusParts(cand.proj, boss, eng, data, learn, conds);
     return {
       uid: cand.mon.uid, id: cand.species.id,
       legend: !!(cand.species.legendary || cand.species.mythical),
@@ -2354,20 +2427,42 @@
     return { mon, hp, hurt, zone, tier };
   }
 
-  /** The game's pool: all mons, the zone rule, no sort (elite zeroes it), one per species, each at min(level, MAX_LEVEL). */
-  function gameLegendPool(save, data, eng, learn, zone) {
-    const cfg = data.cfg, seen = new Set(), pool = [];
-    for (const c of projectCandidates(eng, data, save, cfg.MAX_LEVEL, { anyRegion: true, branches: false })) {
-      if (!gameCanJoinZone(save, c.mon, zone.region, data)) continue;
-      const id = c.species.id;
-      if (seen.has(id)) continue;
-      seen.add(id);
-      const rank = Math.min(cfg.UNDERGROUND?.RANK_MAX ?? 5, Math.max(0, Math.floor(+c.mon.rank || 0)));
+  /** The game's pool: all mons in r.mons (stash included), the zone rule, no sort, one per species family. */
+  function gameLegendPool(save, data, eng, zone) {
+    const cfg = data.cfg, pool = [], seen = new Set();
+    const away = awayUids(save);
+    // the game's allMons is r.mons and keeps the link stash team, which the picker grid also shows
+    for (const uid of save.link?.stash?.team || []) away.delete(uid);
+    const singles = data.formSingles || {}, singleBases = singles.bases || {}, singleOf = singles.of || {};
+    // the game's Gn: a single:!0 family collapses to its base id, everything else keeps "sp:"+id
+    const speciesKey = id => {
+      const base = singleOf[id] ?? id;
+      return singleBases[base] ? base : 'sp:' + id;
+    };
+    for (const m of save.mons || []) {
+      if (away.has(m.uid)) continue;
+      const sp = data.species[m.id];
+      if (!sp) continue;
+      if (!gameCanJoinZone(save, m, zone.region, data)) continue;
+      const key = speciesKey(sp.id);
+      if (seen.has(key)) continue;
+      seen.add(key);
+      const rank = Math.min(cfg.UNDERGROUND?.RANK_MAX ?? 5, Math.max(0, Math.floor(+m.rank || 0)));
+      const mult = (typeof m.statMult === 'number' ? m.statMult : 1) * Math.pow(cfg.RANK_STAT ?? 1, rank);
       const proj = {
-        ...c.base, status: null, level: Math.min(c.mon.level, cfg.MAX_LEVEL),
-        statMult: (c.mon.statMult || 1) * Math.pow(cfg.RANK_STAT ?? 1, rank), hpMult: c.mon.hpMult,
+        id: sp.id, shiny: m.shiny, status: null, types: sp.types, level: Math.min(+m.level || 1, cfg.MAX_LEVEL),
+        statMult: {
+          hp: mult,
+          atk: mult * gameTasteMult(cfg, m.taste, 'atk'), def: mult * gameTasteMult(cfg, m.taste, 'def'),
+          spa: mult * gameTasteMult(cfg, m.taste, 'spa'), spd: mult * gameTasteMult(cfg, m.taste, 'spd'),
+          spe: mult * gameTasteMult(cfg, m.taste, 'spe'),
+        },
+        hpMult: m.hpMult,
       };
-      pool.push({ ...c, proj, hp: eng.maxHp(proj) });
+      pool.push({
+        mon: m, base: { id: sp.id, shiny: m.shiny, status: m.status, types: sp.types },
+        proj, species: sp, hp: eng.maxHp(proj),
+      });
     }
     return pool;
   }
@@ -2378,11 +2473,17 @@
     if (!data || !eng || !learn || !ctx?.zone || !(ctx.tier > 0)) return [];
     const boss = gameLegendBoss(ctx.zone, ctx.tier, eng, data);
     if (!boss) return [];
-    const pool = gameLegendPool(save, data, eng, learn, ctx.zone);
+    const pool = gameLegendPool(save, data, eng, ctx.zone);
     if (!pool.length) return [];
+    const at = Date.now();
+    const conds = {
+      night: gameNight(data, save, at),
+      weather: gameNodeWeather(data, save, at),
+      weatherDamage: save?.adv?.nodes?.[save.adv.node]?.weatherDamage || null,
+    };
     const cache = new Map();
     const partOf = c => {
-      if (!cache.has(c)) cache.set(c, gamePart(c, boss, eng, data, learn));
+      if (!cache.has(c)) cache.set(c, gamePart(c, boss, eng, data, learn, conds));
       return cache.get(c);
     };
     const picked = gameTeamApartLoop(pool.map(partOf), data.cfg.TEAM_SIZE ?? 6, data.cfg.ELITE?.LEGENDS ?? 1, data.cfg);
@@ -4217,6 +4318,7 @@
     if (!slots.length) return 0;
     const input = document.querySelector('#evt-search');
     let done = 0;
+    // a drag cannot remove a slot: a shorter team leaves the old trailing mons where the game's own write would clear them
     for (let i = 0; i < Math.min(team.length, slots.length); i++) {
       const uid = team[i].mon.uid;
       const slot = $$('#evt-team .slot')[i];
@@ -5282,7 +5384,7 @@
         for (let waited = 0; !url && waited < 30000; waited += 250) { await sleep(250); url = bundleUrl(); }
       }
       if (!url) { state.errors = ['game bundle not loaded yet']; log('warn', 'data: the game bundle is not on the page yet'); return; }
-      const cacheKey = 'bundle:v15:' + url;
+      const cacheKey = 'bundle:v16:' + url;
       let data = store.get(cacheKey, null);
       if (data && !dataLooksValid(data)) {
         log('warn', 'data: the cached tables are invalid, parsing the bundle again');
@@ -5760,7 +5862,7 @@
       const vsp = data.species[25];
       const vproj = { id: 25, shiny: false, status: null, level: cap, types: vsp.types, statMult: 1 };
       const vcand = { mon: { uid: 'v-25', id: 25, level: cap }, base: vproj, proj: vproj, species: vsp, hp: eng.maxHp(vproj) };
-      const vpart = gamePart(vcand, vboss, eng, data, state.learnAll);
+      const vpart = gamePart(vcand, vboss, eng, data, state.learnAll, { night: false, weather: null });
       const vEa = (att, def, fixed) => {
         const keys = fixed ? [fixed] : (state.learnAll.learnAll[att.id] || [])
           .filter(([lv, key]) => lv <= att.level && !gcfg.MOVE_BLACKLIST.includes(key) && gameMovePower(key, gcfg, state.learnAll) > 0)
@@ -5785,6 +5887,69 @@
       const vwant = vEa(vproj, vboss.mon) * vcand.hp / Math.max(1, voa);
       check('game part value is Ea x maxHp / Oa', Math.abs(vpart.value - vwant) <= 1e-9 * Math.max(1, Math.abs(vwant)),
         { got: vpart.value, want: vwant });
+
+      // the counter fallback takes the WEAKEST qualifying move (Gs sorts ascending)
+      const cfMoves = {
+        'best-a': { type: 'normal', cat: 'spec', power: 150, acc: 100 },
+        'strong-a': { type: 'normal', cat: 'spec', power: 120, acc: 100 },
+        'weak-a': { type: 'normal', cat: 'spec', power: 50, acc: 100 },
+      };
+      const cfData = {
+        cfg: { ...gcfg, MOVE_BLACKLIST: [], SIGNATURE_POWER: {}, WEATHER: null, NIGHT_DAMAGE: null },
+        species: { 1: { id: 1, types: ['normal'] }, 2: { id: 2, types: ['normal'] } },
+        moves: cfMoves, statusMoves: {},
+        learnAll: {
+          learnAll: { 1: [[1, 'best-a'], [1, 'strong-a'], [1, 'weak-a']] },
+          movePower: key => cfMoves[key]?.power || 0, moveAcc: () => 100,
+        },
+      };
+      const cfEng = { moveDamage: (a, d, mv) => mv.power, statsOf: () => ({}) };
+      const cfKey = gameCounterKey(
+        { id: 1, level: cap, types: ['normal'] }, { id: 2, level: cap, types: ['normal'] },
+        null, cfEng, cfData, cfData.learnAll, { night: false, weather: null });
+      check('game counter fallback takes the weakest qualifying move', cfKey === 'weak-a', cfKey);
+
+      // taste: the parsed curve, hp excluded and the hated stat discounted
+      const tcfg = gcfg.TASTES;
+      const taste = { h: 'atk', up: { spa: tcfg?.MAX ?? 25 } };
+      check('taste multiplier follows TASTES',
+        !!tcfg
+        && Math.abs(gameTasteMult(gcfg, taste, 'spa') - (1 + (tcfg.CAP ?? .2))) < 1e-9
+        && Math.abs(gameTasteMult(gcfg, taste, 'atk') - (1 - (tcfg.DIS0 ?? .2))) < 1e-9
+        && gameTasteMult(gcfg, taste, 'hp') === 1,
+        { spa: gameTasteMult(gcfg, taste, 'spa'), atk: gameTasteMult(gcfg, taste, 'atk') });
+
+      // the engine's statMult object scales one stat at a time (the taste bridge)
+      const tproj = { id: 25, level: cap, types: data.species[25].types, statMult: { atk: 2, def: .5 } };
+      const tbase = eng.statsOf({ ...tproj, statMult: 1 }), tstat = eng.statsOf(tproj);
+      check('engine statMult object scales one stat at a time',
+        tstat.atk === tbase.atk * 2 && tstat.def === Math.floor(tbase.def / 2) && tstat.hp === tbase.hp,
+        { atk: tstat.atk, base: tbase.atk, def: tstat.def });
+
+      // mn's own argmax folds the node weather and the night bonus (not Ea's)
+      const mnMoves = {
+        'normal-a': { type: 'normal', cat: 'spec', power: 100, acc: 100 },
+        'ghost-a': { type: 'ghost', cat: 'spec', power: 100, acc: 100 },
+      };
+      const mnData = {
+        cfg: {
+          ...gcfg, MOVE_BLACKLIST: [], SIGNATURE_POWER: {},
+          NIGHT_DAMAGE: { ghost: 1.1, dark: 1.1 }, WEATHER: { TYPES: { fog: { damage: { ghost: 1.1 } } } },
+        },
+        species: { 1: { id: 1, types: ['normal'] }, 2: { id: 2, types: ['normal'] } },
+        moves: mnMoves, statusMoves: {},
+        learnAll: {
+          learnAll: { 1: [[1, 'normal-a'], [1, 'ghost-a']] },
+          movePower: key => mnMoves[key]?.power || 0, moveAcc: () => 100,
+        },
+      };
+      const mnAtt = { id: 1, level: cap, types: ['normal'] }, mnDef = { id: 2, level: cap, types: ['normal'] };
+      const mnDay = gameMnMove(mnAtt, mnDef, cfEng, mnData, mnData.learnAll, { night: false, weather: null });
+      const mnNight = gameMnMove(mnAtt, mnDef, cfEng, mnData, mnData.learnAll, { night: true, weather: null });
+      const mnFog = gameMnMove(mnAtt, mnDef, cfEng, mnData, mnData.learnAll, { night: false, weather: 'fog' });
+      check('mn takes the night/weather factor into its argmax',
+        mnDay?.key === 'normal-a' && mnNight?.key === 'ghost-a' && mnFog?.key === 'ghost-a',
+        { day: mnDay?.key, night: mnNight?.key, fog: mnFog?.key });
 
       // raids: survival-weighted picks, level-100 pool, game size
       if (data.cfg.RAID) {
