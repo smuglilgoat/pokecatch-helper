@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Poke'Catch Team Optimizer
 // @namespace    pokecatch-helper
-// @version      1.12.0
+// @version      1.12.1
 // @description  Reads the current chapter events, then builds an optimal team of 6 from the PC with an offense preset, optimizes legendary, elite, underground and raid teams, and prepares per-segment template teams.
 // @author       GrumpyOwl
 // @match        https://pokecatch-online.netlify.app/*
@@ -27,7 +27,7 @@
    * 0. Small helpers
    * ------------------------------------------------------------------ */
   const SAVE_KEY = 'gachamon-save-v1';
-  const VERSION = '1.12.0';
+  const VERSION = '1.12.1';
   const UPDATE_URL = 'https://raw.githubusercontent.com/smuglilgoat/pokecatch-helper/main/pokecatch-team-optimizer.user.js';
   const $ = (sel, root = document) => root.querySelector(sel);
   const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
@@ -2203,12 +2203,12 @@
     const sp = eliteSpecies(data, zone.id);
     if (!sp?.stats) return null;
     const lv = zone.level || 100;
-    // the game's maxHp at level 100, then the team factor and the zone's hp knob
+    // the game's maxHp at level 100, then the team factor, the zone's hp knob and the tier-I elite HP knob
     const hpStat = Math.floor(2 * sp.stats.hp * lv / 100) + lv + 10;
     const scale = Math.min(data.cfg.HP_LEVEL_MAX ?? 2.5, 1 + (data.cfg.HP_LEVEL_SCALE ?? 1.5) * lv / 100);
     const maxHp = Math.floor(hpStat * scale * (data.cfg.HP_BOOST ?? 1.1));
     const team = 1 + (data.cfg.ENEMY_HP_PER_ALLY ?? .7) * ((data.cfg.TEAM_SIZE ?? 6) - 1);
-    const bossHp = Math.floor(maxHp * team * (zone.hp ?? data.cfg.LEGEND_ZONE?.HP ?? 3));
+    const bossHp = Math.floor(maxHp * team * (zone.hp ?? data.cfg.LEGEND_ZONE?.HP ?? 3) * (data.cfg.ELITE?.HP?.[1] ?? 1));
     // eliteKnobs: ELITE.POWER[tier] is 1.65 at every tier, ELITE_P is clamped .4–2.2
     const eliteP = Math.min(2.2, Math.max(.4, legends?.eliteP?.[zone.id] ?? 1));
     const powK = (zone.power ?? data.cfg.LEGEND_ZONE?.POWER ?? .5) * (data.cfg.ELITE?.POWER?.[1] ?? 1.65) * eliteP;
@@ -5792,7 +5792,7 @@
         for (let waited = 0; !url && waited < 30000; waited += 250) { await sleep(250); url = bundleUrl(); }
       }
       if (!url) { state.errors = ['game bundle not loaded yet']; log('warn', 'data: the game bundle is not on the page yet'); return; }
-      const cacheKey = 'bundle:v16:' + url;
+      const cacheKey = 'bundle:v17:' + url;
       let data = store.get(cacheKey, null);
       if (data && !dataLooksValid(data)) {
         log('warn', 'data: the cached tables are invalid, parsing the bundle again');
@@ -6235,11 +6235,13 @@
           && state.legends.zones.every(z => chartIds.includes(z.id)),
           { rows: chart.length, zones: state.legends.zones.length, roam: state.legends.zones.filter(z => z.roam).length });
         const gateBad = chart.filter((r, i) => [...r.deps.keys()].some(id => at(id) < 0 || at(id) >= i));
-        const head = chart.slice(0, 15).map(r => r.zone.id).join(',');
+        // the verified chronology, every parsed row in order
+        const order = '643,483,249,487,151,245,494,48701,484,646,145,384,644,64602,64601,379,377,488,'
+          + '645,380,641,648,64501,378,381,385,639,64101,642,144,64201,244,486,382,146,251,485,383,647,'
+          + '481,638,491,243,64801,150,649,64901,64904,64903,64902,640,250,480,492,49201,482,386';
         check('elite chart puts every gate row before its dependents',
           !gateBad.length
-          && head === '643,483,249,487,151,245,494,48701,484,646,145,384,644,64602,64601'
-          && chart.slice(-4).map(r => r.zone.id).join(',') === '492,49201,482,386',
+          && chartIds.join(',') === order,
           { gates: gateBad.map(r => r.zone.id).slice(0, 5), first: chartIds.slice(0, 5), last: chartIds.slice(-4) });
         const carryBad = chart.filter((r, i) => {
           const before = new Set(chartIds.slice(0, i));
