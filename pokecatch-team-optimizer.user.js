@@ -256,7 +256,8 @@
     // the dex literal has no forms: the bundle pushes them from its FORMS array at boot
     const forms = table('FORMS', false, () => {
       const out = {};
-      for (const f of evalLit(literalAfter(src, 'a.FORMS=function(){const g='))) out[f.id] = { base: f.base, form: f.form };
+      // keep types/stats too: the elite chart scores form-only legend zones
+      for (const f of evalLit(literalAfter(src, 'a.FORMS=function(){const g='))) out[f.id] = { base: f.base, form: f.form, types: f.types, stats: f.stats };
       return out;
     }) || {};
     // the forms the picker collapses to their base species (Deoxys, Kyurem, ...): FORMS.single
@@ -559,6 +560,19 @@
       return null;
     }
 
+    // the roam zones are a second literal (roam:!0): 8 legend-only fights
+    let roam = [];
+    const rat = src.indexOf('=[{roam:!0');
+    if (rat >= 0) {
+      try {
+        const v = evalSandbox(literalAt(src, rat + 1));
+        if (Array.isArray(v) && v.length && v.every(z => z && z.roam === true && typeof z.id === 'number' && z.region)) {
+          roam = v;
+          zones = zones.concat(roam.map(z => ({ ...z, roam: true })));
+        } else log('warn', 'legends: roam zone literal has an unexpected shape');
+      } catch (e) { log('debug', 'legends: roam zone literal skipped', e.message); }
+    } else log('warn', 'legends: roam zone literal not found, its 8 elites are missing from the chart');
+
     // the per-zone elite power multiplier the game's eliteKnobs applies: { zoneId: number }
     const pname = names?.ELITE_P || (src.match(/ELITE_P:\s*([A-Za-z_$][\w$]*)/) || [])[1];
     let eliteP = {};
@@ -572,7 +586,7 @@
       }
     }
     if (!Object.keys(eliteP).length) log('warn', 'legends: ELITE_P table not found, elite power uses the shared knob only');
-    log('info', 'legends: parsed', { zones: zones.length, eliteP: Object.keys(eliteP).length, via });
+    log('info', 'legends: parsed', { zones: zones.length, roam: roam.length, eliteP: Object.keys(eliteP).length, via });
     return { zones, eliteP };
   }
 
@@ -2163,6 +2177,186 @@
     }
     return { team: best, gain: base > 0 ? bestScore / base - 1 : 0 };
   }
+
+  /* ------------------------------------------------------------------ *
+   * 6c. The elite raid chart: every legend zone as one playable chronology
+   *     (row order from the game's own gates, carry picks from the rows already
+   *     cleared). Both builders are pure so the selftest can drive them.
+   * ------------------------------------------------------------------ */
+  const ELITE_ROMAN = ['', 'I', 'II', 'III', 'IV', 'V'];
+  const capText = s => (s ? String(s)[0].toUpperCase() + String(s).slice(1) : '');
+
+  /** The dex row of a species or of a form the dex literal leaves out (Kyurem-W, Giratina-O…). */
+  function eliteSpecies(data, id) {
+    const sp = data.species?.[id];
+    if (sp) return sp;
+    const f = data.forms?.[id];
+    if (!f) return null;
+    const base = data.species?.[f.base];
+    const stats = f.stats || base?.stats;
+    const types = f.types || base?.types;
+    return stats && types ? { id, name: f.form, types, stats } : null;
+  }
+
+  /** Tier I boss HP, damage knob and the chart's difficulty score for one zone. */
+  function eliteChartRow(data, legends, zone) {
+    const sp = eliteSpecies(data, zone.id);
+    if (!sp?.stats) return null;
+    const lv = zone.level || 100;
+    // the game's maxHp at level 100, then the team factor and the zone's hp knob
+    const hpStat = Math.floor(2 * sp.stats.hp * lv / 100) + lv + 10;
+    const scale = Math.min(data.cfg.HP_LEVEL_MAX ?? 2.5, 1 + (data.cfg.HP_LEVEL_SCALE ?? 1.5) * lv / 100);
+    const maxHp = Math.floor(hpStat * scale * (data.cfg.HP_BOOST ?? 1.1));
+    const team = 1 + (data.cfg.ENEMY_HP_PER_ALLY ?? .7) * ((data.cfg.TEAM_SIZE ?? 6) - 1);
+    const bossHp = Math.floor(maxHp * team * (zone.hp ?? data.cfg.LEGEND_ZONE?.HP ?? 3));
+    // eliteKnobs: ELITE.POWER[tier] is 1.65 at every tier, ELITE_P is clamped .4–2.2
+    const eliteP = Math.min(2.2, Math.max(.4, legends?.eliteP?.[zone.id] ?? 1));
+    const powK = (zone.power ?? data.cfg.LEGEND_ZONE?.POWER ?? .5) * (data.cfg.ELITE?.POWER?.[1] ?? 1.65) * eliteP;
+    return { zone, bossHp, powK, score: bossHp * Math.max(sp.stats.atk, sp.stats.spa) * powK, types: sp.types, spe: sp.stats.spe };
+  }
+
+  /** Every elite condition nested in a zone's cond (kind "elite" only: owns and items do not reorder). */
+  function eliteDeps(zone, byId, forms) {
+    const deps = new Map();
+    const add = (id, tier) => {
+      if (id == null || !byId.has(id)) return;
+      deps.set(id, Math.max(deps.get(id) || 0, tier || 0));
+    };
+    const walk = c => {
+      if (!c) return;
+      if (Array.isArray(c)) return c.forEach(walk);
+      if (c.kind === 'all' || c.kind === 'any') return (c.list || []).forEach(walk);
+      if (c.kind === 'elite') add(c.zone, c.tier || 1);
+    };
+    walk(zone.cond);
+    const base = forms?.[zone.id]?.base;
+    if (base != null) add(base, 0);
+    return deps;
+  }
+
+  /** The gem a zone's elite pays: the boss's first type at rank 3. */
+  function eliteGemOf(zone, data) {
+    const sp = eliteSpecies(data, zone.id);
+    const type = sp?.types?.[0] || 'normal';
+    const E = data.cfg.ELITE || {};
+    const tiers = E.TIERS || [1, 2, 3, 4, 5];
+    const itemAt = t => Object.values(E.ITEMS || {}).some(pair => pair[0] === zone.id && pair[1] === t);
+    const count = tiers.filter(t => !itemAt(t) && E.REWARDS?.[t] === 'gem').length;
+    return { type, key: type + ':3', count };
+  }
+
+  /** A short English reading of the zone's cond, for the row's needs line. */
+  function eliteNeeds(zone, data) {
+    const name = id => pokeName(data, id);
+    const clause = c => {
+      if (!c) return '';
+      if (Array.isArray(c)) return c.map(clause).filter(Boolean).join(' + ');
+      if (c.kind === 'all') return (c.list || []).map(clause).filter(Boolean).join(' + ');
+      if (c.kind === 'any') return (c.list || []).map(clause).filter(Boolean).join(' or ');
+      if (c.kind === 'owns') return (c.ids || []).map(name).join(' + ') + ' caught';
+      if (c.kind === 'league') return 'the ' + capText(c.region) + ' league';
+      if (c.kind === 'dex') return 'the ' + capText(zone.region) + ' dex';
+      if (c.kind === 'item') return displayItem(c.item);
+      if (c.kind === 'elite') return name(c.zone) + ' Elite ' + (ELITE_ROMAN[c.tier] || c.tier);
+      if (c.kind === 'type') return (/^[aeiou]/i.test(c.type) ? 'an ' : 'a ') + c.type + ' type in the dex';
+      if (c.kind === 'types') return (c.types || []).join('/') + ' types in the dex';
+      if (c.kind === 'count') return c.need + ' caught';
+      if (c.kind === 'tally') return c.need + ' ' + (c.field || 'wins');
+      return '';
+    };
+    const text = clause(zone.cond);
+    return text ? 'Needs ' + text : 'Base catch only';
+  }
+
+  /** Type effectiveness from the parsed chart (the engine's clamp, without needing the engine). */
+  function eliteEff(data, type, types) {
+    let m = 1;
+    for (const t of types || []) m *= data.chart?.[type]?.[t] ?? 1;
+    return Math.max(data.cfg.TYPE_EFF_MIN ?? 0, Math.min(data.cfg.TYPE_EFF_MAX ?? 4, m));
+  }
+
+  /** The best legendary carry among the rows already placed.
+   *  T1: a STAB that hits the boss ×2 or more. T2: a plug that resists its STAB.
+   *  Otherwise the regular six, with the types that hit ×2. */
+  function carryFor(pool, boss, data) {
+    const off = p => Math.max(0, ...(p.types || []).map(t => eliteEff(data, t, boss.types)));
+    const back = p => Math.max(0, ...(boss.types || []).map(t => eliteEff(data, t, p.types)));
+    const t1 = [], t2 = [];
+    pool.forEach((p, i) => {
+      const o = off(p), b = back(p);
+      if (o >= 2) t1.push({ p, i, o, b });
+      else if (b <= .5) t2.push({ p, i, o, b });
+    });
+    const first = list => list.sort((a, b) => a.b - b.b || b.o - a.o || b.p.spe - a.p.spe || a.i - b.i)[0];
+    const pick = first(t1) || first(t2);
+    if (pick) {
+      const hit = (pick.p.types || []).reduce((best, t) => eliteEff(data, t, boss.types) > eliteEff(data, best, boss.types) ? t : best, pick.p.types?.[0]);
+      const hits = eliteEff(data, hit, boss.types);
+      const backText = pick.b === 0 ? 'immune' : pick.b < 1 ? 'resists ×' + pick.b + ' back'
+        : pick.b === 1 ? 'neutral back' : 'trades ×' + pick.b + ' back';
+      return t1.length
+        ? { kind: 'T1', mon: pick.p.zone.id, from: pick.p.zone.id, hits, back: pick.b, text: `Field ${pokeName(data, pick.p.zone.id)} r2: its ${hit} hits ×${hits}, ${backText}` }
+        : { kind: 'T2', mon: pick.p.zone.id, from: pick.p.zone.id, hits, back: pick.b, text: `Field ${pokeName(data, pick.p.zone.id)} r2: resists its STAB, regulars deal the damage` };
+    }
+    const types = Object.keys(data.chart || {})
+      .map(t => ({ t, e: eliteEff(data, t, boss.types) }))
+      .filter(x => x.e >= 2)
+      .sort((a, b) => b.e - a.e)
+      .slice(0, 3)
+      .map(x => x.t);
+    return { kind: 'regular', mon: null, types, text: types.length ? `Regular six: lead ${types.join('/')} STAB` : 'Regular six: no type hits ×2, bring bulk' };
+  }
+
+  /** The 50 legend zones as one order: lowest score first, as far as the gates allow.
+   *  Only elite conditions and form bases hold a row back; ownership stays a note. */
+  function eliteChronology(data, legends) {
+    const zones = legends?.zones || [];
+    const byId = new Map(zones.map(z => [z.id, z]));
+    const baseOf = id => data.forms?.[id]?.base ?? null;
+    const family = new Map();
+    for (const z of zones) {
+      const b = baseOf(z.id);
+      if (b != null) family.set(b, (family.get(b) || []).concat(z));
+    }
+    const rows = [];
+    for (const z of zones) {
+      const r = eliteChartRow(data, legends, z);
+      if (!r) continue;
+      const deps = new Map();
+      const addDeps = src => {
+        for (const [id, tier] of eliteDeps(src, byId, data.forms)) deps.set(id, Math.max(deps.get(id) || 0, tier));
+      };
+      addDeps(z);
+      const base = baseOf(z.id);
+      // the two Kyurem forms share the dna-splicers family: neither opens before both Elite I
+      if (base != null) for (const sib of family.get(base) || []) addDeps(sib);
+      rows.push({ ...r, deps, needs: eliteNeeds(z, data), gem: eliteGemOf(z, data) });
+    }
+    const placed = new Set();
+    const ordered = [];
+    while (ordered.length < rows.length) {
+      const ready = rows.filter(r => !placed.has(r.zone.id) && [...r.deps.keys()].every(id => placed.has(id)));
+      if (!ready.length) break;
+      ready.sort((a, b) => a.score - b.score || a.zone.id - b.zone.id);
+      placed.add(ready[0].zone.id);
+      ordered.push(ready[0]);
+    }
+    if (ordered.length < rows.length) {
+      const left = rows.filter(r => !placed.has(r.zone.id)).sort((a, b) => a.score - b.score || a.zone.id - b.zone.id);
+      log('warn', 'elite chart: dependency cycle, appending by score', { ids: left.map(r => r.zone.id) });
+      ordered.push(...left);
+    }
+    ordered.forEach((r, i) => {
+      r.rank = i + 1;
+      r.wave = i < 14 ? 1 : i < 30 ? 2 : i < 43 ? 3 : 4;
+      r.carry = carryFor(ordered.slice(0, i), r, data);
+    });
+    return ordered;
+  }
+
+  /** The five tier chips of one zone: done, next, or still ahead. */
+  const eliteTierChips = t => [1, 2, 3, 4, 5].map(i => i <= t ? 'done' : i === t + 1 ? 'next' : 'todo');
+  const eliteProgressOf = (save, id) => +(save?.elite?.[id]?.t || 0);
 
   /* ------------------------------------------------------------------ *
    * 6d. The game's own Optimize, for the elite zone picker
@@ -4794,6 +4988,47 @@
       .pcopt-title{font-weight:700;font-size:15px;margin:0 0 6px;display:flex;justify-content:space-between;
         align-items:center;gap:8px;flex-wrap:wrap}
       .pcopt-title small{color:var(--muted);font-weight:400;font-size:11px}
+      .pcopt-elite{width:min(860px,100%)}
+      .pcopt-elite .modal-body{padding:0}
+      .pcopt-elite-head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;
+        padding:16px 18px 10px;position:sticky;top:0;z-index:2;background:var(--panel);border-bottom:2px solid var(--line)}
+      .pcopt-elite-head h3{margin:0 0 4px}
+      .pcopt-elite-gems{display:flex;flex-wrap:wrap;gap:6px;padding:10px 18px;border-bottom:2px solid var(--line)}
+      .pcopt-gemchip{display:inline-flex;align-items:center;gap:4px;font-size:12px;padding:3px 7px;
+        border-radius:8px;background:var(--panel-2)}
+      .pcopt-gemchip img{width:16px;height:16px;object-fit:contain}
+      .pcopt-gemchip small{color:var(--muted)}
+      .pcopt-elite-wave{padding:12px 18px 4px;font-weight:700;font-size:13px;color:var(--muted);
+        text-transform:uppercase;letter-spacing:.04em}
+      .pcopt-elite-row{display:grid;grid-template-columns:54px minmax(0,1fr) auto;gap:10px;
+        padding:9px 18px;border-bottom:1px solid var(--line);align-items:start}
+      .pcopt-elite-row.done{opacity:.5}
+      .pcopt-elite-row.next{background:color-mix(in srgb,var(--yellow) 10%,transparent);box-shadow:inset 3px 0 0 var(--yellow)}
+      .pcopt-elite-boss{position:relative;display:flex;justify-content:center}
+      .pcopt-elite-rank{position:absolute;left:-2px;top:-2px;font-size:10px;line-height:14px;padding:0 4px;
+        border-radius:4px;background:var(--panel-2);color:var(--muted)}
+      .pcopt-elite-main{min-width:0}
+      .pcopt-elite-name{font-size:14px;line-height:1.3}
+      .pcopt-elite-name small{color:var(--muted);font-size:11px}
+      .pcopt-elite-roam{margin-left:5px;font-size:10px;font-style:normal;text-transform:uppercase;letter-spacing:.05em;
+        padding:0 4px;border-radius:4px;background:var(--panel-2);color:var(--muted)}
+      .pcopt-elite-meta{display:flex;flex-wrap:wrap;align-items:center;gap:8px;font-size:12px;color:var(--muted);margin-top:2px}
+      .pcopt-elite-gem{width:15px;height:15px;object-fit:contain}
+      .pcopt-elite-bar{height:4px;margin:5px 0;border-radius:2px;background:var(--line);overflow:hidden;max-width:280px}
+      .pcopt-elite-bar i{display:block;height:100%;background:var(--yellow);border-radius:2px}
+      .pcopt-elite-carry{font-size:12px;line-height:1.4}
+      .pcopt-elite-needs{font-size:11px;color:var(--muted);line-height:1.4}
+      .pcopt-elite-chips{display:flex;gap:3px;margin-top:4px}
+      .pcopt-tier{font-size:10px;line-height:16px;min-width:20px;text-align:center;border-radius:4px;
+        background:var(--panel-2);color:var(--muted)}
+      .pcopt-tier.done{background:var(--green);color:#fff}
+      .pcopt-tier.next{box-shadow:0 0 0 2px var(--yellow);color:var(--text)}
+      .pcopt-elite-act{padding-top:2px}
+      .pcopt-elite .modal-actions{padding:10px 18px 16px}
+      @media(max-width:560px){
+        .pcopt-elite-row{grid-template-columns:44px minmax(0,1fr)}
+        .pcopt-elite-act{grid-column:2}
+      }
     `;
     document.head.appendChild(st);
   }
@@ -5007,6 +5242,9 @@
       <div class="map-sum" style="margin:2px 0"><span>cap <b>${state.events?.cap ?? '-'}</b></span><span>${state.eligible || 0} can join${save?.link ? ' · link ' + esc(save.link.to) : ''}</span>${state.roamer ? `<span>roamer <b>${esc(displayName(state.roamer.id))}</b> ${(state.roamer.catch * 100).toFixed(1)}%</span>` : ''}</div>
       <div class="pcopt-mut">data: ${state.data ? Object.keys(state.data.species).length + ' species · ' + (state.legends?.zones.length ?? 0) + ' zones' : 'not loaded'}
         · chart ${esc(state.chartSource || '-')} · bundle ${esc((bundleUrl() || '').split('/').pop() || '-')}</div>
+      <div class="pcopt-row" style="margin-top:6px">
+        <button class="btn small ghost" data-act="elite">Elite raids</button>
+      </div>
       ${state.leagueInfo ? `<div class="pcopt-mut">${esc(state.leagueInfo)}</div>` : ''}
       ${state.waiting ? `<div class="pcopt-mut">${esc(state.waiting)}</div>` : ''}
       ${updateLine()}${errLine()}
@@ -5045,6 +5283,7 @@
       el.querySelectorAll('[data-farm]').forEach(b => b.onclick = () => { state.loopSel = b.dataset.farm; refreshUi(); });
       el.querySelectorAll('[data-farm] img').forEach(img => img.onerror = () => { img.style.display = 'none'; });
       el.querySelectorAll('[data-spawn]').forEach(b => b.onclick = () => { state.pokeSel = b.dataset.spawn; refreshUi(); });
+      el.querySelector('[data-act="elite"]')?.addEventListener('click', () => openEliteModal().catch(e => logError('elite: chart', e)));
       el.querySelector('[data-act="hunt"]').onclick = () => {
         if (state.hunt?.running) { state.hunt.stop('stopped by hand'); return; }
         startRoamerHunt(state.huntSel);
@@ -5059,6 +5298,175 @@
       };
     }, { before: '#map-root' });
     if (el) refreshHuntCards(el, save, now);
+  }
+
+  /* --- Elite raids: a game-modal chart, with a shortcut into each fight ----- */
+  let eliteNavGen = 0, eliteOutside = null, eliteEsc = null;
+
+  /** Remove the chart and leave #modal-root closed when nothing else uses it. */
+  function closeEliteModal() {
+    const root = document.querySelector('#modal-root');
+    root?.querySelector('.modal.pcopt-elite')?.remove();
+    if (root && !root.querySelector('.modal')) root.classList.remove('open');
+    if (root && eliteOutside) root.removeEventListener('click', eliteOutside);
+    if (eliteEsc) document.removeEventListener('keydown', eliteEsc);
+    eliteOutside = eliteEsc = null;
+  }
+
+  /** Close the chart, open the map, select the zone and click its elite fight. */
+  async function openEliteZone(id) {
+    const gen = ++eliteNavGen;
+    const alive = () => gen === eliteNavGen;
+    closeEliteModal();
+    const zone = legendZones().find(z => z.id === id);
+    const name = zone ? pokeName(state.data, id) : '#' + id;
+    if (!zone) {
+      state.waiting = 'elite: ' + name + ' is not in the parsed legend zones';
+      refreshUi();
+      return;
+    }
+    state.waiting = 'elite: opening ' + name + '…';
+    refreshUi();
+    if (!await gotoMapScreen(30, alive)) {
+      if (alive()) { state.waiting = 'elite: the map screen did not open'; refreshUi(); }
+      return;
+    }
+    const regions = ['kanto', 'johto', 'hoenn', 'sinnoh', 'unova'];
+    const order = [zone.region, ...regions.filter(r => r !== zone.region)];
+    for (let i = 0; i < 10 && alive(); i++) {
+      // only the detail panel's tier button starts an elite fight; a plain data-zone button is the base catch
+      let go = document.querySelector(`.mp-go[data-zone="${id}"][data-tier]`);
+      if (!go) {
+        let row = document.querySelector(`.mp-row[data-ch="Z${id}"]`);
+        if (!row) {
+          // the map lists one region at a time; its row only exists once that region is open
+          const key = order[Math.floor(i / 2) % order.length];
+          const rg = document.querySelector(`.rg.open[data-rg="${key}"]`);
+          if (rg) { rg.click(); await sleep(450); }
+          row = document.querySelector(`.mp-row[data-ch="Z${id}"]`);
+        }
+        if (row) { row.click(); await sleep(450); }
+        // the detail can open on the teams tab, where the fight button is disabled
+        const tab = document.querySelector('.mp-det [data-lz-view="zone"]');
+        if (tab && !tab.classList.contains('on')) { tab.click(); await sleep(200); }
+        go = document.querySelector(`.mp-go[data-zone="${id}"][data-tier]`);
+      }
+      if (go) {
+        if (go.disabled) {
+          const t = eliteProgressOf(readSave(), id);
+          state.waiting = 'elite: ' + name + ' has no fight open' + (t >= 5
+            ? ' (all five tiers cleared)'
+            : ' (the next tier is not fightable yet, or the underground is locked)');
+          refreshUi();
+          log('warn', 'elite: fight button disabled', { id, tier: go.dataset.tier, t });
+          return;
+        }
+        log('info', 'elite: opening the fight', { id, name, tier: +go.dataset.tier || 0 });
+        go.click();
+        state.waiting = null;
+        refreshUi();
+        return;
+      }
+      await sleep(400);
+    }
+    if (alive()) {
+      state.waiting = 'elite: no fight button for ' + name + ' (zone not caught, or the underground is locked)';
+      refreshUi();
+      log('warn', 'elite: no fight button', { id });
+    }
+  }
+
+  /** The chart, on demand: every legend elite with its gate, carry and progress. */
+  async function openEliteModal() {
+    ensureStyle();
+    if (!state.data || !state.legends) {
+      try { await ensureData(); } catch (e) { logError('elite: data', e); }
+    }
+    if (!state.data || !state.legends) { state.waiting = 'elite: game data not loaded'; refreshUi(); return; }
+    const root = document.querySelector('#modal-root');
+    if (!root) { state.waiting = 'elite: the game modal root is missing'; refreshUi(); return; }
+    closeEliteModal();
+    // another game modal may be open: its own close button empties the root
+    document.querySelector('#modal-root .dc-x')?.click();
+    const rows = eliteChronology(state.data, state.legends);
+    const save = readSave() || {};
+    const held = save.under?.gems || {};
+    const maxScore = Math.max(1, ...rows.map(r => r.score));
+    const families = new Map();
+    for (const r of rows) {
+      const f = families.get(r.gem.type) || { type: r.gem.type, zones: 0, gems: 0 };
+      f.zones++;
+      f.gems += r.gem.count;
+      families.set(r.gem.type, f);
+    }
+    const familiesHtml = [...families.values()]
+      .sort((a, b) => b.zones - a.zones || a.type.localeCompare(b.type))
+      .map(f => {
+        const have = +(held[f.type + ':3'] || 0);
+        return `<span class="pcopt-gemchip" title="${f.zones} zones · ${f.gems} legendary gems · ${have} held at rank 3"><img src="assets/items/gem-${f.type}.png" alt=""><b>${esc(capText(f.type))}</b> ${f.zones}${have ? `<small>held ×${have}</small>` : ''}</span>`;
+      }).join('');
+    let nextFound = false;
+    const rowHtml = r => {
+      const t = eliteProgressOf(save, r.zone.id);
+      const done = t >= 5;
+      const depsDone = [...r.deps].every(([id, tier]) => tier ? eliteProgressOf(save, id) >= tier : !!save.dex?.[id]);
+      const next = !done && !nextFound && depsDone;
+      if (next) nextFound = true;
+      const chips = eliteTierChips(t)
+        .map((stateName, i) => `<span class="pcopt-tier${stateName === 'todo' ? '' : ' ' + stateName}" title="Elite ${ELITE_ROMAN[i + 1]}">E${i + 1}</span>`)
+        .join('');
+      const bar = Math.max(2, Math.min(100, Math.round(Math.sqrt(r.score / maxScore) * 100)));
+      const gemText = r.gem.count
+        ? `${esc(capText(r.gem.type))} gem${r.gem.count === 1 ? '' : 's'} ×${r.gem.count}`
+        : 'items, not gems';
+      return `<div class="pcopt-elite-row${done ? ' done' : ''}${next ? ' next' : ''}" data-elite-row="${r.zone.id}">
+        <div class="pcopt-elite-boss">${sprOf(r.zone.id, 44)}<span class="pcopt-elite-rank">${r.rank}</span></div>
+        <div class="pcopt-elite-main">
+          <div class="pcopt-elite-name"><b>${esc(pokeName(state.data, r.zone.id))}</b>${r.zone.roam ? '<em class="pcopt-elite-roam">roam</em>' : ''}</div>
+          <div class="pcopt-elite-meta"><img class="pcopt-elite-gem" src="assets/items/gem-${r.gem.type}.png" alt=""><span>${gemText}</span><span>${Math.round(r.bossHp).toLocaleString('en-US')} HP</span><span>damage ×${r.powK.toFixed(2)}</span></div>
+          <div class="pcopt-elite-bar" title="difficulty score ${r.score.toFixed(2)}"><i style="width:${bar}%"></i></div>
+          <div class="pcopt-elite-carry">${esc(r.carry.text)}</div>
+          <div class="pcopt-elite-needs">${esc(r.needs)}</div>
+          <div class="pcopt-elite-chips">${chips}</div>
+        </div>
+        <div class="pcopt-elite-act"><button class="btn small ghost" data-elite-go="${r.zone.id}"${done ? ' disabled title="Elite V already cleared"' : ''}>Go</button></div>
+      </div>`;
+    };
+    let body = '';
+    for (let w = 1; w <= 4; w++) {
+      const wave = rows.filter(r => r.wave === w);
+      if (!wave.length) continue;
+      body += `<div class="pcopt-elite-wave">Wave ${w} <span class="pcopt-mut">rows ${wave[0].rank}-${wave[wave.length - 1].rank}</span></div>`
+        + wave.map(rowHtml).join('');
+    }
+    const cleared = rows.filter(r => eliteProgressOf(save, r.zone.id) >= 5).length;
+    const modal = document.createElement('div');
+    modal.className = 'modal pcopt-elite';
+    modal.innerHTML = `<div class="modal-body">
+      <div class="pcopt-elite-head">
+        <div><h3>Elite raids</h3>
+          <div class="pcopt-mut">Catch the base first, then clear Elite I to V. Gems pay at I, II and IV. Boss damage rises ×1.15 per tier. One legendary per team.</div></div>
+        <button class="dc-x" data-elite-close title="Close" aria-label="Close"><i class="dc-x-ic"></i></button>
+      </div>
+      <div class="pcopt-elite-gems">${familiesHtml}</div>
+      <div class="pcopt-mut" style="padding:8px 18px 0">${rows.length} raids · ${cleared} fully cleared · cheapest first, as far as the gates allow</div>
+      ${body}
+    </div>
+    <div class="modal-actions"><button class="btn small ghost" data-elite-close>Close</button></div>`;
+    root.classList.add('open');
+    root.appendChild(modal);
+    modal.querySelectorAll('[data-elite-close]').forEach(b => b.onclick = closeEliteModal);
+    modal.querySelectorAll('[data-elite-go]').forEach(b => b.onclick = () => {
+      if (b.disabled) return;
+      b.disabled = true;
+      openEliteZone(+b.dataset.eliteGo).catch(e => logError('elite: shortcut', e));
+    });
+    modal.querySelectorAll('img').forEach(img => img.onerror = () => { img.style.visibility = 'hidden'; });
+    eliteOutside = e => { if (e.target === root) closeEliteModal(); };
+    root.addEventListener('click', eliteOutside);
+    eliteEsc = e => { if (e.key === 'Escape') closeEliteModal(); };
+    document.addEventListener('keydown', eliteEsc);
+    log('info', 'elite chart: open', { rows: rows.length, cleared });
   }
 
   /** The Adventure screen: the game's own team-template bar, between the route timeline and the arena.
@@ -5817,6 +6225,37 @@
         }
       }
 
+      // the elite chart: every parsed zone once, gates first, legal carries, progress chips
+      if (state.legends?.zones?.length) {
+        const chart = eliteChronology(data, state.legends);
+        const chartIds = chart.map(r => r.zone.id);
+        const at = id => chartIds.indexOf(id);
+        check('elite chart covers every parsed legend zone',
+          chart.length === state.legends.zones.length && new Set(chartIds).size === chart.length
+          && state.legends.zones.every(z => chartIds.includes(z.id)),
+          { rows: chart.length, zones: state.legends.zones.length, roam: state.legends.zones.filter(z => z.roam).length });
+        const gateBad = chart.filter((r, i) => [...r.deps.keys()].some(id => at(id) < 0 || at(id) >= i));
+        const head = chart.slice(0, 15).map(r => r.zone.id).join(',');
+        check('elite chart puts every gate row before its dependents',
+          !gateBad.length
+          && head === '643,483,249,487,151,245,494,48701,484,646,145,384,644,64602,64601'
+          && chart.slice(-4).map(r => r.zone.id).join(',') === '492,49201,482,386',
+          { gates: gateBad.map(r => r.zone.id).slice(0, 5), first: chartIds.slice(0, 5), last: chartIds.slice(-4) });
+        const carryBad = chart.filter((r, i) => {
+          const before = new Set(chartIds.slice(0, i));
+          if (r.carry.kind === 'T1') return !before.has(r.carry.mon) || !(r.carry.hits >= 2);
+          if (r.carry.kind === 'T2') return !before.has(r.carry.mon) || !(r.carry.back <= .5);
+          return !(r.carry.types || []).length;
+        });
+        check('elite chart carries follow the STAB / plug / regular rule', !carryBad.length,
+          carryBad.map(r => [r.zone.id, r.carry.kind]).slice(0, 5));
+        const synth = { elite: { [chartIds[0]]: { t: 2 } } };
+        const synthT = eliteProgressOf(synth, chartIds[0]);
+        check('elite progress chips follow save.elite',
+          synthT === 2 && eliteTierChips(synthT).join(',') === 'done,done,next,todo,todo',
+          { t: synthT, chips: eliteTierChips(synthT) });
+      } else check('elite chart covers every parsed legend zone', false, 'legend zones not parsed');
+
       // the game's own elite Optimize: its greedy, teamApart passes and value formula
       const gcfg = data.cfg;
       const gparts = [
@@ -6289,6 +6728,7 @@
     applyTeam, bundleUrl, httpGet, canJoinTeam, showMovesPanel, pokeApiSpecies, compareWithPokeApi,
     parseLegends, legendBoss, simulateLegend, pickLegendTeam, evaluateLegendTeam, runLegendOptimizer,
     legendFightOnce, legendOdds, legendParts, legendTeamScore, legendCandidates, refineLegendTeam, logs,
+    eliteChronology, carryFor, eliteTierChips, openEliteModal, openEliteZone,
     projectCandidates, evolvedBranches, refreshChapter,
     chapterPlan, segmentPlans, prepareSegments, switchSegment, freeTemplates, switchTemplate, simulateChapter, searchChapterTeam, rollBattleFoes, simBattle, simAct, simOhko, simGeneric, autoScore, ensureEnglish,
     raidDps, raidBoss, raidPicks, raidRankScore, annotateRaidSuggestions, huntDecision, huntPlacement, roamList, huntPacing,
