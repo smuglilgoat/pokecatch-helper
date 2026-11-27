@@ -1861,21 +1861,24 @@
 
   /* --- candy leveling: the game's candy values, cap cost and plan -------- */
   /** The region candy XP is scaled to (the game's `no()`: the region link's
-   *  source, else the highest unlocked chapter whose region is open). */
+   *  source, else the highest unlocked chapter whose region is open). Regions
+   *  open through travel; the bundle's own `open` flag only marks Kanto. */
   function currentRegion(data, save) {
     if (save?.link?.side === 'from') {
       const from = data.regions.find(r => r.key === save.link.from);
       if (from) return from;
     }
+    const open = new Set(['kanto', ...(save?.adv?.travel?.to || []), save?.link?.to].filter(Boolean));
     let u = Math.min(save?.adv?.unlocked ?? 0, data.chapters.length - 1);
-    while (u > 0 && !regionOf(data, u)?.open) u--;
+    while (u > 0 && !open.has(regionOf(data, u)?.key)) u--;
     return regionOf(data, u) || data.regions[0];
   }
 
-  /** A species' region from the regions' dex ranges (the game's `$e`). */
-  function speciesRegion(data, id) {
-    const base = id > 10000 ? Math.floor(id / 100) : id;
-    return (data.regions || []).find(r => r.dex && base >= r.dex[0] && base <= r.dex[1])?.key || null;
+  /** A mon's stamped region (the game's `G(mon.reg)`): kanto2 is Johto, an
+   *  unknown or missing region is Kanto. */
+  function monRegion(data, mon) {
+    const key = mon?.reg === 'kanto2' ? 'johto' : mon?.reg;
+    return (data.regions || []).some(r => r.key === key) ? key : 'kanto';
   }
 
   const regionXpOf = (data, region) => data.cfg.REGION_XP?.[region?.key] ?? region?.xp ?? 1;
@@ -1892,18 +1895,18 @@
     return den ? Math.round((c.xp || 0) * (data.cfg.EXP_CANDY_MULT ?? 1) * at(ace(now, c.badges || 0), now) / den) : 0;
   }
 
-  /** XP the next level costs (the game's `Fe`): the rank factor is inside the floor. */
-  function candyNeedFor(data, mon) {
+  /** XP the next level costs (the game's `Fe`): the current region, the rank
+   *  factor inside the floor. */
+  function candyNeedFor(data, save, mon) {
     const cfg = data.cfg;
     const rank = Math.min(cfg.UNDERGROUND?.RANK_MAX ?? Infinity, Math.max(0, Math.floor(+(mon.rank || 0))));
-    const reg = speciesRegion(data, mon.id) || mon.reg || 'kanto';
+    const region = currentRegion(data, save);
     return Math.floor(xpBe(mon.level) * xpGrowth(mon.level) * (cfg.XP_SCALE ?? 3)
-      * (cfg.REGION_XP?.[reg] ?? 1) * Math.pow(cfg.UNDERGROUND?.RANK_XP ?? 1, rank));
+      * regionXpOf(data, region) * Math.pow(cfg.UNDERGROUND?.RANK_XP ?? 1, rank));
   }
 
   /** The cap of one region while a region link is on (the game's `regionCap`). */
   function regionCap(data, adv, regionKey) {
-    if (!regionKey) return levelCap(data, { adv });
     const max = data.cfg.MAX_LEVEL;
     const next = nextGymOf(data, regionKey, adv);
     if (next != null) return Math.min(max, capOf(data, next));
@@ -1914,15 +1917,23 @@
 
   function monEffectiveCap(data, save, mon) {
     if (!save?.link) return levelCap(data, save);
-    const key = speciesRegion(data, mon.id);
-    return key ? regionCap(data, save.adv, key) : levelCap(data, save);
+    return regionCap(data, save.adv, monRegion(data, mon));
   }
 
+  const gcdOf = (a, b) => (b ? gcdOf(b, a % b) : Math.abs(a));
+  const CANDY_INF = 0x3fffffff;
+  // the shipped candy values are all multiples of the smallest one (Kanto 600,
+  // ×1.25 / ×1.35 elsewhere), so the subset-sum has ~1M states at worst
+  const CANDY_DP_MAX = 3000000;
+
   /**
-   * Cheapest candy order for one mon: every candy whose fixed XP still fits under
-   * the cap first (big to small, no waste), rare candies one level at a time,
-   * then one smallest exp candy to cross. `trace` holds the level and xp after
-   * each candy: the runner checks the save against it, step by step.
+   * Cheapest candy order for one mon. Level-ups carry XP and the cap drops the
+   * overshoot, so the XP from (level, xp) to the cap is one fixed total
+   * D = Σ need(L) − xp whichever candy grants it: the exp candies are a bounded
+   * subset-sum over the bag, and a rare candy is an exact one-level finisher.
+   * Waste 0 first (rare candies finish the tail), then the smallest total ≥ D,
+   * then the fewest candies. `trace` holds the level and xp after each candy:
+   * the runner checks the save against it, step by step.
    */
   function planCandies(data, save, mon) {
     const cfg = data.cfg;
@@ -1933,8 +1944,7 @@
       steps: [], trace: [], evolutions: [], inventory: {},
     };
     const st = { id: mon.id, level: mon.level, xp: Math.round(mon.xp || 0) };
-    const proj = { ...mon, id: st.id };
-    const need = level => candyNeedFor(data, { ...proj, level });
+    const need = level => candyNeedFor(data, save, { ...mon, level });
     const evolve = () => {
       // the game's pe: level evolutions behind the daytime and party gates
       const team = (save.team || []).map(u => monByUid(save, u)).filter(Boolean).concat([{ id: st.id, level: st.level }]);
@@ -1955,53 +1965,133 @@
       }
       if (st.level >= cap) st.xp = 0;
     };
-    const remainingTo = () => {
-      let r = -st.xp;
-      for (let L = st.level; L < cap; L++) r += need(L);
-      return r;
-    };
     // the game applies a pending level as soon as it has the XP: start from there
     let guard = 0;
     while (st.level < cap && st.xp >= need(st.level) && guard++ < 500) { st.xp -= need(st.level); st.level++; evolve(); }
     if (st.level >= cap) { st.xp = 0; out.to = { level: st.level, xp: 0 }; return out; }
     out.capped = false;
 
-    const counts = {};
-    for (const id of [...Object.keys(cfg.EXP_CANDIES || {}), 'rare-candy'])
-      counts[id] = Math.max(0, Math.floor(+(save.items?.[id] || 0)));
-    out.inventory = { ...counts };
-    const apply = (id, amount) => {
-      counts[id]--;
-      const step = out.steps.find(s => s.id === id);
-      if (step) step.count++; else out.steps.push({ id, count: 1 });
-      gain(amount);
-      out.trace.push({ id, level: st.level, xp: st.xp });
-    };
+    const M = cap - st.level;
+    const needs = [];
+    let D = -st.xp;
+    for (let L = st.level; L < cap; L++) { const n = need(L); needs.push(n); D += n; }
+    // P[r]: XP still needed to stand at level cap-r; P[0] = D, P[M] = -xp
+    const P = [D];
+    for (let r = 1; r <= M; r++) P.push(P[r - 1] - needs[M - r]);
 
-    const types = Object.keys(cfg.EXP_CANDIES || {})
-      .map(id => ({ id, xp: candyXpFor(data, save, id) }))
+    const counts = {};
+    for (const id of Object.keys(cfg.EXP_CANDIES || {}))
+      counts[id] = Math.max(0, Math.floor(+(save.items?.[id] || 0)));
+    const rareCount = Math.max(0, Math.floor(+(save.items?.['rare-candy'] || 0)));
+    out.inventory = { ...counts, 'rare-candy': rareCount };
+    const types = Object.keys(counts)
+      .filter(id => counts[id] > 0)
+      .map(id => ({ id, xp: candyXpFor(data, save, id), n: counts[id] }))
       .filter(t => t.xp > 0)
       .sort((a, b) => b.xp - a.xp);
-    let remaining = remainingTo();
+
+    let use = {}, rareUse = 0, waste = 0, missing = 0, reachable = false;
+    const totalXp = types.reduce((sum, t) => sum + t.xp * t.n, 0);
+    let g = 0;
+    for (const t of types) g = g ? gcdOf(g, t.xp) : t.xp;
+    if (!g) g = 1;
+    const maxV = types.length ? types[0].xp : 0;
+    const K0 = Math.ceil(D / g), Kmax = K0 + Math.ceil(maxV / g) + 1;
+
+    if (types.length && Kmax <= CANDY_DP_MAX) {
+      // bounded subset-sum: dp[k] = fewest exp candies for k units of g XP
+      const dp = new Int32Array(Kmax + 1).fill(CANDY_INF);
+      const parent = new Uint8Array(Kmax + 1).fill(255);
+      dp[0] = 0;
+      const items = [];
+      for (const t of types) {
+        const unit = t.xp / g;
+        let p = 1, left = t.n;
+        while (left > 0) {
+          const take = Math.min(p, left);
+          items.push({ id: t.id, take, unit: unit * take });
+          left -= take;
+          p *= 2;
+        }
+      }
+      items.forEach((it, idx) => {
+        for (let k = Kmax; k >= it.unit; k--) {
+          const v = dp[k - it.unit];
+          if (v + it.take < dp[k]) { dp[k] = v + it.take; parent[k] = idx; }
+        }
+      });
+      const multiset = k => {
+        const used = {};
+        for (let cur = k; cur > 0 && parent[cur] !== 255;) {
+          const it = items[parent[cur]];
+          used[it.id] = (used[it.id] || 0) + it.take;
+          cur -= it.unit;
+        }
+        return used;
+      };
+      // zero waste: exp XP T in [P[rareCount], D], the rare candies finish the rest
+      const rMax = Math.min(rareCount, M);
+      const Khi = Math.floor(D / g);
+      let best = null, r = rMax;
+      for (let k = Math.max(0, Math.ceil(P[rMax] / g)); k <= Math.min(Khi, Kmax); k++) {
+        const T = k * g;
+        while (r > 0 && P[r - 1] <= T) r--;
+        if (dp[k] >= CANDY_INF) continue;
+        const cost = dp[k] + r;
+        if (!best || cost < best.cost || (cost === best.cost && k > best.k)) best = { k, r, cost };
+      }
+      if (best) {
+        use = multiset(best.k); rareUse = best.r; reachable = true;
+      } else {
+        let kw = -1;
+        for (let k = Math.max(0, K0); k <= Kmax; k++) if (dp[k] < CANDY_INF) { kw = k; break; }
+        if (kw >= 0) {
+          use = multiset(kw); waste = kw * g - D; reachable = true;
+        } else {
+          // short of the cap: report how far the whole bag gets
+          use = { ...counts };
+          rareUse = rareCount;
+          let rr = M;
+          while (rr > 0 && P[rr - 1] <= totalXp) rr--;
+          missing = rareCount > 0 && rr > rareCount ? D - P[rr - rareCount] : D - totalXp;
+        }
+      }
+    } else if (types.length) {
+      // shortcut: a bundle whose candy values lose the shared multiple falls back
+      // to the plain greedy; upgrade to an exact solver if the game ever does it
+      let T = 0;
+      for (const t of types) {
+        const n = Math.min(t.n, Math.floor((D - T) / t.xp));
+        if (n > 0) { use[t.id] = n; T += n * t.xp; }
+      }
+      const pick = types.filter(t => (use[t.id] || 0) < t.n).sort((a, b) => a.xp - b.xp)[0];
+      if (T >= D) { waste = T - D; reachable = true; }
+      else if (pick && T + pick.xp >= D) { use[pick.id] = (use[pick.id] || 0) + 1; waste = T + pick.xp - D; reachable = true; }
+      else missing = D - T;
+    } else if (rareCount >= M) {
+      rareUse = M; reachable = true;
+    } else {
+      // no exp candies here, and the rares stop short of the cap
+      rareUse = rareCount;
+      missing = rareCount > 0 ? D - P[M - rareCount] : D;
+    }
+
     for (const t of types) {
-      while (counts[t.id] > 0 && t.xp <= remaining) {
-        apply(t.id, t.xp);
-        remaining -= t.xp;
+      const n = use[t.id] || 0;
+      if (!n) continue;
+      out.steps.push({ id: t.id, count: n });
+      for (let i = 0; i < n; i++) { gain(t.xp); out.trace.push({ id: t.id, level: st.level, xp: st.xp }); }
+    }
+    if (rareUse) {
+      out.steps.push({ id: 'rare-candy', count: rareUse });
+      for (let i = 0; i < rareUse; i++) {
+        gain(need(st.level) - st.xp);
+        out.trace.push({ id: 'rare-candy', level: st.level, xp: st.xp });
       }
     }
-    // a rare candy is exactly one level: no waste, so it takes the tail first
-    while (st.level < cap && remaining > 0 && counts['rare-candy'] > 0) {
-      const amount = need(st.level) - st.xp;
-      apply('rare-candy', amount);
-      remaining -= amount;
-    }
-    if (st.level < cap && remaining > 0) {
-      const pick = types.filter(t => counts[t.id] > 0).sort((a, b) => a.xp - b.xp)[0];
-      if (!pick) { out.missingXp = remaining; out.to = { level: st.level, xp: st.xp }; return out; }
-      out.wasteXp = pick.xp - remaining;
-      apply(pick.id, pick.xp);
-    }
-    out.reachable = true;
+    out.reachable = reachable;
+    out.wasteXp = waste;
+    out.missingXp = missing;
     out.to = { level: st.level, xp: st.xp };
     return out;
   }
@@ -6424,7 +6514,14 @@
     refreshUi();
     log('info', 'candy: apply start', { uid, steps: plan.trace.length, wasteXp: plan.wasteXp });
     try {
-      for (let i = 0; i < plan.trace.length; i++) {
+      // the plan is a snapshot: the mon must still stand where it started, before any click
+      const startSave = readSave();
+      const start = startSave && monByUid(startSave, uid);
+      if (!start) summary.error = 'Pokémon introuvable : le plan ne peut pas être appliqué';
+      else if (plan.from && (start.level !== plan.from.level || Math.round(start.xp || 0) !== Math.round(plan.from.xp))) {
+        summary.error = `Le Pokémon a changé depuis le calcul du plan (Nv. ${start.level}, ${Math.round(start.xp || 0)} XP au lieu de Nv. ${plan.from.level}, ${plan.from.xp} XP)`;
+      }
+      for (let i = 0; i < plan.trace.length && !summary.error; i++) {
         const step = plan.trace[i];
         let save = readSave();
         let mon = save && monByUid(save, uid);
@@ -7050,9 +7147,30 @@
         exact.reachable && exact.to.level === 10 && exact.wasteXp === 0
         && exact.steps[0]?.id === 'exp-candy-s' && exact.trace.length === 1,
         { to: exact.to, waste: exact.wasteXp, trace: exact.trace });
-      const rank0 = candyNeedFor(candyData, candyMon(9, 0));
-      const rank1 = candyNeedFor(candyData, candyMon(9, 0, 1));
+      const rank0 = candyNeedFor(candyData, candyPlanSave({}), candyMon(9, 0));
+      const rank1 = candyNeedFor(candyData, candyPlanSave({}), candyMon(9, 0, 1));
       check('underground rank raises the candy cost', rank1 === Math.floor(rank0 * 1.5) && rank1 > rank0, { rank0, rank1 });
+
+      // the crossing candy is chosen, not the sum of everything that fits: 130 000 XP
+      // left, five S candies would raise the XL's overshoot, so the XL crosses alone
+      const candyData130 = { ...candyData, cfg: { ...candyData.cfg, MAX_LEVEL: 2, XP_SCALE: 13000 } };
+      const pick = planCandies(candyData130, candyPlanSave({ 'exp-candy-s': 5, 'exp-candy-xl': 1 }), candyMon(1, 0));
+      check('candy planner crosses with the cheap candy, not the whole bag',
+        pick.reachable && pick.to.level === 2 && pick.wasteXp === 20000 && pick.trace.length === 1
+        && pick.steps.length === 1 && pick.steps[0].id === 'exp-candy-xl' && pick.steps[0].count === 1,
+        { steps: pick.steps, waste: pick.wasteXp, to: pick.to });
+
+      // the level cost follows the current region, not the mon's species
+      const johtoCh = data.chapters.findIndex(c => (c.reg || 'kanto') === 'johto');
+      const johtoSave = { items: {}, adv: { unlocked: Math.max(0, johtoCh), chapter: Math.max(0, johtoCh), badges: [], travel: { to: ['johto'] } }, team: [], mons: [] };
+      const kantoMon = { uid: 'candy-test', id: 25, level: 5, xp: 0, reg: 'kanto' };
+      const kantoNeed = candyNeedFor(data, candySave, kantoMon);
+      const johtoNeed = candyNeedFor(data, johtoSave, kantoMon);
+      const kantoGrant = candyXpFor(data, candySave, 'exp-candy-s');
+      const johtoGrant = candyXpFor(data, johtoSave, 'exp-candy-s');
+      check('candy cost and grant follow the current region',
+        johtoCh >= 0 && kantoNeed === 144 && johtoNeed === 180 && kantoGrant === 600 && johtoGrant === 750,
+        { kantoNeed, johtoNeed, kantoGrant, johtoGrant });
 
       // the popup: one block above the candy row, disabled at the cap
       const candySaved = state.candy;

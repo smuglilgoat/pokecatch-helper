@@ -42,7 +42,7 @@ Open `http://localhost:8765/pokecatch-team-optimizer.user.js`, accept Tampermonk
 - **Pokémon hunter**: pick a missing mon with a weather, night/day or season spawn and the script restarts its chapter inside the next window, then goes back to watching
 - **Dashboard**: run state, data source, errors, and the hunts on the Progress screen
 - **English names**: bundle ids read through the game's English language pack
-- **Selftest**: 88 checks against the live save and synthetic cases
+- **Selftest**: 90 checks against the live save and synthetic cases
 
 ## Where the blocks appear
 
@@ -73,7 +73,7 @@ No build step and no dependencies: one file, `pokecatch-team-optimizer.user.js`.
 node --check pokecatch-team-optimizer.user.js
 ```
 
-The script logs every action with `[pcopt]`, and the last 400 entries stay in `window.__pcopt.logs`. In the game console, `window.__pcopt.selftest()` runs the 88 checks and returns `{ ok, ms, results }`. `window.__pcopt.compareWithPokeApi(uid, info)` cross-checks one mon against PokeAPI; no button calls it.
+The script logs every action with `[pcopt]`, and the last 400 entries stay in `window.__pcopt.logs`. In the game console, `window.__pcopt.selftest()` runs the 90 checks and returns `{ ok, ms, results }`. `window.__pcopt.compareWithPokeApi(uid, info)` cross-checks one mon against PokeAPI; no button calls it.
 
 Two places carry the version: `@version` in the header and the `VERSION` constant near the top.
 
