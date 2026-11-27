@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Poke'Catch Team Optimizer
 // @namespace    pokecatch-helper
-// @version      1.12.2
+// @version      1.13.0
 // @description  Reads the current chapter events, then builds an optimal team of 6 from the PC with an offense preset, optimizes legendary, elite, underground and raid teams, and prepares per-segment template teams.
 // @author       GrumpyOwl
 // @match        https://pokecatch-online.netlify.app/*
@@ -27,7 +27,7 @@
    * 0. Small helpers
    * ------------------------------------------------------------------ */
   const SAVE_KEY = 'gachamon-save-v1';
-  const VERSION = '1.12.2';
+  const VERSION = '1.13.0';
   const UPDATE_URL = 'https://raw.githubusercontent.com/smuglilgoat/pokecatch-helper/main/pokecatch-team-optimizer.user.js';
   const $ = (sel, root = document) => root.querySelector(sel);
   const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
@@ -365,6 +365,7 @@
         XP_GROWTH_FROM: cfg.XP_GROWTH_FROM ?? 10, XP_GROWTH_EXTRA: cfg.XP_GROWTH_EXTRA ?? 1,
         CHAPTER_TIME_RATIO: cfg.CHAPTER_TIME_RATIO ?? Math.pow(cfg.PACE?.lastMin / cfg.PACE?.firstMin ?? 40, 1 / ((cfg.PACE?.chapters ?? 14) - 1)),
         REGION_XP: cfg.REGION_XP || {}, baseExp: cfg.baseExp || null,
+        EXP_CANDIES: cfg.EXP_CANDIES || {}, EXP_CANDY_MULT: cfg.EXP_CANDY_MULT ?? .6,
         TRADE_FEE: cfg.ONLINE_TRADE?.FEE || [30000, 120000, 450000],
         TRADE_SHINY_FEE: cfg.ONLINE_TRADE?.SHINY_FEE ?? 5,
         ACC_CURVE: cfg.ACC_CURVE || [40, 150, 80],
@@ -1856,6 +1857,153 @@
     const from = bands.find(b => level >= b.from);
     const back = from && bands.indexOf(from) > 0 ? Math.pow(Math.pow(ratio, 1 / from.step) * (cfg.XP_GROWTH_EXTRA ?? 1), level - from.from) : 1;
     return Math.floor(xpBe(level) * (g / (back || 1)));
+  }
+
+  /* --- candy leveling: the game's candy values, cap cost and plan -------- */
+  /** The region candy XP is scaled to (the game's `no()`: the region link's
+   *  source, else the highest unlocked chapter whose region is open). */
+  function currentRegion(data, save) {
+    if (save?.link?.side === 'from') {
+      const from = data.regions.find(r => r.key === save.link.from);
+      if (from) return from;
+    }
+    let u = Math.min(save?.adv?.unlocked ?? 0, data.chapters.length - 1);
+    while (u > 0 && !regionOf(data, u)?.open) u--;
+    return regionOf(data, u) || data.regions[0];
+  }
+
+  /** A species' region from the regions' dex ranges (the game's `$e`). */
+  function speciesRegion(data, id) {
+    const base = id > 10000 ? Math.floor(id / 100) : id;
+    return (data.regions || []).find(r => r.dex && base >= r.dex[0] && base <= r.dex[1])?.key || null;
+  }
+
+  const regionXpOf = (data, region) => data.cfg.REGION_XP?.[region?.key] ?? region?.xp ?? 1;
+
+  /** XP one candy grants now (the game's `bs`): fixed per candy, scaled by the
+   *  current region against Kanto. */
+  function candyXpFor(data, save, id) {
+    const c = data.cfg.EXP_CANDIES?.[id];
+    const kanto = data.regions[0], now = currentRegion(data, save);
+    if (!c || !kanto || !now) return 0;
+    const ace = (r, badges) => (r.ace?.[0] ?? 0) + (r.ace?.[1] ?? 0) * badges;
+    const at = (level, r) => xpBe(level) * xpGrowth(level) * regionXpOf(data, r);
+    const den = at(ace(kanto, c.badges || 0), kanto);
+    return den ? Math.round((c.xp || 0) * (data.cfg.EXP_CANDY_MULT ?? 1) * at(ace(now, c.badges || 0), now) / den) : 0;
+  }
+
+  /** XP the next level costs (the game's `Fe`): the rank factor is inside the floor. */
+  function candyNeedFor(data, mon) {
+    const cfg = data.cfg;
+    const rank = Math.min(cfg.UNDERGROUND?.RANK_MAX ?? Infinity, Math.max(0, Math.floor(+(mon.rank || 0))));
+    const reg = speciesRegion(data, mon.id) || mon.reg || 'kanto';
+    return Math.floor(xpBe(mon.level) * xpGrowth(mon.level) * (cfg.XP_SCALE ?? 3)
+      * (cfg.REGION_XP?.[reg] ?? 1) * Math.pow(cfg.UNDERGROUND?.RANK_XP ?? 1, rank));
+  }
+
+  /** The cap of one region while a region link is on (the game's `regionCap`). */
+  function regionCap(data, adv, regionKey) {
+    if (!regionKey) return levelCap(data, { adv });
+    const max = data.cfg.MAX_LEVEL;
+    const next = nextGymOf(data, regionKey, adv);
+    if (next != null) return Math.min(max, capOf(data, next));
+    let m = 0;
+    for (const ch of chaptersOf(data, regionKey)) if (aceOf(data, ch) != null) m = Math.max(m, capOf(data, ch));
+    return Math.min(max, Math.max(m, data.cfg.LEAGUE_DONE_CAP ?? 100));
+  }
+
+  function monEffectiveCap(data, save, mon) {
+    if (!save?.link) return levelCap(data, save);
+    const key = speciesRegion(data, mon.id);
+    return key ? regionCap(data, save.adv, key) : levelCap(data, save);
+  }
+
+  /**
+   * Cheapest candy order for one mon: every candy whose fixed XP still fits under
+   * the cap first (big to small, no waste), rare candies one level at a time,
+   * then one smallest exp candy to cross. `trace` holds the level and xp after
+   * each candy: the runner checks the save against it, step by step.
+   */
+  function planCandies(data, save, mon) {
+    const cfg = data.cfg;
+    const cap = monEffectiveCap(data, save, mon);
+    const out = {
+      capped: true, cap, reachable: false, wasteXp: 0, missingXp: 0,
+      from: { level: mon.level, xp: Math.round(mon.xp || 0) }, to: null,
+      steps: [], trace: [], evolutions: [], inventory: {},
+    };
+    const st = { id: mon.id, level: mon.level, xp: Math.round(mon.xp || 0) };
+    const proj = { ...mon, id: st.id };
+    const need = level => candyNeedFor(data, { ...proj, level });
+    const evolve = () => {
+      // the game's pe: level evolutions behind the daytime and party gates
+      const team = (save.team || []).map(u => monByUid(save, u)).filter(Boolean).concat([{ id: st.id, level: st.level }]);
+      for (let guard = 0; guard < 4; guard++) {
+        const next = (data.evo[st.id] || []).find(e => e.level != null && st.level >= e.level
+          && daytimeMatches(data, save, cfg.TIME_EVOLUTIONS?.[e.to])
+          && (!e.party || team.some(t => t.id === e.party)));
+        if (!next || !data.species[next.to]) break;
+        out.evolutions.push({ from: st.id, to: next.to, level: st.level });
+        st.id = next.to;
+      }
+    };
+    const gain = amount => {
+      st.xp += amount;
+      let guard = 0;
+      while (st.level < cap && st.xp >= need(st.level) && guard++ < 200) {
+        st.xp -= need(st.level); st.level++; evolve();
+      }
+      if (st.level >= cap) st.xp = 0;
+    };
+    const remainingTo = () => {
+      let r = -st.xp;
+      for (let L = st.level; L < cap; L++) r += need(L);
+      return r;
+    };
+    // the game applies a pending level as soon as it has the XP: start from there
+    let guard = 0;
+    while (st.level < cap && st.xp >= need(st.level) && guard++ < 500) { st.xp -= need(st.level); st.level++; evolve(); }
+    if (st.level >= cap) { st.xp = 0; out.to = { level: st.level, xp: 0 }; return out; }
+    out.capped = false;
+
+    const counts = {};
+    for (const id of [...Object.keys(cfg.EXP_CANDIES || {}), 'rare-candy'])
+      counts[id] = Math.max(0, Math.floor(+(save.items?.[id] || 0)));
+    out.inventory = { ...counts };
+    const apply = (id, amount) => {
+      counts[id]--;
+      const step = out.steps.find(s => s.id === id);
+      if (step) step.count++; else out.steps.push({ id, count: 1 });
+      gain(amount);
+      out.trace.push({ id, level: st.level, xp: st.xp });
+    };
+
+    const types = Object.keys(cfg.EXP_CANDIES || {})
+      .map(id => ({ id, xp: candyXpFor(data, save, id) }))
+      .filter(t => t.xp > 0)
+      .sort((a, b) => b.xp - a.xp);
+    let remaining = remainingTo();
+    for (const t of types) {
+      while (counts[t.id] > 0 && t.xp <= remaining) {
+        apply(t.id, t.xp);
+        remaining -= t.xp;
+      }
+    }
+    // a rare candy is exactly one level: no waste, so it takes the tail first
+    while (st.level < cap && remaining > 0 && counts['rare-candy'] > 0) {
+      const amount = need(st.level) - st.xp;
+      apply('rare-candy', amount);
+      remaining -= amount;
+    }
+    if (st.level < cap && remaining > 0) {
+      const pick = types.filter(t => counts[t.id] > 0).sort((a, b) => a.xp - b.xp)[0];
+      if (!pick) { out.missingXp = remaining; out.to = { level: st.level, xp: st.xp }; return out; }
+      out.wasteXp = pick.xp - remaining;
+      apply(pick.id, pick.xp);
+    }
+    out.reachable = true;
+    out.to = { level: st.level, xp: st.xp };
+    return out;
   }
 
   /* ------------------------------------------------------------------ *
@@ -4575,7 +4723,8 @@
     evtOdds: null, loading: null,
     league: false, leagueInfo: null, legOdds: null,
     segments: null, segOn: null, switching: false, selfClick: false, manual: null,
-    hunt: null, huntSel: null, loop: null, loopSel: null
+    hunt: null, huntSel: null, loop: null, loopSel: null,
+    lastMonUid: null, candy: null
   };
 
   function esc(s) {
@@ -5682,6 +5831,74 @@
     if (x) sum.insertBefore(btn, x); else sum.appendChild(btn);
   }
 
+  /** The mon popup: plan the candies from the bag, then spend them through the
+   *  game's own candy buttons. Read-only until the confirm click. */
+  function mountCandyOptimizer(root = document.querySelector('.dexcard-modal'), ctx = null) {
+    const candies = root?.querySelector('.dc-candies');
+    const host = candies?.closest('.dc-sec.dc-xp');
+    if (!host) return;
+    const save = ctx?.save || readSave();
+    const data = ctx?.data || state.data;
+    const uid = ctx?.uid !== undefined ? ctx.uid : state.lastMonUid;
+    const mon = save && uid != null ? monByUid(save, uid) : null;
+    if (state.candy && String(state.candy.uid) !== String(uid)) state.candy = null;
+    const mine = String(state.candy?.uid) === String(uid) ? state.candy : null;
+    const plan = mine?.plan || null, done = mine?.done || null;
+    const cap = mon && data ? monEffectiveCap(data, save, mon) : null;
+    const capped = !!(mon && cap != null && mon.level >= cap);
+    const lang = document.documentElement.lang;
+    const map = window.I18N?.[lang] || window.I18n?.[lang] || {};
+    const T = s => map[s] || s;
+    const why = !mon ? 'Ouvre la fiche d\'un Pokémon de ton équipe'
+      : capped ? `Plafond Nv. ${cap} : prochain badge requis` : '';
+    const cappedPlan = !!plan && plan.capped;
+    const rows = !plan ? '' : cappedPlan
+      ? `<div class="pcopt-mut">Niveau maximum atteint · cap ${plan.cap}</div>
+      ${done ? `<div class="${done.ok ? 'pcopt-mut' : 'pcopt-err'}">${esc(done.text)}</div>` : ''}`
+      : `
+      <div class="pcopt-mut">Nv. ${plan.from.level} → ${plan.to.level} · cap ${plan.cap} · ${plan.wasteXp ? fmt(plan.wasteXp) + ' XP perdus' : 'aucun XP perdu'}</div>
+      ${plan.reachable ? '' : `<div class="pcopt-err">XP manquants : ${fmt(plan.missingXp)}</div>`}
+      ${plan.steps.map(s => `<div class="pcopt-mon"><span class="pcopt-badge">×${s.count}</span> ${esc(displayItem(s.id))}
+        <span class="pcopt-mut">+${fmt(candyXpFor(data, save, s.id))} XP</span></div>`).join('')}
+      ${plan.evolutions.length ? `<div class="pcopt-mut">Évolutions : ${plan.evolutions
+        .map(e => esc(displayName(e.from)) + ' → ' + esc(displayName(e.to)) + ' (Nv. ' + e.level + ')').join(', ')}</div>` : ''}
+      ${done ? `<div class="${done.ok ? 'pcopt-mut' : 'pcopt-err'}">${esc(done.text)}</div>` : ''}`;
+    const html = `
+      <div class="pcopt-title"><span>🍬 ${T('Bonbons')}</span>
+        <small>${mon ? 'Nv. ' + mon.level : ''}</small></div>
+      ${rows}
+      ${plan && !done
+        ? `<div class="pcopt-row">
+            <button class="btn small gold" data-act="apply" ${state.busy || !plan.reachable || !plan.trace.length ? 'disabled' : ''}>${T('Appliquer')}</button>
+            <button class="btn small ghost" data-act="cancel" ${state.busy ? 'disabled' : ''}>${T('Annuler')}</button>
+          </div>`
+        : plan
+          ? `<div class="pcopt-row"><button class="btn small ghost" data-act="cancel">${T('Fermer')}</button></div>`
+          : `<div class="pcopt-row">
+              <button class="btn small" data-act="plan" ${!mon || capped || state.busy ? 'disabled' : ''} title="${esc(why)}">${T('Optimiser les bonbons')}</button>
+            </div>`}`;
+    const sig = JSON.stringify([uid, mon?.id, mon?.level, mon?.xp, state.busy,
+      plan && [plan.capped, plan.reachable, plan.from.level, plan.to?.level, plan.to?.xp, plan.wasteXp,
+        plan.missingXp, plan.steps.map(s => s.id + s.count).join(',')],
+      done && [done.ok, done.text]]);
+    mountBlock(host, 'candy', sig, html, el => {
+      const planBtn = el.querySelector('[data-act="plan"]');
+      if (planBtn) planBtn.onclick = () => {
+        planBtn.disabled = true;
+        runCandyPlan(uid).catch(e => logError('candy: plan', e));
+      };
+      const cancelBtn = el.querySelector('[data-act="cancel"]');
+      if (cancelBtn) cancelBtn.onclick = () => { state.candy = null; refreshUi(); };
+      const applyBtn = el.querySelector('[data-act="apply"]');
+      if (applyBtn) applyBtn.onclick = () => {
+        const current = String(state.candy?.uid) === String(uid) ? state.candy.plan : null;
+        if (!current) return;
+        applyBtn.disabled = true;
+        applyCandyPlan(current, uid).catch(e => logError('candy: apply', e));
+      };
+    }, { before: '.dc-candies' });
+  }
+
   /** The raid picker: fastest clear and the total DPS line. */  function mountRaidBox(rc) {
     const boss = state.raidBoss;
     const key = 'raid:' + rc.id;
@@ -5796,6 +6013,7 @@
       mountPokeTimer();
       mountChapter();
       mountFreeAll();
+      mountCandyOptimizer();
       if (document.querySelector('#evt-pick-head')) injectPickerUi().catch(e => logError('picker ui: inject', e));
       else { state.raidBoss = null; markRecommended(); }
     } catch (e) { logError('ui: refresh', e); }
@@ -5820,7 +6038,7 @@
         for (let waited = 0; !url && waited < 30000; waited += 250) { await sleep(250); url = bundleUrl(); }
       }
       if (!url) { state.errors = ['game bundle not loaded yet']; log('warn', 'data: the game bundle is not on the page yet'); return; }
-      const cacheKey = 'bundle:v17:' + url;
+      const cacheKey = 'bundle:v18:' + url;
       let data = store.get(cacheKey, null);
       if (data && !dataLooksValid(data)) {
         log('warn', 'data: the cached tables are invalid, parsing the bundle again');
@@ -6160,6 +6378,101 @@
     return projectCandidates(state.engine, state.data, save, level, { anyRegion: true })
       .filter(c => c.mon.level >= state.data.cfg.MAX_LEVEL)
       .map(c => ({ ...c, hpCur: c.hp }));
+  }
+
+  /** Plan the current mon's candies and show the plan in its popup. */
+  async function runCandyPlan(uid) {
+    if (state.busy) return;
+    try {
+      await ensureData();
+      const save = readSave();
+      const mon = save && monByUid(save, uid);
+      if (!state.data || !mon) { log('warn', 'candy: no mon for this popup', { uid }); return; }
+      const plan = planCandies(state.data, save, mon);
+      state.candy = { uid, plan, done: null };
+      log('info', 'candy: plan', {
+        mon: displayName(mon.id), level: mon.level, cap: plan.cap, capped: plan.capped,
+        reachable: plan.reachable, wasteXp: plan.wasteXp, missingXp: plan.missingXp,
+        steps: plan.steps,
+      });
+    } finally {
+      refreshUi();
+    }
+  }
+
+  const itemCount = (save, id) => Math.max(0, Math.floor(+(save?.items?.[id] || 0)));
+
+  /** The game's candy button for one item: its image names the id; the fixed
+   *  order is the fallback. */
+  function candyButton(candies, id) {
+    const btns = [...candies.querySelectorAll('.dc-candy')];
+    const hit = btns.find(b => (b.querySelector('img')?.getAttribute('src') || '').includes(id));
+    if (hit) return hit;
+    const order = [...Object.keys(state.data?.cfg?.EXP_CANDIES || {}), 'rare-candy'];
+    return btns[order.indexOf(id)] || null;
+  }
+
+  /**
+   * Spend a plan through the game's own candy buttons, one click at a time, with
+   * a save read after each click: the save decides, the plan is only the target.
+   */
+  async function applyCandyPlan(plan, uid) {
+    if (state.busy || !plan?.trace?.length) return { ok: false, applied: 0, error: 'rien à appliquer' };
+    const summary = { ok: false, applied: 0, level: null, error: null };
+    state.busy = true;
+    state.candy = { uid, plan, done: null };
+    refreshUi();
+    log('info', 'candy: apply start', { uid, steps: plan.trace.length, wasteXp: plan.wasteXp });
+    try {
+      for (let i = 0; i < plan.trace.length; i++) {
+        const step = plan.trace[i];
+        let save = readSave();
+        let mon = save && monByUid(save, uid);
+        if (!mon) { summary.error = 'Pop-up fermé : Pokémon introuvable'; break; }
+        if (mon.level >= plan.cap) break;     // the game is capped: nothing left to spend
+        let candies = document.querySelector('.dexcard-modal .dc-candies');
+        if (!candies) { await sleep(600); candies = document.querySelector('.dexcard-modal .dc-candies'); }
+        if (!candies) { summary.error = 'Pop-up fermé'; break; }
+        if (state.lastMonUid != null && String(state.lastMonUid) !== String(uid)) {
+          summary.error = 'Un autre Pokémon est ouvert'; break;
+        }
+        const btn = candyButton(candies, step.id);
+        if (!btn) { summary.error = displayItem(step.id) + ' introuvable'; break; }
+        if (btn.disabled) { summary.error = btn.title || displayItem(step.id) + ' désactivé'; break; }
+        const before = itemCount(save, step.id);
+        btn.click();
+        await sleep(500);
+        const after = readSave();
+        const got = after && monByUid(after, uid);
+        if (!got || itemCount(after, step.id) !== before - 1) {
+          summary.error = `Désync à l'étape ${i + 1} (${displayItem(step.id)}) : ${before} → ${itemCount(after, step.id)}`;
+          break;
+        }
+        if (got.level !== step.level || Math.round(got.xp || 0) !== Math.round(step.xp)) {
+          summary.error = `Désync à l'étape ${i + 1} : attendu Nv. ${step.level} (${Math.round(step.xp)} XP), jeu Nv. ${got.level} (${Math.round(got.xp || 0)} XP)`;
+          break;
+        }
+        summary.applied = i + 1;
+      }
+      summary.ok = !summary.error;
+      const end = readSave();
+      summary.level = (end && monByUid(end, uid)?.level) ?? null;
+    } finally {
+      state.busy = false;
+      state.candy = {
+        uid, plan,
+        done: {
+          ok: summary.ok,
+          text: summary.error
+            ? `${summary.applied} bonbon(s) appliqué(s) · ${summary.error}`
+            : `Plan appliqué : ${summary.applied} bonbon(s) · Nv. ${summary.level} · cap ${plan.cap}`,
+        },
+      };
+      log(summary.ok ? 'info' : 'warn', 'candy: apply ' + (summary.ok ? 'done' : 'stopped'),
+        { uid, applied: summary.applied, level: summary.level, wasteXp: plan.wasteXp, error: summary.error });
+      refreshUi();
+    }
+    return summary;
   }
 
   async function applyTeamFromPanel(team, picker = false) {
@@ -6691,6 +7004,75 @@
       const outsideElite = !plainHead.querySelector('[data-pcopt="elite-opt"]');
       check('the elite picker gets one Optimize button, the game\'s own wins',
         placed && deduped && gameWins && outsideElite, { placed, deduped, gameWins, outsideElite });
+
+      // candy leveling: the bundle's candy table, the Kanto value, then the planner's orders
+      const expCandies = data.cfg.EXP_CANDIES || {};
+      check('exp candies parse the four bag items',
+        ['exp-candy-s', 'exp-candy-m', 'exp-candy-xl', 'exp-candy-big']
+          .every(id => expCandies[id]?.xp > 0) && Object.keys(expCandies).length === 4,
+        Object.keys(expCandies));
+      const candySave = { items: {}, adv: { unlocked: 0, chapter: 0, badges: [] }, team: [], mons: [] };
+      const kantoXp = id => candyXpFor(data, candySave, id);
+      check('candy xp is the Kanto value',
+        kantoXp('exp-candy-s') === 600 && kantoXp('exp-candy-m') === 9000
+        && kantoXp('exp-candy-xl') === 150000 && kantoXp('exp-candy-big') === 600000,
+        ['exp-candy-s', 'exp-candy-m', 'exp-candy-xl', 'exp-candy-big'].map(kantoXp));
+
+      // a small, deterministic world: one open region, no chapters, cap 10 (growth 1 below 10)
+      const candyData = {
+        cfg: { ...data.cfg, MAX_LEVEL: 10, XP_SCALE: 3, REGION_XP: {}, UNDERGROUND: { RANK_XP: 1.5, RANK_MAX: 5 } },
+        regions: [{ key: 'kanto', name: 'Kanto', dex: [1, 151], ace: [14, 8], open: true }],
+        chapters: [], evo: {},
+      };
+      const candyMon = (level, xp, rank = 0) => ({ uid: 'candy-test', id: 25, level, xp, rank });
+      const candyPlanSave = items => ({ items, adv: { unlocked: 0, chapter: 0, badges: [] }, team: [], mons: [] });
+      const bulk = planCandies(candyData, candyPlanSave({ 'exp-candy-s': 3 }), candyMon(1, 0));
+      check('candy planner fits the exp candies under the cap',
+        bulk.reachable && bulk.to.level === 10 && bulk.to.xp === 0
+        && bulk.steps.length === 1 && bulk.steps[0].id === 'exp-candy-s' && bulk.steps[0].count === 3
+        && bulk.wasteXp === 57 && bulk.trace.length === 3,
+        { steps: bulk.steps, to: bulk.to, waste: bulk.wasteXp, trace: bulk.trace.length });
+      const rare = planCandies(candyData, candyPlanSave({ 'rare-candy': 1 }), candyMon(9, 0));
+      check('candy planner finishes a level with one rare candy, no waste',
+        rare.reachable && rare.to.level === 10 && rare.wasteXp === 0
+        && rare.steps[0]?.id === 'rare-candy' && rare.steps[0].count === 1,
+        { steps: rare.steps, to: rare.to, waste: rare.wasteXp });
+      const partial = planCandies(candyData, candyPlanSave({ 'exp-candy-s': 1 }), candyMon(1, 0));
+      check('candy planner reports the missing xp',
+        partial.reachable === false && partial.missingXp === 1143
+        && partial.to.level === 7 && partial.to.xp === 21,
+        { missing: partial.missingXp, to: partial.to });
+      const capped = planCandies(candyData, candyPlanSave({ 'exp-candy-s': 3 }), candyMon(10, 0));
+      check('candy planner leaves a capped mon alone',
+        capped.capped === true && capped.trace.length === 0 && capped.steps.length === 0, capped);
+      const exact = planCandies(candyData, candyPlanSave({ 'exp-candy-s': 1 }), candyMon(7, 564));
+      check('candy planner crosses exactly with no waste',
+        exact.reachable && exact.to.level === 10 && exact.wasteXp === 0
+        && exact.steps[0]?.id === 'exp-candy-s' && exact.trace.length === 1,
+        { to: exact.to, waste: exact.wasteXp, trace: exact.trace });
+      const rank0 = candyNeedFor(candyData, candyMon(9, 0));
+      const rank1 = candyNeedFor(candyData, candyMon(9, 0, 1));
+      check('underground rank raises the candy cost', rank1 === Math.floor(rank0 * 1.5) && rank1 > rank0, { rank0, rank1 });
+
+      // the popup: one block above the candy row, disabled at the cap
+      const candySaved = state.candy;
+      const pop = document.createElement('div');
+      pop.className = 'dexcard-modal';
+      pop.innerHTML = '<div class="dc-sec dc-xp"><div class="xpbar big"></div><div class="dc-candies"><button class="dc-candy"></button></div></div>';
+      document.body.appendChild(pop);
+      const capSave = { ...candyPlanSave({ 'exp-candy-s': 1 }), mons: [{ uid: 'candy-test', id: 25, level: 10, xp: 0 }] };
+      mountCandyOptimizer(pop, { save: capSave, data: candyData, uid: 'candy-test' });
+      const candyBlock = pop.querySelector('[data-pcopt="candy"]');
+      const candyPlaced = !!candyBlock && candyBlock.parentElement?.classList.contains('dc-xp')
+        && candyBlock.nextElementSibling === pop.querySelector('.dc-candies');
+      const candyBtn = candyBlock?.querySelector('[data-act="plan"]');
+      const candyOff = candyBtn?.disabled === true && /plafond/i.test(candyBtn.title);
+      mountCandyOptimizer(pop, { save: capSave, data: candyData, uid: 'candy-test' });
+      const candyOnce = pop.querySelectorAll('[data-pcopt="candy"]').length === 1;
+      pop.remove();
+      state.candy = candySaved;
+      check('the mon popup gets one candy button, disabled at the cap',
+        candyPlaced && candyOff && candyOnce, { candyPlaced, candyOff, candyOnce });
     } catch (e) {
       check('selftest crashed', false, e.message);
       logError('selftest', e);
@@ -6726,6 +7108,12 @@
       if (!b || state.selfClick) return;
       state.manual = { idx: segmentIndex(readSave()), slot: +b.dataset.set, at: Date.now() };
       log('info', 'templates: manual pick in the game', { slot: +b.dataset.set });
+    }, true);
+    // the mon popup has no uid of its own: remember the last tile clicked before it opens
+    document.addEventListener('click', e => {
+      const t = e.target.closest?.('[data-uid], [data-pc]');
+      const uid = t?.dataset?.uid ?? t?.dataset?.pc;
+      if (uid != null) state.lastMonUid = uid;
     }, true);
     state.hunt = new RoamerHunt();
     state.poke = new PokemonHunter();
@@ -6764,6 +7152,7 @@
     raidDps, raidBoss, raidPicks, raidRankScore, annotateRaidSuggestions, huntDecision, huntPlacement, roamList, huntPacing,
     farmTargets, loopPlan, loopDecision, startZoneLoop, ZoneLooper,
     wHash, weatherAt, nextWindow, specialSpawns, pokeDecision, startPokemonHunt, PokemonHunter,
-    undergroundContext, undergroundFoes, pickVsFoes, roamerBoss, selftest
+    undergroundContext, undergroundFoes, pickVsFoes, roamerBoss, selftest,
+    planCandies, candyXpFor, candyNeedFor, applyCandyPlan
   };
 })();

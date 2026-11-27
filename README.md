@@ -36,12 +36,13 @@ Open `http://localhost:8765/pokecatch-team-optimizer.user.js`, accept Tampermonk
 - **Legendary and elite**: win and catch odds, expected runs, and a team from your level-100 mons
 - **Underground**: a team against the theme's guard pool
 - **Shiny raids**: fastest clear, ranked by damage and survival
+- **Candy leveling**: a plan in each Pokémon's detail popup that spends the bag's exp and rare candies for the most levels, then clicks the game's own candy buttons
 - **Roamer hunt**: restarts the roaming legendary's chapter until it is caught
 - **Item Hunter**: pick a farmable story item and the chapter reruns until it drops
 - **Pokémon hunter**: pick a missing mon with a weather, night/day or season spawn and the script restarts its chapter inside the next window, then goes back to watching
 - **Dashboard**: run state, data source, errors, and the hunts on the Progress screen
 - **English names**: bundle ids read through the game's English language pack
-- **Selftest**: 75 checks against the live save and synthetic cases
+- **Selftest**: 88 checks against the live save and synthetic cases
 
 ## Where the blocks appear
 
@@ -52,6 +53,7 @@ Open `http://localhost:8765/pokecatch-team-optimizer.user.js`, accept Tampermonk
 | Adventure | A copy of the game's template bar; one click loads a template. While the Pokémon hunter runs, a line above the bar shows the hunted mon and its window countdown. The chapter list shows legend zones first |
 | Legend, elite, underground and raid pickers | The optimizer beside the game's own Optimize button, with odds and apply to team. Elite fights also get the gold Optimize button back in the picker header, wired to a port of the game's own Optimize: its counter-value greedy with the elite legend cap, not the script's refined optimizer |
 | PC grid | A blue marker on each mon the script picked, gold when the game's own ranking agrees |
+| Pokémon detail popup | A candy plan button above the exp-candy row; once planned, the per-candy list with Apply and Cancel |
 
 ## Pacing
 
@@ -71,7 +73,7 @@ No build step and no dependencies: one file, `pokecatch-team-optimizer.user.js`.
 node --check pokecatch-team-optimizer.user.js
 ```
 
-The script logs every action with `[pcopt]`, and the last 400 entries stay in `window.__pcopt.logs`. In the game console, `window.__pcopt.selftest()` runs the 75 checks and returns `{ ok, ms, results }`. `window.__pcopt.compareWithPokeApi(uid, info)` cross-checks one mon against PokeAPI; no button calls it.
+The script logs every action with `[pcopt]`, and the last 400 entries stay in `window.__pcopt.logs`. In the game console, `window.__pcopt.selftest()` runs the 88 checks and returns `{ ok, ms, results }`. `window.__pcopt.compareWithPokeApi(uid, info)` cross-checks one mon against PokeAPI; no button calls it.
 
 Two places carry the version: `@version` in the header and the `VERSION` constant near the top.
 
