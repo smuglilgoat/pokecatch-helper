@@ -38,6 +38,7 @@
         "scale": "100 = the best of all 304 in that area; the tier score is the average of the three."
       }
     },
+    "layout": "The board prints three groups: Pseudo-legendaries (\"Always good · all six are rare and rank up with rare gems\"), Top 10 Rare (\"Pseudo-legendaries not counted · rare gems\") and Top 10 Uncommon (\"Cheaper uncommon gems, still real gains\"). Each card shows its rank in the group, the name, the gem-type tags, three bars in EL / LG / UG order, the score in pts and its best area out of 304. The stored lists keep the board's rank order, so index + 1 is the rank; pts is the printed score, not a bar measurement.",
     "gameFacts": [
       "An Elite team fields only one legendary, so 5 of 6 slots are non-legendaries.",
       "Rare species rank up with rare gems of their types; uncommon species with cheaper uncommon gems.",
@@ -49,11 +50,11 @@
   },
   "data": {
     "pseudoLegendary": [
-      { "name": "Metagross", "gemTypes": ["steel", "psychic"], "pts": 78, "bestArea": "Underground #2 of 304" },
-      { "name": "Garchomp", "gemTypes": ["dragon", "ground"], "pts": 70, "bestArea": "Underground #3 of 304" },
-      { "name": "Tyranitar", "gemTypes": ["rock", "dark"], "pts": 65, "bestArea": "Elite #2 of 304" },
-      { "name": "Hydreigon", "gemTypes": ["dark", "dragon"], "pts": 64, "bestArea": "Elite #12 of 304" },
-      { "name": "Salamence", "gemTypes": ["dragon", "flying"], "pts": 61, "bestArea": "Underground #7 of 304" },
+      { "name": "Metagross", "gemTypes": ["steel", "psychic"], "pts": 79, "bestArea": "Underground #2 of 304" },
+      { "name": "Garchomp", "gemTypes": ["dragon", "ground"], "pts": 78, "bestArea": "Underground #3 of 304" },
+      { "name": "Tyranitar", "gemTypes": ["rock", "dark"], "pts": 70, "bestArea": "Elite #2 of 304" },
+      { "name": "Hydreigon", "gemTypes": ["dark", "dragon"], "pts": 65, "bestArea": "Elite #12 of 304" },
+      { "name": "Salamence", "gemTypes": ["dragon", "flying"], "pts": 64, "bestArea": "Underground #7 of 304" },
       { "name": "Dragonite", "gemTypes": ["dragon", "flying"], "pts": 61, "bestArea": "Underground #11 of 304" }
     ],
     "topRare": [
@@ -69,12 +70,16 @@
       { "name": "Glaceon", "gemTypes": ["ice"], "pts": 64, "bestArea": "League #12 of 304" }
     ],
     "topUncommon": [
-      { "name": "Golurk", "gemTypes": ["ground", "ghost"], "pts": 61, "bestArea": "Underground #15 of 304" },
-      { "name": "Dewgong", "gemTypes": ["water", "ice"], "pts": 60, "bestArea": "Elite #9 of 304" },
-      { "name": "Darmanitan", "gemTypes": ["fire"], "pts": 54, "bestArea": "Underground #27 of 304" },
+      { "name": "Scrafty", "gemTypes": ["dark", "fighting"], "pts": 61, "bestArea": "Underground #15 of 304" },
+      { "name": "Escavalier", "gemTypes": ["bug", "steel"], "pts": 60, "bestArea": "Elite #9 of 304" },
+      { "name": "Skuntank", "gemTypes": ["poison", "dark"], "pts": 53, "bestArea": "Elite #3 of 304" },
+      { "name": "Golurk", "gemTypes": ["ground", "ghost"], "pts": 52, "bestArea": "Underground #36 of 304" },
+      { "name": "Dewgong", "gemTypes": ["water", "ice"], "pts": 51, "bestArea": "League #11 of 304" },
+      { "name": "Darmanitan", "gemTypes": ["fire"], "pts": 51, "bestArea": "Underground #27 of 304" },
       { "name": "Froslass", "gemTypes": ["ice", "ghost"], "pts": 49, "bestArea": "Elite #57 of 304" },
       { "name": "Granbull", "gemTypes": ["fairy"], "pts": 48, "bestArea": "League #53 of 304" },
-      { "name": "Hariyama", "gemTypes": ["fighting"], "pts": 48, "bestArea": "Underground #26 of 304" }
+      { "name": "Hariyama", "gemTypes": ["fighting"], "pts": 48, "bestArea": "Underground #26 of 304" },
+      { "name": "Gastrodon", "gemTypes": ["water", "ground"], "pts": 48, "bestArea": "League #45 of 304" }
     ],
     "notes": [
       "Simisage, Simisear and Simipour are now Rare.",
@@ -82,10 +87,5 @@
       "Pseudo-legendaries are not counted in the Top 10 Rare list (they are shown separately)."
     ]
   },
-  "uncertain": [
-    "The board's Top 10 Uncommon prints three of its first five names as sprites only; the OCR recovered Golurk, Dewgong, Darmanitan, Froslass, Granbull and Hariyama, so those six are stored and the rest omitted rather than invented.",
-    "Mamoswine's points read 'MA' and Glaceon's are cut off; 71 and 64 are best reads, not confirmed digits.",
-    "Darmanitan's 54 pts is printed in the second row group above the 52/51 of the first group; kept as read, so the stored top list is not strictly descending.",
-    "One best-area label reads 'Bite #57/#12 of 304' in the OCR; stored as 'Elite' where the column header makes that the likely word."
-  ]
+  "uncertain": []
 }

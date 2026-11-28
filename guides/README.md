@@ -35,7 +35,8 @@ Every file carries the same outer fields:
 - `id`, `title`, `subject`, `credit` (`@destryyy`), `ingested`
 - `board`: `gameVersion`, `build`, `pulled`, `title`
 - `sourceImage`: the board's file name
-- `method`: `summary`, `algorithm` (`goal`, `engine`, `steps`, `parameters`, `acceptance`), `gameFacts`
+- `method`: `summary`, `algorithm` (`goal`, `engine`, `steps`, `parameters`, `acceptance`), `gameFacts`,
+  plus the blocks the board needs: `measurement` and `changes` on `gem-tiers`, `layout` on `ru-tiers`
 - `data`: the board's own tables (shape per guide, see the files)
 - `uncertain`: every value the OCR left ambiguous, with what was done instead
 
@@ -103,6 +104,10 @@ fetch the public bundle and language pack.
   comes with its own move bans, listed in the card's
   "BANS OF THE ALTERNATES MARKED BAN" section.
 - Sprite/gem-chip/rank glyph garble (`@D @Q GD GB £1 fi «1 #1`) is dropped.
+- The two tier boards (`legendary-rank-tiers-2.png`, `rare-uncommon-tiers-2.png`) are
+  read from the picture itself, not OCR: crop a row with `pngcrop.py` and read the
+  names and scores, then measure the gem board's bars with `barmeasure.py` (76px is
+  the full track). OCR mangled both boards' columns into shifted lists.
 - Team-board headers: `0:52` is one fight's time, `69 wins/h` wins per hour,
   `LESSER LEGENDARIES ALLOWED` is the first team, `WITHOUT/NO ANY LEGENDARY` the
   second, `BANS +N%` the wins/h the bans add.

@@ -7957,14 +7957,14 @@
         "gameVersion": "v0.5.161",
         "build": "d8622a1fb3",
         "pulled": "2026-11-24",
-        "title": "Legendary Gem Tier List Rank *0 — *5 — all Lv 100"
+        "title": "Legendary Gem Tier List Rank *0 → *5 — all Lv 100"
       },
       "ingested": "2026-11-28",
       "sourceImage": "legendary-rank-tiers-2.png",
       "method": {
-        "summary": "Rank 5 doubles a Pokémon's stats (×1.15 per rank, ×2.01 at 5). This list shows who gains the most: each legendary ranked to *5 alone and dropped into the best *0 team. White Kyurem is still #1 overall, but no longer everywhere: Dialga now leads the Elite Leagues and Ho-Oh the Elite legendary fights. Since v0.5.03, Ho-Oh (60 → 80), Entei (33 → 63), Dialga, Reshiram and Kyogre climbed the most. Gems are type-locked: a legendary only ranks up with gems of the types tagged under it, and each Arceus plate is a separate Pokémon with its own gem type. Simulated with the game's own battle engine on build d8622a1fb3. Box: all 79 gemmable legendaries and forms plus strong non-legendaries, all Lv 100, Rank 0, not shiny. For each fight the best Rank-0 team was searched, then each legendary was set to Rank 5, ranked in place or swapped into its best slot, and replayed on the same seeds. Elite: 45 legendary Elite fights + 5 Elite Leagues × 2 tiers, each at the first tier a Rank-0 team wins under half the time (48 tries per fight, 24 per League; win rate + 0.2 × damage dealt). Underground: best Rank-0 trio per theme, 6 themes × 16 expeditions, gain in floors reached. Bars are scaled to the best legendary in each area; the tier is the average of the three. Changes since v0.5.03 that matter: signature moves (v0.5.08) help Ho-Oh and Entei most; draining moves no longer heal (v0.5.141); status lands ≤75% and sleep/freeze/paralysis stack resistance (v0.5.13); boss fights got small tweaks (v0.5.142).",
+        "summary": "Rank 5 doubles a Pokémon's stats (×1.15 per rank, ×2.01 at ★5). This list shows who gains the most: each legendary ranked to ★5 alone and dropped into the best ★0 team, then grouped into tiers S to F. White Kyurem is still #1 overall, but no longer everywhere: Dialga now leads the Elite Leagues and Ho-Oh the Elite legendary fights. Since v0.5.03, Ho-Oh (60 → 80), Entei (33 → 63), Dialga, Reshiram and Kyogre climbed the most. Gems are type-locked: a legendary only ranks up with gems of the types tagged under it, and each Arceus plate is a separate Pokémon with its own gem type. Simulated with the game's own battle engine on build d8622a1fb3. Box: all 79 gemmable legendaries and forms plus strong non-legendaries, all Lv 100, Rank 0, not shiny. For each fight the best Rank-0 team was searched, then each legendary was set to Rank 5, ranked in place or swapped into its best slot, and replayed on the same seeds. Elite: 45 legendary Elite fights + 5 Elite Leagues × 2 tiers, each at the first tier a Rank-0 team wins under half the time (48 tries per fight, 24 per League; win rate + 0.2 × damage dealt). Underground: best Rank-0 trio per theme, 6 themes × 16 expeditions, gain in floors reached. Bars are scaled to the best legendary in each area; the tier is the average of the three.",
         "algorithm": {
-          "goal": "Rank every gemmable legendary by how much going from Rank 0 to Rank 5 improves Elite Leagues, Elite legendary fights and the Underground.",
+          "goal": "Rank every gemmable legendary by how much going from Rank 0 to Rank 5 improves Elite Leagues, Elite legendary fights and the Underground, then group the result into letter tiers.",
           "engine": "The game's own battle engine at build d8622a1fb3",
           "steps": [
             "Build the box: all 79 gemmable legendaries and forms plus strong non-legendaries, Lv 100, Rank 0, not shiny.",
@@ -7972,7 +7972,7 @@
             "Set each legendary to Rank 5, rank it in place or swap it into its best slot, and replay the same seeds.",
             "Elite: 45 legendary Elite fights + 5 Elite Leagues × 2 tiers, each at the first tier a Rank-0 team wins under half the time; 48 tries per fight, 24 per League; score = win rate + 0.2 × damage dealt.",
             "Underground: best Rank-0 trio per theme, 6 themes × 16 expeditions; score = gain in floors reached.",
-            "Scale each area's bars to the best legendary in that area; the tier is the average of the three.",
+            "Scale each area's bars to the best legendary in that area; the average of the three places the member in tier S, A, B, C, D or F.",
             "Read each member's three bars off the board in pixels with tools/barmeasure.py; 76px is the full track, the best in that area."
           ],
           "parameters": {
@@ -7992,153 +7992,228 @@
         "measurement": {
           "source": "boards/legendary-rank-tiers-2.png (1200×3079)",
           "helper": "python3 tools/barmeasure.py boards/legendary-rank-tiers-2.png prints every bar band and its run lengths",
-          "algorithm": "Each card prints three bars under LG (Elite Leagues), EL (Elite legendary fights), UG (Underground), coloured 255,203,61 / 201,168,255 / 91,224,160. A bar is a solid horizontal run about 6 rows tall (4 for the smallest); its length is the union of that colour over the band's rows, from the card's left edge. Read the runs left to right against the names printed above the row.",
-          "scale": "76px is the full track: the best legendary's bar reaches it in every area, so px / 76 is the area ratio the board draws.",
+          "algorithm": "The board was read from the image directly, not from OCR: every card's name, gem-type tags and tier (letter + sublabel) come from the picture, and the 79 cards are stored in board order inside their tier. Each card prints three bars under LG, EL and UG, coloured 255,203,61 / 201,168,255 / 91,224,160. A bar is a solid horizontal run about 6 rows tall (4 for the smallest); barmeasure unions one colour over the band's rows to get the bar's full length, and the runs are paired left to right with the names printed above the row.",
+          "scale": "76px is the full track: the best legendary reaches it in every area (Dialga LG, Ho-Oh EL, White Kyurem and Reshiram UG), so px / 76 is the area ratio the board draws. Each area is normalised to its own best, so the average of a member's three px need not follow the tier order; the tier comes from the board's own printed grouping and must not be recomputed from px.",
           "units": "areas.<area>.px is the bar length in board pixels."
         },
         "gameFacts": [
           "Rank 5 multiplies stats by ×2.01; each rank gives ×1.15.",
-          "Gems are type-locked: a legendary only ranks up with gems of its own types.",
-          "Each Arceus plate is a separate Pokémon with its own gem type.",
-          "Signature moves (v0.5.08) count as the strongest move of their type; Ho-Oh and Entei gain the most.",
-          "Draining moves no longer heal (v0.5.141).",
-          "Status moves land 75% at most; sleep, freeze and paralysis stack resistance on both sides (v0.5.13).",
-          "Boss fights had small adjustments in v0.5.142."
+          "Gems are type-locked: a legendary only ranks up with gems of its own types, shown as the coloured tags under each card.",
+          "Each Arceus plate is a separate Pokémon with its own gem type; the Normal plate is printed as plain Arceus."
+        ],
+        "changes": [
+          "Signature moves (v0.5.08): each legendary now uses its signature move, and it counts as its strongest move of that type. Ho-Oh and Entei gain the most.",
+          "Status (v0.5.13): status moves land 75% of the time at most (Spore, Nuzzle, Zap Cannon, Inferno and Dynamic Punch too, down from 100%). Each Sleep, Freeze or Paralysis makes the target more resistant to the next one, on both sides.",
+          "Draining moves no longer heal (v0.5.141): Giga Drain, Drain Punch and the like just deal damage.",
+          "Boss fights (v0.5.142): a few small adjustments.",
+          "Unchanged: Rank ×1.15 per rank (×2.01 at ★5) and the gem rules."
         ]
       },
       "data": {
         "bestSinks": [
           {
-            "name": "Zekrom",
+            "name": "White Kyurem",
             "gemTypes": [
               "dragon",
-              "electric"
-            ]
-          },
-          {
-            "name": "Regigigas",
-            "gemTypes": [
-              "normal"
-            ]
-          },
-          {
-            "name": "Arceus Ice",
-            "gemTypes": [
               "ice"
             ]
           },
           {
-            "name": "Groudon",
+            "name": "Dialga",
             "gemTypes": [
-              "ground"
-            ]
-          },
-          {
-            "name": "Entei",
-            "gemTypes": [
-              "fire"
-            ]
-          },
-          {
-            "name": "Arceus Dark",
-            "gemTypes": [
-              "dark"
-            ]
-          },
-          {
-            "name": "Arceus Dragon",
-            "gemTypes": [
+              "steel",
               "dragon"
             ]
           },
           {
-            "name": "Landorus Therian",
+            "name": "Reshiram",
             "gemTypes": [
-              "ground",
-              "flying"
+              "dragon",
+              "fire"
             ]
           },
           {
-            "name": "Arceus Electric",
+            "name": "Black Kyurem",
             "gemTypes": [
-              "electric"
+              "dragon",
+              "ice"
             ]
           },
           {
-            "name": "Suicune",
+            "name": "Kyogre",
             "gemTypes": [
               "water"
             ]
           },
           {
-            "name": "Genesect Burn",
+            "name": "Ho-Oh",
             "gemTypes": [
-              "bug",
-              "steel"
-            ]
-          },
-          {
-            "name": "Arceus Ground",
-            "gemTypes": [
-              "ground"
-            ]
-          },
-          {
-            "name": "Victini",
-            "gemTypes": [
-              "psychic",
-              "fire"
-            ]
-          },
-          {
-            "name": "Arceus Psychic",
-            "gemTypes": [
-              "psychic"
-            ]
-          },
-          {
-            "name": "Arceus Flying",
-            "gemTypes": [
+              "fire",
               "flying"
             ]
           },
           {
-            "name": "Arceus Rock",
+            "name": "Palkia",
             "gemTypes": [
-              "rock"
-            ]
-          },
-          {
-            "name": "Landorus",
-            "gemTypes": [
-              "ground",
-              "flying"
-            ]
-          },
-          {
-            "name": "Arceus Fire",
-            "gemTypes": [
-              "fire"
-            ]
-          },
-          {
-            "name": "Genesect",
-            "gemTypes": [
-              "bug",
-              "steel"
-            ]
-          },
-          {
-            "name": "Deoxys Defense",
-            "gemTypes": [
-              "psychic"
+              "water",
+              "dragon"
             ]
           }
         ],
         "tiers": [
           {
-            "label": "Best gem sinks (board order)",
+            "label": "S",
+            "sublabel": "Best gem sinks",
             "members": [
+              {
+                "name": "White Kyurem",
+                "gemTypes": [
+                  "dragon",
+                  "ice"
+                ],
+                "areas": {
+                  "eliteLeagues": {
+                    "px": 70
+                  },
+                  "eliteFights": {
+                    "px": 75
+                  },
+                  "underground": {
+                    "px": 76
+                  }
+                }
+              },
+              {
+                "name": "Dialga",
+                "gemTypes": [
+                  "steel",
+                  "dragon"
+                ],
+                "areas": {
+                  "eliteLeagues": {
+                    "px": 76
+                  },
+                  "eliteFights": {
+                    "px": 58
+                  },
+                  "underground": {
+                    "px": 72
+                  }
+                }
+              },
+              {
+                "name": "Reshiram",
+                "gemTypes": [
+                  "dragon",
+                  "fire"
+                ],
+                "areas": {
+                  "eliteLeagues": {
+                    "px": 56
+                  },
+                  "eliteFights": {
+                    "px": 73
+                  },
+                  "underground": {
+                    "px": 76
+                  }
+                }
+              },
+              {
+                "name": "Black Kyurem",
+                "gemTypes": [
+                  "dragon",
+                  "ice"
+                ],
+                "areas": {
+                  "eliteLeagues": {
+                    "px": 73
+                  },
+                  "eliteFights": {
+                    "px": 65
+                  },
+                  "underground": {
+                    "px": 67
+                  }
+                }
+              },
+              {
+                "name": "Kyogre",
+                "gemTypes": [
+                  "water"
+                ],
+                "areas": {
+                  "eliteLeagues": {
+                    "px": 70
+                  },
+                  "eliteFights": {
+                    "px": 52
+                  },
+                  "underground": {
+                    "px": 71
+                  }
+                }
+              },
+              {
+                "name": "Ho-Oh",
+                "gemTypes": [
+                  "fire",
+                  "flying"
+                ],
+                "areas": {
+                  "eliteLeagues": {
+                    "px": 42
+                  },
+                  "eliteFights": {
+                    "px": 76
+                  },
+                  "underground": {
+                    "px": 62
+                  }
+                }
+              },
+              {
+                "name": "Palkia",
+                "gemTypes": [
+                  "water",
+                  "dragon"
+                ],
+                "areas": {
+                  "eliteLeagues": {
+                    "px": 63
+                  },
+                  "eliteFights": {
+                    "px": 44
+                  },
+                  "underground": {
+                    "px": 63
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "label": "A",
+            "sublabel": "Great",
+            "members": [
+              {
+                "name": "Giratina Origin",
+                "gemTypes": [
+                  "ghost",
+                  "dragon"
+                ],
+                "areas": {
+                  "eliteLeagues": {
+                    "px": 57
+                  },
+                  "eliteFights": {
+                    "px": 51
+                  },
+                  "underground": {
+                    "px": 57
+                  }
+                }
+              },
               {
                 "name": "Zekrom",
                 "gemTypes": [
@@ -8154,6 +8229,24 @@
                   },
                   "underground": {
                     "px": 52
+                  }
+                }
+              },
+              {
+                "name": "Giratina",
+                "gemTypes": [
+                  "ghost",
+                  "dragon"
+                ],
+                "areas": {
+                  "eliteLeagues": {
+                    "px": 56
+                  },
+                  "eliteFights": {
+                    "px": 48
+                  },
+                  "underground": {
+                    "px": 56
                   }
                 }
               },
@@ -8239,6 +8332,171 @@
                   },
                   "underground": {
                     "px": 44
+                  }
+                }
+              },
+              {
+                "name": "Kyurem",
+                "gemTypes": [
+                  "dragon",
+                  "ice"
+                ],
+                "areas": {
+                  "eliteLeagues": {
+                    "px": 41
+                  },
+                  "eliteFights": {
+                    "px": 46
+                  },
+                  "underground": {
+                    "px": 49
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "label": "B",
+            "sublabel": "Good",
+            "members": [
+              {
+                "name": "Arceus Steel",
+                "gemTypes": [
+                  "steel"
+                ],
+                "areas": {
+                  "eliteLeagues": {
+                    "px": 45
+                  },
+                  "eliteFights": {
+                    "px": 34
+                  },
+                  "underground": {
+                    "px": 56
+                  }
+                }
+              },
+              {
+                "name": "Arceus Ghost",
+                "gemTypes": [
+                  "ghost"
+                ],
+                "areas": {
+                  "eliteLeagues": {
+                    "px": 46
+                  },
+                  "eliteFights": {
+                    "px": 44
+                  },
+                  "underground": {
+                    "px": 62
+                  }
+                }
+              },
+              {
+                "name": "Arceus Water",
+                "gemTypes": [
+                  "water"
+                ],
+                "areas": {
+                  "eliteLeagues": {
+                    "px": 54
+                  },
+                  "eliteFights": {
+                    "px": 24
+                  },
+                  "underground": {
+                    "px": 46
+                  }
+                }
+              },
+              {
+                "name": "Genesect Chill",
+                "gemTypes": [
+                  "bug",
+                  "steel"
+                ],
+                "areas": {
+                  "eliteLeagues": {
+                    "px": 52
+                  },
+                  "eliteFights": {
+                    "px": 33
+                  },
+                  "underground": {
+                    "px": 38
+                  }
+                }
+              },
+              {
+                "name": "Rayquaza",
+                "gemTypes": [
+                  "dragon",
+                  "flying"
+                ],
+                "areas": {
+                  "eliteLeagues": {
+                    "px": 43
+                  },
+                  "eliteFights": {
+                    "px": 32
+                  },
+                  "underground": {
+                    "px": 44
+                  }
+                }
+              },
+              {
+                "name": "Heatran",
+                "gemTypes": [
+                  "fire",
+                  "steel"
+                ],
+                "areas": {
+                  "eliteLeagues": {
+                    "px": 40
+                  },
+                  "eliteFights": {
+                    "px": 43
+                  },
+                  "underground": {
+                    "px": 34
+                  }
+                }
+              },
+              {
+                "name": "Lugia",
+                "gemTypes": [
+                  "psychic",
+                  "flying"
+                ],
+                "areas": {
+                  "eliteLeagues": {
+                    "px": 45
+                  },
+                  "eliteFights": {
+                    "px": 28
+                  },
+                  "underground": {
+                    "px": 43
+                  }
+                }
+              },
+              {
+                "name": "Keldeo",
+                "gemTypes": [
+                  "water",
+                  "fighting"
+                ],
+                "areas": {
+                  "eliteLeagues": {
+                    "px": 46
+                  },
+                  "eliteFights": {
+                    "px": 32
+                  },
+                  "underground": {
+                    "px": 40
                   }
                 }
               },
@@ -8330,6 +8588,23 @@
                 }
               },
               {
+                "name": "Arceus Bug",
+                "gemTypes": [
+                  "bug"
+                ],
+                "areas": {
+                  "eliteLeagues": {
+                    "px": 35
+                  },
+                  "eliteFights": {
+                    "px": 28
+                  },
+                  "underground": {
+                    "px": 43
+                  }
+                }
+              },
+              {
                 "name": "Arceus Ground",
                 "gemTypes": [
                   "ground"
@@ -8378,6 +8653,23 @@
                   },
                   "underground": {
                     "px": 52
+                  }
+                }
+              },
+              {
+                "name": "Arceus Grass",
+                "gemTypes": [
+                  "grass"
+                ],
+                "areas": {
+                  "eliteLeagues": {
+                    "px": 50
+                  },
+                  "eliteFights": {
+                    "px": 18
+                  },
+                  "underground": {
+                    "px": 57
                   }
                 }
               },
@@ -8434,6 +8726,23 @@
                 }
               },
               {
+                "name": "Mewtwo",
+                "gemTypes": [
+                  "psychic"
+                ],
+                "areas": {
+                  "eliteLeagues": {
+                    "px": 32
+                  },
+                  "eliteFights": {
+                    "px": 23
+                  },
+                  "underground": {
+                    "px": 42
+                  }
+                }
+              },
+              {
                 "name": "Arceus Fire",
                 "gemTypes": [
                   "fire"
@@ -8469,6 +8778,602 @@
                 }
               },
               {
+                "name": "Genesect Shock",
+                "gemTypes": [
+                  "bug",
+                  "steel"
+                ],
+                "areas": {
+                  "eliteLeagues": {
+                    "px": 42
+                  },
+                  "eliteFights": {
+                    "px": 23
+                  },
+                  "underground": {
+                    "px": 35
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "label": "C",
+            "sublabel": "Situational",
+            "members": [
+              {
+                "name": "Genesect Douse",
+                "gemTypes": [
+                  "bug",
+                  "steel"
+                ],
+                "areas": {
+                  "eliteLeagues": {
+                    "px": 41
+                  },
+                  "eliteFights": {
+                    "px": 24
+                  },
+                  "underground": {
+                    "px": 38
+                  }
+                }
+              },
+              {
+                "name": "Arceus Fighting",
+                "gemTypes": [
+                  "fighting"
+                ],
+                "areas": {
+                  "eliteLeagues": {
+                    "px": 26
+                  },
+                  "eliteFights": {
+                    "px": 29
+                  },
+                  "underground": {
+                    "px": 47
+                  }
+                }
+              },
+              {
+                "name": "Jirachi",
+                "gemTypes": [
+                  "steel",
+                  "psychic"
+                ],
+                "areas": {
+                  "eliteLeagues": {
+                    "px": 40
+                  },
+                  "eliteFights": {
+                    "px": 43
+                  },
+                  "underground": {
+                    "px": 46
+                  }
+                }
+              },
+              {
+                "name": "Regice",
+                "gemTypes": [
+                  "ice"
+                ],
+                "areas": {
+                  "eliteLeagues": {
+                    "px": 55
+                  },
+                  "eliteFights": {
+                    "px": 34
+                  },
+                  "underground": {
+                    "px": 40
+                  }
+                }
+              },
+              {
+                "name": "Moltres",
+                "gemTypes": [
+                  "fire",
+                  "flying"
+                ],
+                "areas": {
+                  "eliteLeagues": {
+                    "px": 32
+                  },
+                  "eliteFights": {
+                    "px": 20
+                  },
+                  "underground": {
+                    "px": 37
+                  }
+                }
+              },
+              {
+                "name": "Zapdos",
+                "gemTypes": [
+                  "electric",
+                  "flying"
+                ],
+                "areas": {
+                  "eliteLeagues": {
+                    "px": 37
+                  },
+                  "eliteFights": {
+                    "px": 14
+                  },
+                  "underground": {
+                    "px": 35
+                  }
+                }
+              },
+              {
+                "name": "Terrakion",
+                "gemTypes": [
+                  "rock",
+                  "fighting"
+                ],
+                "areas": {
+                  "eliteLeagues": {
+                    "px": 37
+                  },
+                  "eliteFights": {
+                    "px": 29
+                  },
+                  "underground": {
+                    "px": 21
+                  }
+                }
+              },
+              {
+                "name": "Arceus",
+                "gemTypes": [
+                  "normal"
+                ],
+                "areas": {
+                  "eliteLeagues": {
+                    "px": 30
+                  },
+                  "eliteFights": {
+                    "px": 13
+                  },
+                  "underground": {
+                    "px": 38
+                  }
+                }
+              },
+              {
+                "name": "Articuno",
+                "gemTypes": [
+                  "ice",
+                  "flying"
+                ],
+                "areas": {
+                  "eliteLeagues": {
+                    "px": 34
+                  },
+                  "eliteFights": {
+                    "px": 24
+                  },
+                  "underground": {
+                    "px": 34
+                  }
+                }
+              },
+              {
+                "name": "Arceus Poison",
+                "gemTypes": [
+                  "poison"
+                ],
+                "areas": {
+                  "eliteLeagues": {
+                    "px": 24
+                  },
+                  "eliteFights": {
+                    "px": 22
+                  },
+                  "underground": {
+                    "px": 38
+                  }
+                }
+              },
+              {
+                "name": "Meloetta Pirouette",
+                "gemTypes": [
+                  "normal",
+                  "fighting"
+                ],
+                "areas": {
+                  "eliteLeagues": {
+                    "px": 32
+                  },
+                  "eliteFights": {
+                    "px": 29
+                  },
+                  "underground": {
+                    "px": 43
+                  }
+                }
+              },
+              {
+                "name": "Thundurus Therian",
+                "gemTypes": [
+                  "electric",
+                  "flying"
+                ],
+                "areas": {
+                  "eliteLeagues": {
+                    "px": 40
+                  },
+                  "eliteFights": {
+                    "px": 18
+                  },
+                  "underground": {
+                    "px": 41
+                  }
+                }
+              },
+              {
+                "name": "Regirock",
+                "gemTypes": [
+                  "rock"
+                ],
+                "areas": {
+                  "eliteLeagues": {
+                    "px": 29
+                  },
+                  "eliteFights": {
+                    "px": 18
+                  },
+                  "underground": {
+                    "px": 20
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "label": "D",
+            "sublabel": "Low value",
+            "members": [
+              {
+                "name": "Latios",
+                "gemTypes": [
+                  "dragon",
+                  "psychic"
+                ],
+                "areas": {
+                  "eliteLeagues": {
+                    "px": 26
+                  },
+                  "eliteFights": {
+                    "px": 23
+                  },
+                  "underground": {
+                    "px": 36
+                  }
+                }
+              },
+              {
+                "name": "Thundurus",
+                "gemTypes": [
+                  "electric",
+                  "flying"
+                ],
+                "areas": {
+                  "eliteLeagues": {
+                    "px": 28
+                  },
+                  "eliteFights": {
+                    "px": 12
+                  },
+                  "underground": {
+                    "px": 28
+                  }
+                }
+              },
+              {
+                "name": "Raikou",
+                "gemTypes": [
+                  "electric"
+                ],
+                "areas": {
+                  "eliteLeagues": {
+                    "px": 31
+                  },
+                  "eliteFights": {
+                    "px": 10
+                  },
+                  "underground": {
+                    "px": 25
+                  }
+                }
+              },
+              {
+                "name": "Celebi",
+                "gemTypes": [
+                  "psychic",
+                  "grass"
+                ],
+                "areas": {
+                  "eliteLeagues": {
+                    "px": 25
+                  },
+                  "eliteFights": {
+                    "px": 12
+                  },
+                  "underground": {
+                    "px": 29
+                  }
+                }
+              },
+              {
+                "name": "Latias",
+                "gemTypes": [
+                  "dragon",
+                  "psychic"
+                ],
+                "areas": {
+                  "eliteLeagues": {
+                    "px": 19
+                  },
+                  "eliteFights": {
+                    "px": 16
+                  },
+                  "underground": {
+                    "px": 30
+                  }
+                }
+              },
+              {
+                "name": "Virizion",
+                "gemTypes": [
+                  "grass",
+                  "fighting"
+                ],
+                "areas": {
+                  "eliteLeagues": {
+                    "px": 25
+                  },
+                  "eliteFights": {
+                    "px": 17
+                  },
+                  "underground": {
+                    "px": 23
+                  }
+                }
+              },
+              {
+                "name": "Registeel",
+                "gemTypes": [
+                  "steel"
+                ],
+                "areas": {
+                  "eliteLeagues": {
+                    "px": 24
+                  },
+                  "eliteFights": {
+                    "px": 13
+                  },
+                  "underground": {
+                    "px": 24
+                  }
+                }
+              },
+              {
+                "name": "Darkrai",
+                "gemTypes": [
+                  "dark"
+                ],
+                "areas": {
+                  "eliteLeagues": {
+                    "px": 22
+                  },
+                  "eliteFights": {
+                    "px": 17
+                  },
+                  "underground": {
+                    "px": 19
+                  }
+                }
+              },
+              {
+                "name": "Mew",
+                "gemTypes": [
+                  "psychic"
+                ],
+                "areas": {
+                  "eliteLeagues": {
+                    "px": 28
+                  },
+                  "eliteFights": {
+                    "px": 10
+                  },
+                  "underground": {
+                    "px": 33
+                  }
+                }
+              },
+              {
+                "name": "Manaphy",
+                "gemTypes": [
+                  "water"
+                ],
+                "areas": {
+                  "eliteLeagues": {
+                    "px": 31
+                  },
+                  "eliteFights": {
+                    "px": 7
+                  },
+                  "underground": {
+                    "px": 19
+                  }
+                }
+              },
+              {
+                "name": "Cobalion",
+                "gemTypes": [
+                  "steel",
+                  "fighting"
+                ],
+                "areas": {
+                  "eliteLeagues": {
+                    "px": 11
+                  },
+                  "eliteFights": {
+                    "px": 19
+                  },
+                  "underground": {
+                    "px": 26
+                  }
+                }
+              },
+              {
+                "name": "Shaymin",
+                "gemTypes": [
+                  "grass"
+                ],
+                "areas": {
+                  "eliteLeagues": {
+                    "px": 27
+                  },
+                  "eliteFights": {
+                    "px": 8
+                  },
+                  "underground": {
+                    "px": 21
+                  }
+                }
+              },
+              {
+                "name": "Tornadus",
+                "gemTypes": [
+                  "flying"
+                ],
+                "areas": {
+                  "eliteLeagues": {
+                    "px": 22
+                  },
+                  "eliteFights": {
+                    "px": 9
+                  },
+                  "underground": {
+                    "px": 24
+                  }
+                }
+              },
+              {
+                "name": "Meloetta",
+                "gemTypes": [
+                  "normal",
+                  "psychic"
+                ],
+                "areas": {
+                  "eliteLeagues": {
+                    "px": 11
+                  },
+                  "eliteFights": {
+                    "px": 15
+                  },
+                  "underground": {
+                    "px": 28
+                  }
+                }
+              },
+              {
+                "name": "Cresselia",
+                "gemTypes": [
+                  "psychic"
+                ],
+                "areas": {
+                  "eliteLeagues": {
+                    "px": 17
+                  },
+                  "eliteFights": {
+                    "px": 5
+                  },
+                  "underground": {
+                    "px": 27
+                  }
+                }
+              },
+              {
+                "name": "Shaymin Sky",
+                "gemTypes": [
+                  "grass",
+                  "flying"
+                ],
+                "areas": {
+                  "eliteLeagues": {
+                    "px": 22
+                  },
+                  "eliteFights": {
+                    "px": 8
+                  },
+                  "underground": {
+                    "px": 19
+                  }
+                }
+              },
+              {
+                "name": "Tornadus Therian",
+                "gemTypes": [
+                  "flying"
+                ],
+                "areas": {
+                  "eliteLeagues": {
+                    "px": 21
+                  },
+                  "eliteFights": {
+                    "px": 11
+                  },
+                  "underground": {
+                    "px": 28
+                  }
+                }
+              },
+              {
+                "name": "Mesprit",
+                "gemTypes": [
+                  "psychic"
+                ],
+                "areas": {
+                  "eliteLeagues": {
+                    "px": 18
+                  },
+                  "eliteFights": {
+                    "px": 7
+                  },
+                  "underground": {
+                    "px": 20
+                  }
+                }
+              }
+            ]
+          },
+          {
+            "label": "F",
+            "sublabel": "Skip",
+            "members": [
+              {
+                "name": "Azelf",
+                "gemTypes": [
+                  "psychic"
+                ],
+                "areas": {
+                  "eliteLeagues": {
+                    "px": 11
+                  },
+                  "eliteFights": {
+                    "px": 5
+                  },
+                  "underground": {
+                    "px": 17
+                  }
+                }
+              },
+              {
                 "name": "Deoxys Defense",
                 "gemTypes": [
                   "psychic"
@@ -8484,16 +9389,98 @@
                     "px": 14
                   }
                 }
+              },
+              {
+                "name": "Deoxys Speed",
+                "gemTypes": [
+                  "psychic"
+                ],
+                "areas": {
+                  "eliteLeagues": {
+                    "px": 13
+                  },
+                  "eliteFights": {
+                    "px": 5
+                  },
+                  "underground": {
+                    "px": 12
+                  }
+                }
+              },
+              {
+                "name": "Deoxys",
+                "gemTypes": [
+                  "psychic"
+                ],
+                "areas": {
+                  "eliteLeagues": {
+                    "px": 9
+                  },
+                  "eliteFights": {
+                    "px": 4
+                  },
+                  "underground": {
+                    "px": 15
+                  }
+                }
+              },
+              {
+                "name": "Uxie",
+                "gemTypes": [
+                  "psychic"
+                ],
+                "areas": {
+                  "eliteLeagues": {
+                    "px": 10
+                  },
+                  "eliteFights": {
+                    "px": 4
+                  },
+                  "underground": {
+                    "px": 13
+                  }
+                }
+              },
+              {
+                "name": "Phione",
+                "gemTypes": [
+                  "water"
+                ],
+                "areas": {
+                  "eliteLeagues": {
+                    "px": 16
+                  },
+                  "eliteFights": {
+                    "px": 4
+                  },
+                  "underground": {
+                    "px": 8
+                  }
+                }
+              },
+              {
+                "name": "Deoxys Attack",
+                "gemTypes": [
+                  "psychic"
+                ],
+                "areas": {
+                  "eliteLeagues": {
+                    "px": 4
+                  },
+                  "eliteFights": {
+                    "px": 2
+                  },
+                  "underground": {
+                    "px": 4
+                  }
+                }
               }
             ]
           }
         ]
       },
       "uncertain": [
-        "`areas` holds each bar's length in board pixels (76px = the best in that area). The board prints no absolute score, and the rounded bar ends put each length within 1px. The stored order is the board order.",
-        "The vertical tier grouping (which row belongs to which letter tier) is not legible; all members are stored in one 'board order' group.",
-        "The OCR also read 'Arceus Flying?' with a question mark; the sprite chip follows the Flying plate row, so it is stored as Arceus Flying.",
-        "Two best-sink names are ambiguous between a base and a form (Landorus vs Landorus Therian, Genesect vs Genesect Burn); both appear in the OCR rows and both are stored as separate entries."
+        "Bars end in a rounded cap, so each area's px is the exact coloured run and can sit 1px off the drawn scaled value; 76px is the full track."
       ]
     },
     "ru-tiers": {
@@ -8536,6 +9523,7 @@
             "scale": "100 = the best of all 304 in that area; the tier score is the average of the three."
           }
         },
+        "layout": "The board prints three groups: Pseudo-legendaries (\"Always good · all six are rare and rank up with rare gems\"), Top 10 Rare (\"Pseudo-legendaries not counted · rare gems\") and Top 10 Uncommon (\"Cheaper uncommon gems, still real gains\"). Each card shows its rank in the group, the name, the gem-type tags, three bars in EL / LG / UG order, the score in pts and its best area out of 304. The stored lists keep the board's rank order, so index + 1 is the rank; pts is the printed score, not a bar measurement.",
         "gameFacts": [
           "An Elite team fields only one legendary, so 5 of 6 slots are non-legendaries.",
           "Rare species rank up with rare gems of their types; uncommon species with cheaper uncommon gems.",
@@ -8553,7 +9541,7 @@
               "steel",
               "psychic"
             ],
-            "pts": 78,
+            "pts": 79,
             "bestArea": "Underground #2 of 304"
           },
           {
@@ -8562,7 +9550,7 @@
               "dragon",
               "ground"
             ],
-            "pts": 70,
+            "pts": 78,
             "bestArea": "Underground #3 of 304"
           },
           {
@@ -8571,7 +9559,7 @@
               "rock",
               "dark"
             ],
-            "pts": 65,
+            "pts": 70,
             "bestArea": "Elite #2 of 304"
           },
           {
@@ -8580,7 +9568,7 @@
               "dark",
               "dragon"
             ],
-            "pts": 64,
+            "pts": 65,
             "bestArea": "Elite #12 of 304"
           },
           {
@@ -8589,7 +9577,7 @@
               "dragon",
               "flying"
             ],
-            "pts": 61,
+            "pts": 64,
             "bestArea": "Underground #7 of 304"
           },
           {
@@ -8693,13 +9681,40 @@
         ],
         "topUncommon": [
           {
+            "name": "Scrafty",
+            "gemTypes": [
+              "dark",
+              "fighting"
+            ],
+            "pts": 61,
+            "bestArea": "Underground #15 of 304"
+          },
+          {
+            "name": "Escavalier",
+            "gemTypes": [
+              "bug",
+              "steel"
+            ],
+            "pts": 60,
+            "bestArea": "Elite #9 of 304"
+          },
+          {
+            "name": "Skuntank",
+            "gemTypes": [
+              "poison",
+              "dark"
+            ],
+            "pts": 53,
+            "bestArea": "Elite #3 of 304"
+          },
+          {
             "name": "Golurk",
             "gemTypes": [
               "ground",
               "ghost"
             ],
-            "pts": 61,
-            "bestArea": "Underground #15 of 304"
+            "pts": 52,
+            "bestArea": "Underground #36 of 304"
           },
           {
             "name": "Dewgong",
@@ -8707,15 +9722,15 @@
               "water",
               "ice"
             ],
-            "pts": 60,
-            "bestArea": "Elite #9 of 304"
+            "pts": 51,
+            "bestArea": "League #11 of 304"
           },
           {
             "name": "Darmanitan",
             "gemTypes": [
               "fire"
             ],
-            "pts": 54,
+            "pts": 51,
             "bestArea": "Underground #27 of 304"
           },
           {
@@ -8742,6 +9757,15 @@
             ],
             "pts": 48,
             "bestArea": "Underground #26 of 304"
+          },
+          {
+            "name": "Gastrodon",
+            "gemTypes": [
+              "water",
+              "ground"
+            ],
+            "pts": 48,
+            "bestArea": "League #45 of 304"
           }
         ],
         "notes": [
@@ -8750,12 +9774,7 @@
           "Pseudo-legendaries are not counted in the Top 10 Rare list (they are shown separately)."
         ]
       },
-      "uncertain": [
-        "The board's Top 10 Uncommon prints three of its first five names as sprites only; the OCR recovered Golurk, Dewgong, Darmanitan, Froslass, Granbull and Hariyama, so those six are stored and the rest omitted rather than invented.",
-        "Mamoswine's points read 'MA' and Glaceon's are cut off; 71 and 64 are best reads, not confirmed digits.",
-        "Darmanitan's 54 pts is printed in the second row group above the 52/51 of the first group; kept as read, so the stored top list is not strictly descending.",
-        "One best-area label reads 'Bite #57/#12 of 304' in the OCR; stored as 'Elite' where the column header makes that the likely word."
-      ]
+      "uncertain": []
     },
     "type-picks": {
       "id": "type-picks",
