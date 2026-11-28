@@ -10796,76 +10796,76 @@
               ],
               "alternates": [
                 {
-                  "memberIndex": 0,
                   "name": "Scizor",
                   "rate": 68,
-                  "withBan": false
+                  "withBan": false,
+                  "memberIndex": 0
                 },
                 {
-                  "memberIndex": 0,
                   "name": "Hydreigon",
                   "rate": 68,
-                  "withBan": false
+                  "withBan": false,
+                  "memberIndex": 0
                 },
                 {
-                  "memberIndex": 1,
                   "name": "Skuntank",
                   "rate": 66,
-                  "withBan": false
+                  "withBan": false,
+                  "memberIndex": 1
                 },
                 {
-                  "memberIndex": 1,
                   "name": "Drapion",
                   "rate": 65,
-                  "withBan": false
+                  "withBan": false,
+                  "memberIndex": 1
                 },
                 {
-                  "memberIndex": 2,
                   "name": "Exeggutor",
                   "rate": 65,
-                  "withBan": false
+                  "withBan": false,
+                  "memberIndex": 2
                 },
                 {
-                  "memberIndex": 2,
                   "name": "Scizor",
                   "rate": 64,
-                  "withBan": false
+                  "withBan": false,
+                  "memberIndex": 2
                 },
                 {
-                  "memberIndex": 3,
                   "name": "Skuntank",
                   "rate": 64,
-                  "withBan": false
+                  "withBan": false,
+                  "memberIndex": 3
                 },
                 {
-                  "memberIndex": 3,
                   "name": "Hydreigon",
                   "rate": 64,
-                  "withBan": false
+                  "withBan": false,
+                  "memberIndex": 3
                 },
                 {
-                  "memberIndex": 4,
                   "name": "Hydreigon",
                   "rate": 67,
-                  "withBan": false
+                  "withBan": false,
+                  "memberIndex": 4
                 },
                 {
-                  "memberIndex": 4,
                   "name": "Skuntank",
                   "rate": 67,
-                  "withBan": false
+                  "withBan": false,
+                  "memberIndex": 4
                 },
                 {
-                  "memberIndex": 5,
                   "name": "Hydreigon",
                   "rate": 64,
-                  "withBan": false
+                  "withBan": false,
+                  "memberIndex": 5
                 },
                 {
-                  "memberIndex": 5,
                   "name": "Spiritomb",
                   "rate": 65,
-                  "withBan": false
+                  "withBan": true,
+                  "memberIndex": 5
                 }
               ],
               "alternateBans": [
@@ -10959,64 +10959,76 @@
               ],
               "alternates": [
                 {
-                  "memberIndex": 0,
+                  "name": "Hydreigon",
+                  "rate": 64,
+                  "withBan": false,
+                  "memberIndex": 0
+                },
+                {
                   "name": "Scizor",
                   "rate": 64,
-                  "withBan": false
+                  "withBan": false,
+                  "memberIndex": 0
                 },
                 {
-                  "memberIndex": 0,
+                  "name": "Scizor",
+                  "rate": 64,
+                  "withBan": false,
+                  "memberIndex": 1
+                },
+                {
                   "name": "Hydreigon",
                   "rate": 63,
-                  "withBan": false
+                  "withBan": false,
+                  "memberIndex": 1
                 },
                 {
-                  "memberIndex": 0,
                   "name": "Scizor",
                   "rate": 63,
-                  "withBan": false
+                  "withBan": false,
+                  "memberIndex": 2
                 },
                 {
-                  "memberIndex": 0,
                   "name": "Hydreigon",
                   "rate": 62,
-                  "withBan": false
+                  "withBan": false,
+                  "memberIndex": 2
                 },
                 {
-                  "memberIndex": 1,
                   "name": "Scizor",
                   "rate": 63,
-                  "withBan": false
+                  "withBan": false,
+                  "memberIndex": 3
                 },
                 {
-                  "memberIndex": 1,
                   "name": "Hydreigon",
                   "rate": 62,
-                  "withBan": false
+                  "withBan": false,
+                  "memberIndex": 3
                 },
                 {
-                  "memberIndex": 2,
                   "name": "Scizor",
                   "rate": 65,
-                  "withBan": false
+                  "withBan": false,
+                  "memberIndex": 4
                 },
                 {
-                  "memberIndex": 2,
                   "name": "Hydreigon",
                   "rate": 64,
-                  "withBan": false
+                  "withBan": false,
+                  "memberIndex": 4
                 },
                 {
-                  "memberIndex": 3,
                   "name": "Scizor",
                   "rate": 61,
-                  "withBan": false
+                  "withBan": false,
+                  "memberIndex": 5
                 },
                 {
-                  "memberIndex": 3,
                   "name": "Hydreigon",
                   "rate": 61,
-                  "withBan": false
+                  "withBan": false,
+                  "memberIndex": 5
                 }
               ],
               "alternateBans": []
@@ -11111,7 +11123,80 @@
                   "bans": []
                 }
               ],
-              "alternates": [],
+              "alternates": [
+                {
+                  "name": "Gigalith",
+                  "rate": 69,
+                  "withBan": false,
+                  "memberIndex": 0
+                },
+                {
+                  "name": "Relicanth",
+                  "rate": 68,
+                  "withBan": false,
+                  "memberIndex": 0
+                },
+                {
+                  "name": "Gigalith",
+                  "rate": 70,
+                  "withBan": false,
+                  "memberIndex": 1
+                },
+                {
+                  "name": "Tyranitar",
+                  "rate": 69,
+                  "withBan": false,
+                  "memberIndex": 1
+                },
+                {
+                  "name": "Sudowoodo",
+                  "rate": 72,
+                  "withBan": false,
+                  "memberIndex": 2
+                },
+                {
+                  "name": "Gigalith",
+                  "rate": 72,
+                  "withBan": false,
+                  "memberIndex": 2
+                },
+                {
+                  "name": "Sudowoodo",
+                  "rate": 71,
+                  "withBan": false,
+                  "memberIndex": 3
+                },
+                {
+                  "name": "Gigalith",
+                  "rate": 70,
+                  "withBan": false,
+                  "memberIndex": 3
+                },
+                {
+                  "name": "Gigalith",
+                  "rate": 71,
+                  "withBan": false,
+                  "memberIndex": 4
+                },
+                {
+                  "name": "Relicanth",
+                  "rate": 70,
+                  "withBan": false,
+                  "memberIndex": 4
+                },
+                {
+                  "name": "Sudowoodo",
+                  "rate": 64,
+                  "withBan": false,
+                  "memberIndex": 5
+                },
+                {
+                  "name": "Relicanth",
+                  "rate": 64,
+                  "withBan": false,
+                  "memberIndex": 5
+                }
+              ],
               "alternateBans": []
             },
             "noLegendary": {
@@ -11189,7 +11274,80 @@
                   "bans": []
                 }
               ],
-              "alternates": [],
+              "alternates": [
+                {
+                  "name": "Gigalith",
+                  "rate": 68,
+                  "withBan": false,
+                  "memberIndex": 0
+                },
+                {
+                  "name": "Tyranitar",
+                  "rate": 68,
+                  "withBan": false,
+                  "memberIndex": 0
+                },
+                {
+                  "name": "Gigalith",
+                  "rate": 69,
+                  "withBan": false,
+                  "memberIndex": 1
+                },
+                {
+                  "name": "Golem",
+                  "rate": 68,
+                  "withBan": false,
+                  "memberIndex": 1
+                },
+                {
+                  "name": "Gigalith",
+                  "rate": 69,
+                  "withBan": false,
+                  "memberIndex": 2
+                },
+                {
+                  "name": "Rhydon",
+                  "rate": 68,
+                  "withBan": false,
+                  "memberIndex": 2
+                },
+                {
+                  "name": "Rhydon",
+                  "rate": 68,
+                  "withBan": false,
+                  "memberIndex": 3
+                },
+                {
+                  "name": "Tyranitar",
+                  "rate": 68,
+                  "withBan": false,
+                  "memberIndex": 3
+                },
+                {
+                  "name": "Gigalith",
+                  "rate": 70,
+                  "withBan": false,
+                  "memberIndex": 4
+                },
+                {
+                  "name": "Tyranitar",
+                  "rate": 69,
+                  "withBan": false,
+                  "memberIndex": 4
+                },
+                {
+                  "name": "Gigalith",
+                  "rate": 63,
+                  "withBan": false,
+                  "memberIndex": 5
+                },
+                {
+                  "name": "Rhydon",
+                  "rate": 62,
+                  "withBan": false,
+                  "memberIndex": 5
+                }
+              ],
               "alternateBans": []
             }
           },
@@ -11280,8 +11438,95 @@
                   ]
                 }
               ],
-              "alternates": [],
-              "alternateBans": []
+              "alternates": [
+                {
+                  "name": "Electivire",
+                  "rate": 63,
+                  "withBan": true,
+                  "memberIndex": 0
+                },
+                {
+                  "name": "Magneton",
+                  "rate": 62,
+                  "withBan": true,
+                  "memberIndex": 0
+                },
+                {
+                  "name": "Relicanth",
+                  "rate": 63,
+                  "withBan": false,
+                  "memberIndex": 1
+                },
+                {
+                  "name": "Magneton",
+                  "rate": 62,
+                  "withBan": true,
+                  "memberIndex": 1
+                },
+                {
+                  "name": "Relicanth",
+                  "rate": 61,
+                  "withBan": false,
+                  "memberIndex": 2
+                },
+                {
+                  "name": "Solrock",
+                  "rate": 60,
+                  "withBan": false,
+                  "memberIndex": 2
+                },
+                {
+                  "name": "Magneton",
+                  "rate": 61,
+                  "withBan": true,
+                  "memberIndex": 3
+                },
+                {
+                  "name": "Luxray",
+                  "rate": 58,
+                  "withBan": false,
+                  "memberIndex": 3
+                },
+                {
+                  "name": "Relicanth",
+                  "rate": 58,
+                  "withBan": false,
+                  "memberIndex": 4
+                },
+                {
+                  "name": "Electivire",
+                  "rate": 58,
+                  "withBan": true,
+                  "memberIndex": 4
+                },
+                {
+                  "name": "Magneton",
+                  "rate": 62,
+                  "withBan": true,
+                  "memberIndex": 5
+                },
+                {
+                  "name": "Electivire",
+                  "rate": 54,
+                  "withBan": true,
+                  "memberIndex": 5
+                }
+              ],
+              "alternateBans": [
+                {
+                  "name": "Magneton",
+                  "bans": [
+                    "Supersonic",
+                    "Thunder Wave"
+                  ]
+                },
+                {
+                  "name": "Electivire",
+                  "bans": [
+                    "Thunder Wave"
+                  ]
+                }
+              ]
             },
             "noLegendary": {
               "title": "NO LEGENDARY - 100 WINS - 0:58 - 62/H - BANS +7%",
@@ -11362,8 +11607,101 @@
                   "bans": []
                 }
               ],
-              "alternates": [],
-              "alternateBans": []
+              "alternates": [
+                {
+                  "name": "Magneton",
+                  "rate": 60,
+                  "withBan": true,
+                  "memberIndex": 0
+                },
+                {
+                  "name": "Luxray",
+                  "rate": 55,
+                  "withBan": true,
+                  "memberIndex": 0
+                },
+                {
+                  "name": "Bisharp",
+                  "rate": 60,
+                  "withBan": false,
+                  "memberIndex": 1
+                },
+                {
+                  "name": "Magneton",
+                  "rate": 61,
+                  "withBan": true,
+                  "memberIndex": 1
+                },
+                {
+                  "name": "Nidoqueen",
+                  "rate": 61,
+                  "withBan": true,
+                  "memberIndex": 2
+                },
+                {
+                  "name": "Bisharp",
+                  "rate": 60,
+                  "withBan": false,
+                  "memberIndex": 2
+                },
+                {
+                  "name": "Bisharp",
+                  "rate": 56,
+                  "withBan": false,
+                  "memberIndex": 3
+                },
+                {
+                  "name": "Luxray",
+                  "rate": 56,
+                  "withBan": true,
+                  "memberIndex": 3
+                },
+                {
+                  "name": "Bisharp",
+                  "rate": 61,
+                  "withBan": false,
+                  "memberIndex": 4
+                },
+                {
+                  "name": "Luxray",
+                  "rate": 61,
+                  "withBan": true,
+                  "memberIndex": 4
+                },
+                {
+                  "name": "Bisharp",
+                  "rate": 60,
+                  "withBan": false,
+                  "memberIndex": 5
+                },
+                {
+                  "name": "Luxray",
+                  "rate": 60,
+                  "withBan": true,
+                  "memberIndex": 5
+                }
+              ],
+              "alternateBans": [
+                {
+                  "name": "Magneton",
+                  "bans": [
+                    "Supersonic",
+                    "Thunder Wave"
+                  ]
+                },
+                {
+                  "name": "Nidoqueen",
+                  "bans": [
+                    "11 attacks, all but its 8 Ground attacks"
+                  ]
+                },
+                {
+                  "name": "Luxray",
+                  "bans": [
+                    "Thunder Wave"
+                  ]
+                }
+              ]
             }
           },
           {
@@ -11467,7 +11805,80 @@
                   ]
                 }
               ],
-              "alternates": [],
+              "alternates": [
+                {
+                  "name": "Bellossom",
+                  "rate": 71,
+                  "withBan": false,
+                  "memberIndex": 0
+                },
+                {
+                  "name": "Meganium",
+                  "rate": 71,
+                  "withBan": false,
+                  "memberIndex": 0
+                },
+                {
+                  "name": "Meganium",
+                  "rate": 74,
+                  "withBan": false,
+                  "memberIndex": 1
+                },
+                {
+                  "name": "Bellossom",
+                  "rate": 75,
+                  "withBan": false,
+                  "memberIndex": 1
+                },
+                {
+                  "name": "Bellossom",
+                  "rate": 74,
+                  "withBan": false,
+                  "memberIndex": 2
+                },
+                {
+                  "name": "Meganium",
+                  "rate": 74,
+                  "withBan": false,
+                  "memberIndex": 2
+                },
+                {
+                  "name": "Bellossom",
+                  "rate": 72,
+                  "withBan": false,
+                  "memberIndex": 3
+                },
+                {
+                  "name": "Meganium",
+                  "rate": 72,
+                  "withBan": false,
+                  "memberIndex": 3
+                },
+                {
+                  "name": "Bellossom",
+                  "rate": 72,
+                  "withBan": false,
+                  "memberIndex": 4
+                },
+                {
+                  "name": "Ludicolo",
+                  "rate": 70,
+                  "withBan": false,
+                  "memberIndex": 4
+                },
+                {
+                  "name": "Bellossom",
+                  "rate": 71,
+                  "withBan": false,
+                  "memberIndex": 5
+                },
+                {
+                  "name": "Meganium",
+                  "rate": 71,
+                  "withBan": false,
+                  "memberIndex": 5
+                }
+              ],
               "alternateBans": []
             },
             "noLegendary": {
@@ -11555,8 +11966,88 @@
                   "bans": []
                 }
               ],
-              "alternates": [],
-              "alternateBans": []
+              "alternates": [
+                {
+                  "name": "Ludicolo",
+                  "rate": 67,
+                  "withBan": false,
+                  "memberIndex": 0
+                },
+                {
+                  "name": "Tropius",
+                  "rate": 66,
+                  "withBan": false,
+                  "memberIndex": 0
+                },
+                {
+                  "name": "Ludicolo",
+                  "rate": 68,
+                  "withBan": false,
+                  "memberIndex": 1
+                },
+                {
+                  "name": "Tropius",
+                  "rate": 66,
+                  "withBan": false,
+                  "memberIndex": 1
+                },
+                {
+                  "name": "Ludicolo",
+                  "rate": 67,
+                  "withBan": false,
+                  "memberIndex": 2
+                },
+                {
+                  "name": "Pelipper",
+                  "rate": 67,
+                  "withBan": true,
+                  "memberIndex": 2
+                },
+                {
+                  "name": "Pelipper",
+                  "rate": 62,
+                  "withBan": true,
+                  "memberIndex": 3
+                },
+                {
+                  "name": "Tropius",
+                  "rate": 62,
+                  "withBan": false,
+                  "memberIndex": 3
+                },
+                {
+                  "name": "Ludicolo",
+                  "rate": 69,
+                  "withBan": false,
+                  "memberIndex": 4
+                },
+                {
+                  "name": "Tropius",
+                  "rate": 67,
+                  "withBan": false,
+                  "memberIndex": 4
+                },
+                {
+                  "name": "Ludicolo",
+                  "rate": 68,
+                  "withBan": false,
+                  "memberIndex": 5
+                },
+                {
+                  "name": "Swanna",
+                  "rate": 66,
+                  "withBan": false,
+                  "memberIndex": 5
+                }
+              ],
+              "alternateBans": [
+                {
+                  "name": "Pelipper",
+                  "bans": [
+                    "Supersonic"
+                  ]
+                }
+              ]
             }
           },
           {
@@ -11657,76 +12148,76 @@
               ],
               "alternates": [
                 {
-                  "memberIndex": 0,
                   "name": "Roserade",
                   "rate": 69,
-                  "withBan": false
+                  "withBan": false,
+                  "memberIndex": 0
                 },
                 {
-                  "memberIndex": 0,
                   "name": "Abomasnow",
                   "rate": 68,
-                  "withBan": false
+                  "withBan": false,
+                  "memberIndex": 0
                 },
                 {
-                  "memberIndex": 1,
                   "name": "Abomasnow",
                   "rate": 68,
-                  "withBan": false
+                  "withBan": false,
+                  "memberIndex": 1
                 },
                 {
-                  "memberIndex": 1,
                   "name": "Roserade",
                   "rate": 70,
-                  "withBan": false
+                  "withBan": false,
+                  "memberIndex": 1
                 },
                 {
-                  "memberIndex": 2,
                   "name": "Meganium",
                   "rate": 68,
-                  "withBan": false
+                  "withBan": false,
+                  "memberIndex": 2
                 },
                 {
-                  "memberIndex": 2,
                   "name": "Roserade",
                   "rate": 68,
-                  "withBan": false
+                  "withBan": false,
+                  "memberIndex": 2
                 },
                 {
-                  "memberIndex": 3,
                   "name": "Meganium",
                   "rate": 68,
-                  "withBan": false
+                  "withBan": false,
+                  "memberIndex": 3
                 },
                 {
-                  "memberIndex": 3,
                   "name": "Venusaur",
                   "rate": 68,
-                  "withBan": false
+                  "withBan": false,
+                  "memberIndex": 3
                 },
                 {
-                  "memberIndex": 4,
                   "name": "Venusaur",
                   "rate": 69,
-                  "withBan": false
+                  "withBan": false,
+                  "memberIndex": 4
                 },
                 {
-                  "memberIndex": 4,
                   "name": "Meganium",
                   "rate": 68,
-                  "withBan": false
+                  "withBan": false,
+                  "memberIndex": 4
                 },
                 {
-                  "memberIndex": 5,
                   "name": "Venusaur",
                   "rate": 69,
-                  "withBan": false
+                  "withBan": false,
+                  "memberIndex": 5
                 },
                 {
-                  "memberIndex": 5,
                   "name": "Abomasnow",
                   "rate": 68,
-                  "withBan": false
+                  "withBan": false,
+                  "memberIndex": 5
                 }
               ],
               "alternateBans": []
@@ -11820,76 +12311,76 @@
               ],
               "alternates": [
                 {
-                  "memberIndex": 0,
                   "name": "Carnivine",
                   "rate": 69,
-                  "withBan": false
+                  "withBan": false,
+                  "memberIndex": 0
                 },
                 {
-                  "memberIndex": 0,
                   "name": "Abomasnow",
                   "rate": 69,
-                  "withBan": false
+                  "withBan": false,
+                  "memberIndex": 0
                 },
                 {
-                  "memberIndex": 1,
                   "name": "Carnivine",
                   "rate": 68,
-                  "withBan": false
+                  "withBan": false,
+                  "memberIndex": 1
                 },
                 {
-                  "memberIndex": 1,
                   "name": "Abomasnow",
                   "rate": 67,
-                  "withBan": false
+                  "withBan": false,
+                  "memberIndex": 1
                 },
                 {
-                  "memberIndex": 2,
                   "name": "Carnivine",
                   "rate": 67,
-                  "withBan": false
+                  "withBan": false,
+                  "memberIndex": 2
                 },
                 {
-                  "memberIndex": 2,
                   "name": "Venusaur",
                   "rate": 67,
-                  "withBan": false
+                  "withBan": false,
+                  "memberIndex": 2
                 },
                 {
-                  "memberIndex": 3,
                   "name": "Roserade",
                   "rate": 68,
-                  "withBan": false
+                  "withBan": false,
+                  "memberIndex": 3
                 },
                 {
-                  "memberIndex": 3,
                   "name": "Venusaur",
                   "rate": 68,
-                  "withBan": false
+                  "withBan": false,
+                  "memberIndex": 3
                 },
                 {
-                  "memberIndex": 4,
                   "name": "Roserade",
                   "rate": 68,
-                  "withBan": false
+                  "withBan": false,
+                  "memberIndex": 4
                 },
                 {
-                  "memberIndex": 4,
                   "name": "Venusaur",
                   "rate": 69,
-                  "withBan": false
+                  "withBan": false,
+                  "memberIndex": 4
                 },
                 {
-                  "memberIndex": 4,
                   "name": "Venusaur",
                   "rate": 69,
-                  "withBan": false
+                  "withBan": false,
+                  "memberIndex": 5
                 },
                 {
-                  "memberIndex": 4,
                   "name": "Muk",
                   "rate": 66,
-                  "withBan": false
+                  "withBan": false,
+                  "memberIndex": 5
                 }
               ],
               "alternateBans": []
@@ -11985,79 +12476,87 @@
               ],
               "alternates": [
                 {
-                  "memberIndex": 0,
                   "name": "Walrein",
                   "rate": 65,
-                  "withBan": false
+                  "withBan": false,
+                  "memberIndex": 0
                 },
                 {
-                  "memberIndex": 0,
                   "name": "Rotom (Frost)",
                   "rate": 67,
-                  "withBan": true
+                  "withBan": true,
+                  "memberIndex": 0
                 },
                 {
-                  "memberIndex": 1,
                   "name": "Rotom (Frost)",
                   "rate": 62,
-                  "withBan": true
+                  "withBan": true,
+                  "memberIndex": 1
                 },
                 {
-                  "memberIndex": 1,
                   "name": "Walrein",
                   "rate": 60,
-                  "withBan": false
+                  "withBan": false,
+                  "memberIndex": 1
                 },
                 {
-                  "memberIndex": 2,
                   "name": "Rotom (Frost)",
                   "rate": 64,
-                  "withBan": true
+                  "withBan": true,
+                  "memberIndex": 2
                 },
                 {
-                  "memberIndex": 2,
                   "name": "Walrein",
                   "rate": 62,
-                  "withBan": false
+                  "withBan": false,
+                  "memberIndex": 2
                 },
                 {
-                  "memberIndex": 3,
                   "name": "Walrein",
                   "rate": 65,
-                  "withBan": false
+                  "withBan": false,
+                  "memberIndex": 3
                 },
                 {
-                  "memberIndex": 3,
                   "name": "Rotom (Frost)",
                   "rate": 66,
-                  "withBan": true
+                  "withBan": true,
+                  "memberIndex": 3
                 },
                 {
-                  "memberIndex": 4,
                   "name": "Walrein",
                   "rate": 66,
-                  "withBan": false
+                  "withBan": false,
+                  "memberIndex": 4
                 },
                 {
-                  "memberIndex": 4,
                   "name": "Rotom (Frost)",
                   "rate": 67,
-                  "withBan": true
+                  "withBan": true,
+                  "memberIndex": 4
                 },
                 {
-                  "memberIndex": 5,
                   "name": "Walrein",
                   "rate": 64,
-                  "withBan": false
+                  "withBan": false,
+                  "memberIndex": 5
                 },
                 {
-                  "memberIndex": 5,
                   "name": "Rotom (Frost)",
                   "rate": 66,
-                  "withBan": true
+                  "withBan": true,
+                  "memberIndex": 5
                 }
               ],
-              "alternateBans": []
+              "alternateBans": [
+                {
+                  "name": "Rotom (Frost)",
+                  "bans": [
+                    "Confuse Ray",
+                    "Thunder Wave"
+                  ]
+                }
+              ]
             },
             "noLegendary": {
               "title": "NO LEGENDARY - 99 WINS - 0:55 - 65/H - BANS +2%",
@@ -12135,79 +12634,100 @@
               ],
               "alternates": [
                 {
-                  "memberIndex": 0,
                   "name": "Rotom (Frost)",
                   "rate": 62,
-                  "withBan": false
+                  "withBan": true,
+                  "memberIndex": 0
                 },
                 {
-                  "memberIndex": 0,
                   "name": "Beartic",
                   "rate": 59,
-                  "withBan": false
+                  "withBan": false,
+                  "memberIndex": 0
                 },
                 {
-                  "memberIndex": 1,
                   "name": "Rotom (Frost)",
                   "rate": 66,
-                  "withBan": false
+                  "withBan": true,
+                  "memberIndex": 1
                 },
                 {
-                  "memberIndex": 1,
                   "name": "Beartic",
                   "rate": 65,
-                  "withBan": false
+                  "withBan": false,
+                  "memberIndex": 1
                 },
                 {
-                  "memberIndex": 2,
                   "name": "Rotom (Frost)",
                   "rate": 63,
-                  "withBan": false
+                  "withBan": true,
+                  "memberIndex": 2
                 },
                 {
-                  "memberIndex": 2,
                   "name": "Lapras",
                   "rate": 61,
-                  "withBan": true
+                  "withBan": true,
+                  "memberIndex": 2
                 },
                 {
-                  "memberIndex": 3,
                   "name": "Rotom (Frost)",
                   "rate": 64,
-                  "withBan": false
+                  "withBan": true,
+                  "memberIndex": 3
                 },
                 {
-                  "memberIndex": 3,
                   "name": "Beartic",
                   "rate": 64,
-                  "withBan": false
+                  "withBan": false,
+                  "memberIndex": 3
                 },
                 {
-                  "memberIndex": 4,
                   "name": "Rotom (Frost)",
                   "rate": 66,
-                  "withBan": false
+                  "withBan": true,
+                  "memberIndex": 4
                 },
                 {
-                  "memberIndex": 4,
                   "name": "Beartic",
                   "rate": 65,
-                  "withBan": false
+                  "withBan": false,
+                  "memberIndex": 4
                 },
                 {
-                  "memberIndex": 5,
                   "name": "Lapras",
                   "rate": 63,
-                  "withBan": true
+                  "withBan": true,
+                  "memberIndex": 5
                 },
                 {
-                  "memberIndex": 5,
                   "name": "Rotom (Frost)",
                   "rate": 63,
-                  "withBan": false
+                  "withBan": true,
+                  "memberIndex": 5
                 }
               ],
-              "alternateBans": []
+              "alternateBans": [
+                {
+                  "name": "Rotom (Frost)",
+                  "bans": [
+                    "Confuse Ray",
+                    "Thunder Wave"
+                  ]
+                },
+                {
+                  "name": "Lapras",
+                  "bans": [
+                    "Confuse Ray",
+                    "Sing"
+                  ]
+                },
+                {
+                  "name": "Rotom (Frost)",
+                  "bans": [
+                    "Thunder Wave"
+                  ]
+                }
+              ]
             }
           },
           {
@@ -12300,76 +12820,76 @@
               ],
               "alternates": [
                 {
-                  "memberIndex": 0,
                   "name": "Machamp",
                   "rate": 71,
-                  "withBan": false
+                  "withBan": false,
+                  "memberIndex": 0
                 },
                 {
-                  "memberIndex": 0,
                   "name": "Heracross",
                   "rate": 71,
-                  "withBan": false
+                  "withBan": false,
+                  "memberIndex": 0
                 },
                 {
-                  "memberIndex": 1,
                   "name": "Machamp",
                   "rate": 73,
-                  "withBan": false
+                  "withBan": false,
+                  "memberIndex": 1
                 },
                 {
-                  "memberIndex": 1,
                   "name": "Hariyama",
                   "rate": 72,
-                  "withBan": false
+                  "withBan": false,
+                  "memberIndex": 1
                 },
                 {
-                  "memberIndex": 2,
                   "name": "Heracross",
                   "rate": 73,
-                  "withBan": false
+                  "withBan": false,
+                  "memberIndex": 2
                 },
                 {
-                  "memberIndex": 2,
                   "name": "Machamp",
                   "rate": 73,
-                  "withBan": false
+                  "withBan": false,
+                  "memberIndex": 2
                 },
                 {
-                  "memberIndex": 3,
                   "name": "Machamp",
                   "rate": 73,
-                  "withBan": false
+                  "withBan": false,
+                  "memberIndex": 3
                 },
                 {
-                  "memberIndex": 3,
                   "name": "Heracross",
                   "rate": 73,
-                  "withBan": false
+                  "withBan": false,
+                  "memberIndex": 3
                 },
                 {
-                  "memberIndex": 4,
                   "name": "Machamp",
                   "rate": 73,
-                  "withBan": false
+                  "withBan": false,
+                  "memberIndex": 4
                 },
                 {
-                  "memberIndex": 4,
                   "name": "Heracross",
                   "rate": 73,
-                  "withBan": false
+                  "withBan": false,
+                  "memberIndex": 4
                 },
                 {
-                  "memberIndex": 5,
                   "name": "Gallade",
                   "rate": 69,
-                  "withBan": false
+                  "withBan": false,
+                  "memberIndex": 5
                 },
                 {
-                  "memberIndex": 5,
                   "name": "Haunter",
                   "rate": 69,
-                  "withBan": true
+                  "withBan": true,
+                  "memberIndex": 5
                 }
               ],
               "alternateBans": [
@@ -12467,76 +12987,76 @@
               ],
               "alternates": [
                 {
-                  "memberIndex": 0,
                   "name": "Emboar",
                   "rate": 69,
-                  "withBan": false
+                  "withBan": false,
+                  "memberIndex": 0
                 },
                 {
-                  "memberIndex": 0,
                   "name": "Hariyama",
                   "rate": 69,
-                  "withBan": false
+                  "withBan": false,
+                  "memberIndex": 0
                 },
                 {
-                  "memberIndex": 1,
                   "name": "Emboar",
                   "rate": 68,
-                  "withBan": false
+                  "withBan": false,
+                  "memberIndex": 1
                 },
                 {
-                  "memberIndex": 1,
                   "name": "Excadrill",
                   "rate": 67,
-                  "withBan": false
+                  "withBan": false,
+                  "memberIndex": 1
                 },
                 {
-                  "memberIndex": 2,
                   "name": "Emboar",
                   "rate": 68,
-                  "withBan": false
+                  "withBan": false,
+                  "memberIndex": 2
                 },
                 {
-                  "memberIndex": 2,
                   "name": "Hariyama",
                   "rate": 68,
-                  "withBan": false
+                  "withBan": false,
+                  "memberIndex": 2
                 },
                 {
-                  "memberIndex": 3,
                   "name": "Hariyama",
                   "rate": 62,
-                  "withBan": false
+                  "withBan": false,
+                  "memberIndex": 3
                 },
                 {
-                  "memberIndex": 3,
                   "name": "Lampent",
                   "rate": 63,
-                  "withBan": true
+                  "withBan": true,
+                  "memberIndex": 3
                 },
                 {
-                  "memberIndex": 4,
                   "name": "Emboar",
                   "rate": 69,
-                  "withBan": false
+                  "withBan": false,
+                  "memberIndex": 4
                 },
                 {
-                  "memberIndex": 4,
                   "name": "Hariyama",
                   "rate": 69,
-                  "withBan": false
+                  "withBan": false,
+                  "memberIndex": 4
                 },
                 {
-                  "memberIndex": 5,
                   "name": "Emboar",
                   "rate": 69,
-                  "withBan": false
+                  "withBan": false,
+                  "memberIndex": 5
                 },
                 {
-                  "memberIndex": 5,
                   "name": "Hariyama",
                   "rate": 69,
-                  "withBan": false
+                  "withBan": false,
+                  "memberIndex": 5
                 }
               ],
               "alternateBans": [
@@ -12645,7 +13165,80 @@
                   "bans": []
                 }
               ],
-              "alternates": [],
+              "alternates": [
+                {
+                  "name": "Gardevoir",
+                  "rate": 63,
+                  "withBan": true,
+                  "memberIndex": 0
+                },
+                {
+                  "name": "Gallade",
+                  "rate": 62,
+                  "withBan": false,
+                  "memberIndex": 0
+                },
+                {
+                  "name": "Gardevoir",
+                  "rate": 62,
+                  "withBan": true,
+                  "memberIndex": 1
+                },
+                {
+                  "name": "Gyarados",
+                  "rate": 60,
+                  "withBan": false,
+                  "memberIndex": 1
+                },
+                {
+                  "name": "Gardevoir",
+                  "rate": 59,
+                  "withBan": true,
+                  "memberIndex": 2
+                },
+                {
+                  "name": "Gyarados",
+                  "rate": 57,
+                  "withBan": false,
+                  "memberIndex": 2
+                },
+                {
+                  "name": "Gardevoir",
+                  "rate": 59,
+                  "withBan": true,
+                  "memberIndex": 3
+                },
+                {
+                  "name": "Gyarados",
+                  "rate": 58,
+                  "withBan": false,
+                  "memberIndex": 3
+                },
+                {
+                  "name": "Gallade",
+                  "rate": 61,
+                  "withBan": false,
+                  "memberIndex": 4
+                },
+                {
+                  "name": "Gyarados",
+                  "rate": 62,
+                  "withBan": false,
+                  "memberIndex": 4
+                },
+                {
+                  "name": "Gardevoir",
+                  "rate": 62,
+                  "withBan": true,
+                  "memberIndex": 5
+                },
+                {
+                  "name": "Clefable",
+                  "rate": 61,
+                  "withBan": true,
+                  "memberIndex": 5
+                }
+              ],
               "alternateBans": [
                 {
                   "name": "Gardevoir",
@@ -12743,7 +13336,80 @@
                   "bans": []
                 }
               ],
-              "alternates": [],
+              "alternates": [
+                {
+                  "name": "Gyarados",
+                  "rate": 56,
+                  "withBan": false,
+                  "memberIndex": 0
+                },
+                {
+                  "name": "Escavalier",
+                  "rate": 54,
+                  "withBan": false,
+                  "memberIndex": 0
+                },
+                {
+                  "name": "Gyarados",
+                  "rate": 55,
+                  "withBan": false,
+                  "memberIndex": 1
+                },
+                {
+                  "name": "Escavalier",
+                  "rate": 55,
+                  "withBan": false,
+                  "memberIndex": 1
+                },
+                {
+                  "name": "Gyarados",
+                  "rate": 58,
+                  "withBan": false,
+                  "memberIndex": 2
+                },
+                {
+                  "name": "Gallade",
+                  "rate": 56,
+                  "withBan": false,
+                  "memberIndex": 2
+                },
+                {
+                  "name": "Gyarados",
+                  "rate": 60,
+                  "withBan": false,
+                  "memberIndex": 3
+                },
+                {
+                  "name": "Escavalier",
+                  "rate": 58,
+                  "withBan": false,
+                  "memberIndex": 3
+                },
+                {
+                  "name": "Escavalier",
+                  "rate": 58,
+                  "withBan": false,
+                  "memberIndex": 4
+                },
+                {
+                  "name": "Gyarados",
+                  "rate": 59,
+                  "withBan": false,
+                  "memberIndex": 4
+                },
+                {
+                  "name": "Gallade",
+                  "rate": 57,
+                  "withBan": false,
+                  "memberIndex": 5
+                },
+                {
+                  "name": "Gyarados",
+                  "rate": 57,
+                  "withBan": false,
+                  "memberIndex": 5
+                }
+              ],
               "alternateBans": []
             }
           },
@@ -12831,7 +13497,80 @@
                   "bans": []
                 }
               ],
-              "alternates": [],
+              "alternates": [
+                {
+                  "name": "Skuntank",
+                  "rate": 80,
+                  "withBan": false,
+                  "memberIndex": 0
+                },
+                {
+                  "name": "Exeggutor",
+                  "rate": 78,
+                  "withBan": true,
+                  "memberIndex": 0
+                },
+                {
+                  "name": "Skuntank",
+                  "rate": 78,
+                  "withBan": false,
+                  "memberIndex": 1
+                },
+                {
+                  "name": "Beartic",
+                  "rate": 79,
+                  "withBan": false,
+                  "memberIndex": 1
+                },
+                {
+                  "name": "Skuntank",
+                  "rate": 79,
+                  "withBan": false,
+                  "memberIndex": 2
+                },
+                {
+                  "name": "Slaking",
+                  "rate": 78,
+                  "withBan": false,
+                  "memberIndex": 2
+                },
+                {
+                  "name": "Beartic",
+                  "rate": 78,
+                  "withBan": false,
+                  "memberIndex": 3
+                },
+                {
+                  "name": "Skuntank",
+                  "rate": 78,
+                  "withBan": false,
+                  "memberIndex": 3
+                },
+                {
+                  "name": "Skuntank",
+                  "rate": 74,
+                  "withBan": false,
+                  "memberIndex": 4
+                },
+                {
+                  "name": "Beartic",
+                  "rate": 74,
+                  "withBan": false,
+                  "memberIndex": 4
+                },
+                {
+                  "name": "Skuntank",
+                  "rate": 75,
+                  "withBan": false,
+                  "memberIndex": 5
+                },
+                {
+                  "name": "Beartic",
+                  "rate": 75,
+                  "withBan": false,
+                  "memberIndex": 5
+                }
+              ],
               "alternateBans": [
                 {
                   "name": "Exeggutor",
@@ -12917,7 +13656,80 @@
                   "bans": []
                 }
               ],
-              "alternates": [],
+              "alternates": [
+                {
+                  "name": "Beartic",
+                  "rate": 78,
+                  "withBan": false,
+                  "memberIndex": 0
+                },
+                {
+                  "name": "Granbull",
+                  "rate": 78,
+                  "withBan": false,
+                  "memberIndex": 0
+                },
+                {
+                  "name": "Beartic",
+                  "rate": 79,
+                  "withBan": false,
+                  "memberIndex": 1
+                },
+                {
+                  "name": "Granbull",
+                  "rate": 77,
+                  "withBan": false,
+                  "memberIndex": 1
+                },
+                {
+                  "name": "Exeggutor",
+                  "rate": 78,
+                  "withBan": true,
+                  "memberIndex": 2
+                },
+                {
+                  "name": "Granbull",
+                  "rate": 77,
+                  "withBan": false,
+                  "memberIndex": 2
+                },
+                {
+                  "name": "Beartic",
+                  "rate": 76,
+                  "withBan": false,
+                  "memberIndex": 3
+                },
+                {
+                  "name": "Lapras",
+                  "rate": 75,
+                  "withBan": false,
+                  "memberIndex": 3
+                },
+                {
+                  "name": "Beartic",
+                  "rate": 73,
+                  "withBan": false,
+                  "memberIndex": 4
+                },
+                {
+                  "name": "Slaking",
+                  "rate": 73,
+                  "withBan": false,
+                  "memberIndex": 4
+                },
+                {
+                  "name": "Beartic",
+                  "rate": 76,
+                  "withBan": false,
+                  "memberIndex": 5
+                },
+                {
+                  "name": "Granbull",
+                  "rate": 74,
+                  "withBan": false,
+                  "memberIndex": 5
+                }
+              ],
               "alternateBans": [
                 {
                   "name": "Exeggutor",
@@ -13015,76 +13827,76 @@
               ],
               "alternates": [
                 {
-                  "memberIndex": 0,
                   "name": "Skuntank",
                   "rate": 74,
-                  "withBan": false
+                  "withBan": false,
+                  "memberIndex": 0
                 },
                 {
-                  "memberIndex": 0,
                   "name": "Slaking",
                   "rate": 72,
-                  "withBan": false
+                  "withBan": false,
+                  "memberIndex": 0
                 },
                 {
-                  "memberIndex": 1,
                   "name": "Quagsire",
                   "rate": 70,
-                  "withBan": true
+                  "withBan": true,
+                  "memberIndex": 1
                 },
                 {
-                  "memberIndex": 1,
                   "name": "Nidoking",
                   "rate": 70,
-                  "withBan": true
+                  "withBan": true,
+                  "memberIndex": 1
                 },
                 {
-                  "memberIndex": 2,
                   "name": "Skuntank",
                   "rate": 71,
-                  "withBan": false
+                  "withBan": false,
+                  "memberIndex": 2
                 },
                 {
-                  "memberIndex": 2,
                   "name": "Nidoking",
                   "rate": 71,
-                  "withBan": true
+                  "withBan": true,
+                  "memberIndex": 2
                 },
                 {
-                  "memberIndex": 3,
                   "name": "Skuntank",
                   "rate": 74,
-                  "withBan": false
+                  "withBan": false,
+                  "memberIndex": 3
                 },
                 {
-                  "memberIndex": 3,
                   "name": "Beartic",
                   "rate": 73,
-                  "withBan": false
+                  "withBan": false,
+                  "memberIndex": 3
                 },
                 {
-                  "memberIndex": 4,
                   "name": "Skuntank",
                   "rate": 75,
-                  "withBan": false
+                  "withBan": false,
+                  "memberIndex": 4
                 },
                 {
-                  "memberIndex": 4,
                   "name": "Nidoking",
                   "rate": 74,
-                  "withBan": true
+                  "withBan": true,
+                  "memberIndex": 4
                 },
                 {
-                  "memberIndex": 5,
                   "name": "Skuntank",
                   "rate": 71,
-                  "withBan": false
+                  "withBan": false,
+                  "memberIndex": 5
                 },
                 {
-                  "memberIndex": 5,
                   "name": "Granbull",
                   "rate": 70,
-                  "withBan": false
+                  "withBan": false,
+                  "memberIndex": 5
                 }
               ],
               "alternateBans": [
@@ -13097,7 +13909,7 @@
                 {
                   "name": "Nidoking",
                   "bans": [
-                    "13 attacks, all but its 5 Normal and Fighting attacks"
+                    "13 attacks, all but es its 5 Normal and Fighting attacks"
                   ]
                 }
               ]
@@ -13200,21 +14012,81 @@
                   ]
                 }
               ],
-              "alternates": [],
-              "alternateBans": [
+              "alternates": [
                 {
-                  "name": "Gengar",
-                  "bans": [
-                    "Sludge Wave"
-                  ]
+                  "name": "Emboar",
+                  "rate": 60,
+                  "withBan": false,
+                  "memberIndex": 0
                 },
                 {
-                  "name": "Lampent",
-                  "bans": [
-                    "Overheat"
-                  ]
+                  "name": "Hariyama",
+                  "rate": 59,
+                  "withBan": false,
+                  "memberIndex": 0
+                },
+                {
+                  "name": "Emboar",
+                  "rate": 60,
+                  "withBan": false,
+                  "memberIndex": 1
+                },
+                {
+                  "name": "Hariyama",
+                  "rate": 60,
+                  "withBan": false,
+                  "memberIndex": 1
+                },
+                {
+                  "name": "Emboar",
+                  "rate": 60,
+                  "withBan": false,
+                  "memberIndex": 2
+                },
+                {
+                  "name": "Hariyama",
+                  "rate": 60,
+                  "withBan": false,
+                  "memberIndex": 2
+                },
+                {
+                  "name": "Emboar",
+                  "rate": 60,
+                  "withBan": false,
+                  "memberIndex": 3
+                },
+                {
+                  "name": "Hariyama",
+                  "rate": 60,
+                  "withBan": false,
+                  "memberIndex": 3
+                },
+                {
+                  "name": "Emboar",
+                  "rate": 61,
+                  "withBan": false,
+                  "memberIndex": 4
+                },
+                {
+                  "name": "Hariyama",
+                  "rate": 60,
+                  "withBan": false,
+                  "memberIndex": 4
+                },
+                {
+                  "name": "Gallade",
+                  "rate": 58,
+                  "withBan": false,
+                  "memberIndex": 5
+                },
+                {
+                  "name": "Emboar",
+                  "rate": 58,
+                  "withBan": false,
+                  "memberIndex": 5
                 }
-              ]
+              ],
+              "alternateBans": []
             },
             "noLegendary": {
               "title": "NO LEGENDARY - 100 WINS - 1:01 - 59/H - BANS +6%",
@@ -13293,8 +14165,94 @@
                   ]
                 }
               ],
-              "alternates": [],
-              "alternateBans": []
+              "alternates": [
+                {
+                  "name": "Gallade",
+                  "rate": 58,
+                  "withBan": false,
+                  "memberIndex": 0
+                },
+                {
+                  "name": "Hariyama",
+                  "rate": 58,
+                  "withBan": false,
+                  "memberIndex": 0
+                },
+                {
+                  "name": "Gallade",
+                  "rate": 58,
+                  "withBan": false,
+                  "memberIndex": 1
+                },
+                {
+                  "name": "Hariyama",
+                  "rate": 58,
+                  "withBan": false,
+                  "memberIndex": 1
+                },
+                {
+                  "name": "Hariyama",
+                  "rate": 59,
+                  "withBan": false,
+                  "memberIndex": 2
+                },
+                {
+                  "name": "Gallade",
+                  "rate": 59,
+                  "withBan": false,
+                  "memberIndex": 2
+                },
+                {
+                  "name": "Hariyama",
+                  "rate": 59,
+                  "withBan": false,
+                  "memberIndex": 3
+                },
+                {
+                  "name": "Gallade",
+                  "rate": 59,
+                  "withBan": false,
+                  "memberIndex": 3
+                },
+                {
+                  "name": "Gallade",
+                  "rate": 59,
+                  "withBan": false,
+                  "memberIndex": 4
+                },
+                {
+                  "name": "Hariyama",
+                  "rate": 58,
+                  "withBan": false,
+                  "memberIndex": 4
+                },
+                {
+                  "name": "Gengar",
+                  "rate": 56,
+                  "withBan": true,
+                  "memberIndex": 5
+                },
+                {
+                  "name": "Lampent",
+                  "rate": 57,
+                  "withBan": true,
+                  "memberIndex": 5
+                }
+              ],
+              "alternateBans": [
+                {
+                  "name": "Gengar",
+                  "bans": [
+                    "Sludge Wave"
+                  ]
+                },
+                {
+                  "name": "Lampent",
+                  "bans": [
+                    "Overheat"
+                  ]
+                }
+              ]
             }
           },
           {
@@ -13404,76 +14362,76 @@
               ],
               "alternates": [
                 {
-                  "memberIndex": 0,
                   "name": "Heracross",
                   "rate": 65,
-                  "withBan": false
+                  "withBan": false,
+                  "memberIndex": 0
                 },
                 {
-                  "memberIndex": 0,
                   "name": "Snorlax",
                   "rate": 63,
-                  "withBan": false
+                  "withBan": false,
+                  "memberIndex": 0
                 },
                 {
-                  "memberIndex": 1,
                   "name": "Heracross",
                   "rate": 71,
-                  "withBan": false
+                  "withBan": false,
+                  "memberIndex": 1
                 },
                 {
-                  "memberIndex": 1,
                   "name": "Slaking",
                   "rate": 61,
-                  "withBan": false
+                  "withBan": false,
+                  "memberIndex": 1
                 },
                 {
-                  "memberIndex": 2,
                   "name": "Heracross",
                   "rate": 61,
-                  "withBan": false
+                  "withBan": false,
+                  "memberIndex": 2
                 },
                 {
-                  "memberIndex": 2,
                   "name": "Snorlax",
                   "rate": 56,
-                  "withBan": false
+                  "withBan": false,
+                  "memberIndex": 2
                 },
                 {
-                  "memberIndex": 3,
                   "name": "Gengar",
                   "rate": 52,
-                  "withBan": true
+                  "withBan": true,
+                  "memberIndex": 3
                 },
                 {
-                  "memberIndex": 3,
                   "name": "Poliwrath",
                   "rate": 53,
-                  "withBan": true
+                  "withBan": true,
+                  "memberIndex": 3
                 },
                 {
-                  "memberIndex": 4,
                   "name": "Scrafty",
                   "rate": 66,
-                  "withBan": false
+                  "withBan": false,
+                  "memberIndex": 4
                 },
                 {
-                  "memberIndex": 4,
                   "name": "Heracross",
                   "rate": 71,
-                  "withBan": false
+                  "withBan": false,
+                  "memberIndex": 4
                 },
                 {
-                  "memberIndex": 5,
                   "name": "Heracross",
                   "rate": 69,
-                  "withBan": false
+                  "withBan": false,
+                  "memberIndex": 5
                 },
                 {
-                  "memberIndex": 5,
                   "name": "Escavalier",
                   "rate": 61,
-                  "withBan": false
+                  "withBan": false,
+                  "memberIndex": 5
                 }
               ],
               "alternateBans": [
@@ -13580,76 +14538,76 @@
               ],
               "alternates": [
                 {
-                  "memberIndex": 0,
                   "name": "Cofagrigus",
                   "rate": 40,
-                  "withBan": true
+                  "withBan": true,
+                  "memberIndex": 0
                 },
                 {
-                  "memberIndex": 0,
                   "name": "Heracross",
                   "rate": 41,
-                  "withBan": false
+                  "withBan": false,
+                  "memberIndex": 0
                 },
                 {
-                  "memberIndex": 1,
                   "name": "Escavalier",
                   "rate": 45,
-                  "withBan": false
+                  "withBan": false,
+                  "memberIndex": 1
                 },
                 {
-                  "memberIndex": 1,
                   "name": "Jellicent",
                   "rate": 43,
-                  "withBan": false
+                  "withBan": false,
+                  "memberIndex": 1
                 },
                 {
-                  "memberIndex": 2,
                   "name": "Jellicent",
                   "rate": 42,
-                  "withBan": false
+                  "withBan": false,
+                  "memberIndex": 2
                 },
                 {
-                  "memberIndex": 2,
                   "name": "Poliwrath",
                   "rate": 39,
-                  "withBan": false
+                  "withBan": false,
+                  "memberIndex": 2
                 },
                 {
-                  "memberIndex": 3,
                   "name": "Heracross",
                   "rate": 46,
-                  "withBan": false
+                  "withBan": false,
+                  "memberIndex": 3
                 },
                 {
-                  "memberIndex": 3,
                   "name": "Jellicent",
                   "rate": 45,
-                  "withBan": false
+                  "withBan": false,
+                  "memberIndex": 3
                 },
                 {
-                  "memberIndex": 4,
                   "name": "Heracross",
                   "rate": 41,
-                  "withBan": false
+                  "withBan": false,
+                  "memberIndex": 4
                 },
                 {
-                  "memberIndex": 4,
                   "name": "Escavalier",
                   "rate": 39,
-                  "withBan": false
+                  "withBan": false,
+                  "memberIndex": 4
                 },
                 {
-                  "memberIndex": 5,
                   "name": "Escavalier",
                   "rate": 43,
-                  "withBan": false
+                  "withBan": false,
+                  "memberIndex": 5
                 },
                 {
-                  "memberIndex": 5,
                   "name": "Jellicent",
                   "rate": 46,
-                  "withBan": false
+                  "withBan": false,
+                  "memberIndex": 5
                 }
               ],
               "alternateBans": [
@@ -13751,7 +14709,80 @@
                   "bans": []
                 }
               ],
-              "alternates": [],
+              "alternates": [
+                {
+                  "name": "Tyranitar",
+                  "rate": 75,
+                  "withBan": false,
+                  "memberIndex": 0
+                },
+                {
+                  "name": "Golurk",
+                  "rate": 74,
+                  "withBan": false,
+                  "memberIndex": 0
+                },
+                {
+                  "name": "Tyranitar",
+                  "rate": 73,
+                  "withBan": false,
+                  "memberIndex": 1
+                },
+                {
+                  "name": "Golurk",
+                  "rate": 73,
+                  "withBan": false,
+                  "memberIndex": 1
+                },
+                {
+                  "name": "Tyranitar",
+                  "rate": 74,
+                  "withBan": false,
+                  "memberIndex": 2
+                },
+                {
+                  "name": "Golurk",
+                  "rate": 73,
+                  "withBan": false,
+                  "memberIndex": 2
+                },
+                {
+                  "name": "Tyranitar",
+                  "rate": 68,
+                  "withBan": false,
+                  "memberIndex": 3
+                },
+                {
+                  "name": "Solrock",
+                  "rate": 64,
+                  "withBan": false,
+                  "memberIndex": 3
+                },
+                {
+                  "name": "Muk",
+                  "rate": 74,
+                  "withBan": false,
+                  "memberIndex": 4
+                },
+                {
+                  "name": "Nidoking",
+                  "rate": 73,
+                  "withBan": false,
+                  "memberIndex": 4
+                },
+                {
+                  "name": "Tyranitar",
+                  "rate": 74,
+                  "withBan": false,
+                  "memberIndex": 5
+                },
+                {
+                  "name": "Solrock",
+                  "rate": 72,
+                  "withBan": false,
+                  "memberIndex": 5
+                }
+              ],
               "alternateBans": []
             },
             "noLegendary": {
@@ -13829,7 +14860,80 @@
                   "bans": []
                 }
               ],
-              "alternates": [],
+              "alternates": [
+                {
+                  "name": "Muk",
+                  "rate": 74,
+                  "withBan": false,
+                  "memberIndex": 0
+                },
+                {
+                  "name": "Nidoqueen",
+                  "rate": 73,
+                  "withBan": false,
+                  "memberIndex": 0
+                },
+                {
+                  "name": "Quagsire",
+                  "rate": 72,
+                  "withBan": false,
+                  "memberIndex": 1
+                },
+                {
+                  "name": "Nidoqueen",
+                  "rate": 71,
+                  "withBan": false,
+                  "memberIndex": 1
+                },
+                {
+                  "name": "Quagsire",
+                  "rate": 65,
+                  "withBan": false,
+                  "memberIndex": 2
+                },
+                {
+                  "name": "Nidoqueen",
+                  "rate": 65,
+                  "withBan": false,
+                  "memberIndex": 2
+                },
+                {
+                  "name": "Quagsire",
+                  "rate": 72,
+                  "withBan": false,
+                  "memberIndex": 3
+                },
+                {
+                  "name": "Nidoqueen",
+                  "rate": 72,
+                  "withBan": false,
+                  "memberIndex": 3
+                },
+                {
+                  "name": "Armaldo",
+                  "rate": 72,
+                  "withBan": false,
+                  "memberIndex": 4
+                },
+                {
+                  "name": "Golurk",
+                  "rate": 72,
+                  "withBan": false,
+                  "memberIndex": 4
+                },
+                {
+                  "name": "Armaldo",
+                  "rate": 71,
+                  "withBan": false,
+                  "memberIndex": 5
+                },
+                {
+                  "name": "Quagsire",
+                  "rate": 71,
+                  "withBan": false,
+                  "memberIndex": 5
+                }
+              ],
               "alternateBans": []
             }
           },
@@ -13921,7 +15025,80 @@
                   "bans": []
                 }
               ],
-              "alternates": [],
+              "alternates": [
+                {
+                  "name": "Excadrill",
+                  "rate": 70,
+                  "withBan": false,
+                  "memberIndex": 0
+                },
+                {
+                  "name": "Quagsire",
+                  "rate": 69,
+                  "withBan": false,
+                  "memberIndex": 0
+                },
+                {
+                  "name": "Excadrill",
+                  "rate": 68,
+                  "withBan": false,
+                  "memberIndex": 1
+                },
+                {
+                  "name": "Rhyperior",
+                  "rate": 69,
+                  "withBan": false,
+                  "memberIndex": 1
+                },
+                {
+                  "name": "Rhyperior",
+                  "rate": 72,
+                  "withBan": false,
+                  "memberIndex": 2
+                },
+                {
+                  "name": "Excadrill",
+                  "rate": 72,
+                  "withBan": false,
+                  "memberIndex": 2
+                },
+                {
+                  "name": "Excadrill",
+                  "rate": 74,
+                  "withBan": false,
+                  "memberIndex": 3
+                },
+                {
+                  "name": "Rhyperior",
+                  "rate": 75,
+                  "withBan": false,
+                  "memberIndex": 3
+                },
+                {
+                  "name": "Excadrill",
+                  "rate": 68,
+                  "withBan": false,
+                  "memberIndex": 4
+                },
+                {
+                  "name": "Rhyperior",
+                  "rate": 69,
+                  "withBan": false,
+                  "memberIndex": 4
+                },
+                {
+                  "name": "Rhyperior",
+                  "rate": 72,
+                  "withBan": false,
+                  "memberIndex": 5
+                },
+                {
+                  "name": "Rhydon",
+                  "rate": 71,
+                  "withBan": false,
+                  "memberIndex": 5
+                }
+              ],
               "alternateBans": []
             },
             "noLegendary": {
@@ -14004,7 +15181,80 @@
                   "bans": []
                 }
               ],
-              "alternates": [],
+              "alternates": [
+                {
+                  "name": "Gardevoir",
+                  "rate": 64,
+                  "withBan": false,
+                  "memberIndex": 0
+                },
+                {
+                  "name": "Mamoswine",
+                  "rate": 63,
+                  "withBan": false,
+                  "memberIndex": 0
+                },
+                {
+                  "name": "Gardevoir",
+                  "rate": 66,
+                  "withBan": false,
+                  "memberIndex": 1
+                },
+                {
+                  "name": "Mamoswine",
+                  "rate": 65,
+                  "withBan": false,
+                  "memberIndex": 1
+                },
+                {
+                  "name": "Nidoqueen",
+                  "rate": 66,
+                  "withBan": false,
+                  "memberIndex": 2
+                },
+                {
+                  "name": "Vileplume",
+                  "rate": 66,
+                  "withBan": false,
+                  "memberIndex": 2
+                },
+                {
+                  "name": "Gardevoir",
+                  "rate": 66,
+                  "withBan": false,
+                  "memberIndex": 3
+                },
+                {
+                  "name": "Mamoswine",
+                  "rate": 65,
+                  "withBan": false,
+                  "memberIndex": 3
+                },
+                {
+                  "name": "Gardevoir",
+                  "rate": 66,
+                  "withBan": false,
+                  "memberIndex": 4
+                },
+                {
+                  "name": "Mamoswine",
+                  "rate": 67,
+                  "withBan": false,
+                  "memberIndex": 4
+                },
+                {
+                  "name": "Mamoswine",
+                  "rate": 66,
+                  "withBan": false,
+                  "memberIndex": 5
+                },
+                {
+                  "name": "Golem",
+                  "rate": 65,
+                  "withBan": false,
+                  "memberIndex": 5
+                }
+              ],
               "alternateBans": []
             }
           },
@@ -14104,76 +15354,76 @@
               ],
               "alternates": [
                 {
-                  "memberIndex": 0,
                   "name": "Lucario",
                   "rate": 79,
-                  "withBan": false
+                  "withBan": false,
+                  "memberIndex": 0
                 },
                 {
-                  "memberIndex": 0,
                   "name": "Poliwrath",
                   "rate": 78,
-                  "withBan": false
+                  "withBan": false,
+                  "memberIndex": 0
                 },
                 {
-                  "memberIndex": 1,
                   "name": "Lucario",
                   "rate": 80,
-                  "withBan": false
+                  "withBan": false,
+                  "memberIndex": 1
                 },
                 {
-                  "memberIndex": 1,
                   "name": "Gardevoir",
                   "rate": 80,
-                  "withBan": false
+                  "withBan": false,
+                  "memberIndex": 1
                 },
                 {
-                  "memberIndex": 2,
-                  "name": "Lucario",
-                  "rate": 81,
-                  "withBan": false
-                },
-                {
-                  "memberIndex": 2,
-                  "name": "Gardevoir",
-                  "rate": 80,
-                  "withBan": false
-                },
-                {
-                  "memberIndex": 3,
                   "name": "Lucario",
                   "rate": 81,
-                  "withBan": false
+                  "withBan": false,
+                  "memberIndex": 2
                 },
                 {
-                  "memberIndex": 3,
                   "name": "Gardevoir",
                   "rate": 80,
-                  "withBan": false
+                  "withBan": false,
+                  "memberIndex": 2
                 },
                 {
-                  "memberIndex": 4,
+                  "name": "Lucario",
+                  "rate": 81,
+                  "withBan": false,
+                  "memberIndex": 3
+                },
+                {
+                  "name": "Gardevoir",
+                  "rate": 80,
+                  "withBan": false,
+                  "memberIndex": 3
+                },
+                {
                   "name": "Lucario",
                   "rate": 83,
-                  "withBan": false
+                  "withBan": false,
+                  "memberIndex": 4
                 },
                 {
-                  "memberIndex": 4,
                   "name": "Poliwrath",
                   "rate": 82,
-                  "withBan": false
+                  "withBan": false,
+                  "memberIndex": 4
                 },
                 {
-                  "memberIndex": 5,
                   "name": "Lucario",
                   "rate": 80,
-                  "withBan": false
+                  "withBan": false,
+                  "memberIndex": 5
                 },
                 {
-                  "memberIndex": 5,
                   "name": "Gardevoir",
                   "rate": 81,
-                  "withBan": false
+                  "withBan": false,
+                  "memberIndex": 5
                 }
               ],
               "alternateBans": []
@@ -14265,76 +15515,76 @@
               ],
               "alternates": [
                 {
-                  "memberIndex": 0,
                   "name": "Scizor",
                   "rate": 74,
-                  "withBan": false
+                  "withBan": false,
+                  "memberIndex": 0
                 },
                 {
-                  "memberIndex": 0,
                   "name": "Escavalier",
                   "rate": 74,
-                  "withBan": false
+                  "withBan": false,
+                  "memberIndex": 0
                 },
                 {
-                  "memberIndex": 1,
                   "name": "Escavalier",
                   "rate": 72,
-                  "withBan": false
+                  "withBan": false,
+                  "memberIndex": 1
                 },
                 {
-                  "memberIndex": 1,
                   "name": "Scizor",
                   "rate": 72,
-                  "withBan": false
+                  "withBan": false,
+                  "memberIndex": 1
                 },
                 {
-                  "memberIndex": 2,
                   "name": "Poliwrath",
                   "rate": 75,
-                  "withBan": false
+                  "withBan": false,
+                  "memberIndex": 2
                 },
                 {
-                  "memberIndex": 2,
                   "name": "Escavalier",
                   "rate": 74,
-                  "withBan": false
+                  "withBan": false,
+                  "memberIndex": 2
                 },
                 {
-                  "memberIndex": 3,
                   "name": "Escavalier",
                   "rate": 74,
-                  "withBan": false
+                  "withBan": false,
+                  "memberIndex": 3
                 },
                 {
-                  "memberIndex": 3,
                   "name": "Scizor",
                   "rate": 74,
-                  "withBan": false
+                  "withBan": false,
+                  "memberIndex": 3
                 },
                 {
-                  "memberIndex": 4,
                   "name": "Escavalier",
                   "rate": 73,
-                  "withBan": false
+                  "withBan": false,
+                  "memberIndex": 4
                 },
                 {
-                  "memberIndex": 4,
                   "name": "Scizor",
                   "rate": 73,
-                  "withBan": false
+                  "withBan": false,
+                  "memberIndex": 4
                 },
                 {
-                  "memberIndex": 5,
                   "name": "Poliwrath",
                   "rate": 72,
-                  "withBan": false
+                  "withBan": false,
+                  "memberIndex": 5
                 },
                 {
-                  "memberIndex": 5,
                   "name": "Escavalier",
                   "rate": 72,
-                  "withBan": false
+                  "withBan": false,
+                  "memberIndex": 5
                 }
               ],
               "alternateBans": []
@@ -14434,7 +15684,80 @@
                   "bans": []
                 }
               ],
-              "alternates": [],
+              "alternates": [
+                {
+                  "name": "Metagross",
+                  "rate": 84,
+                  "withBan": false,
+                  "memberIndex": 0
+                },
+                {
+                  "name": "Poliwrath",
+                  "rate": 82,
+                  "withBan": false,
+                  "memberIndex": 0
+                },
+                {
+                  "name": "Metagross",
+                  "rate": 81,
+                  "withBan": false,
+                  "memberIndex": 1
+                },
+                {
+                  "name": "Escavalier",
+                  "rate": 80,
+                  "withBan": false,
+                  "memberIndex": 1
+                },
+                {
+                  "name": "Metagross",
+                  "rate": 84,
+                  "withBan": false,
+                  "memberIndex": 2
+                },
+                {
+                  "name": "Escavalier",
+                  "rate": 83,
+                  "withBan": false,
+                  "memberIndex": 2
+                },
+                {
+                  "name": "Metagross",
+                  "rate": 84,
+                  "withBan": false,
+                  "memberIndex": 3
+                },
+                {
+                  "name": "Escavalier",
+                  "rate": 84,
+                  "withBan": false,
+                  "memberIndex": 3
+                },
+                {
+                  "name": "Metagross",
+                  "rate": 81,
+                  "withBan": false,
+                  "memberIndex": 4
+                },
+                {
+                  "name": "Poliwrath",
+                  "rate": 81,
+                  "withBan": false,
+                  "memberIndex": 4
+                },
+                {
+                  "name": "Metagross",
+                  "rate": 83,
+                  "withBan": false,
+                  "memberIndex": 5
+                },
+                {
+                  "name": "Escavalier",
+                  "rate": 81,
+                  "withBan": false,
+                  "memberIndex": 5
+                }
+              ],
               "alternateBans": []
             },
             "noLegendary": {
@@ -14522,7 +15845,80 @@
                   "bans": []
                 }
               ],
-              "alternates": [],
+              "alternates": [
+                {
+                  "name": "Aggron",
+                  "rate": 73,
+                  "withBan": false,
+                  "memberIndex": 0
+                },
+                {
+                  "name": "Scizor",
+                  "rate": 73,
+                  "withBan": false,
+                  "memberIndex": 0
+                },
+                {
+                  "name": "Aggron",
+                  "rate": 74,
+                  "withBan": false,
+                  "memberIndex": 1
+                },
+                {
+                  "name": "Scizor",
+                  "rate": 74,
+                  "withBan": false,
+                  "memberIndex": 1
+                },
+                {
+                  "name": "Aggron",
+                  "rate": 71,
+                  "withBan": false,
+                  "memberIndex": 2
+                },
+                {
+                  "name": "Scizor",
+                  "rate": 70,
+                  "withBan": false,
+                  "memberIndex": 2
+                },
+                {
+                  "name": "Bisharp",
+                  "rate": 71,
+                  "withBan": false,
+                  "memberIndex": 3
+                },
+                {
+                  "name": "Aggron",
+                  "rate": 75,
+                  "withBan": false,
+                  "memberIndex": 3
+                },
+                {
+                  "name": "Aggron",
+                  "rate": 72,
+                  "withBan": false,
+                  "memberIndex": 4
+                },
+                {
+                  "name": "Scizor",
+                  "rate": 72,
+                  "withBan": false,
+                  "memberIndex": 4
+                },
+                {
+                  "name": "Aggron",
+                  "rate": 75,
+                  "withBan": false,
+                  "memberIndex": 5
+                },
+                {
+                  "name": "Scizor",
+                  "rate": 75,
+                  "withBan": false,
+                  "memberIndex": 5
+                }
+              ],
               "alternateBans": []
             }
           },
@@ -14610,7 +16006,80 @@
                   "bans": []
                 }
               ],
-              "alternates": [],
+              "alternates": [
+                {
+                  "name": "Toxicroak",
+                  "rate": 69,
+                  "withBan": false,
+                  "memberIndex": 0
+                },
+                {
+                  "name": "Muk",
+                  "rate": 69,
+                  "withBan": false,
+                  "memberIndex": 0
+                },
+                {
+                  "name": "Machamp",
+                  "rate": 72,
+                  "withBan": false,
+                  "memberIndex": 1
+                },
+                {
+                  "name": "Tyranitar",
+                  "rate": 71,
+                  "withBan": false,
+                  "memberIndex": 1
+                },
+                {
+                  "name": "Tyranitar",
+                  "rate": 70,
+                  "withBan": false,
+                  "memberIndex": 2
+                },
+                {
+                  "name": "Machamp",
+                  "rate": 69,
+                  "withBan": false,
+                  "memberIndex": 2
+                },
+                {
+                  "name": "Machamp",
+                  "rate": 67,
+                  "withBan": false,
+                  "memberIndex": 3
+                },
+                {
+                  "name": "Tyranitar",
+                  "rate": 67,
+                  "withBan": false,
+                  "memberIndex": 3
+                },
+                {
+                  "name": "Machamp",
+                  "rate": 73,
+                  "withBan": false,
+                  "memberIndex": 4
+                },
+                {
+                  "name": "Tyranitar",
+                  "rate": 71,
+                  "withBan": false,
+                  "memberIndex": 4
+                },
+                {
+                  "name": "Poliwrath",
+                  "rate": 73,
+                  "withBan": false,
+                  "memberIndex": 5
+                },
+                {
+                  "name": "Toxicroak",
+                  "rate": 72,
+                  "withBan": false,
+                  "memberIndex": 5
+                }
+              ],
               "alternateBans": []
             },
             "noLegendary": {
@@ -14683,7 +16152,80 @@
                   "bans": []
                 }
               ],
-              "alternates": [],
+              "alternates": [
+                {
+                  "name": "Conkeldurr",
+                  "rate": 68,
+                  "withBan": false,
+                  "memberIndex": 0
+                },
+                {
+                  "name": "Muk",
+                  "rate": 68,
+                  "withBan": false,
+                  "memberIndex": 0
+                },
+                {
+                  "name": "Conkeldurr",
+                  "rate": 70,
+                  "withBan": false,
+                  "memberIndex": 1
+                },
+                {
+                  "name": "Tyranitar",
+                  "rate": 67,
+                  "withBan": false,
+                  "memberIndex": 1
+                },
+                {
+                  "name": "Conkeldurr",
+                  "rate": 67,
+                  "withBan": false,
+                  "memberIndex": 2
+                },
+                {
+                  "name": "Tyranitar",
+                  "rate": 65,
+                  "withBan": false,
+                  "memberIndex": 2
+                },
+                {
+                  "name": "Conkeldurr",
+                  "rate": 70,
+                  "withBan": false,
+                  "memberIndex": 3
+                },
+                {
+                  "name": "Gardevoir",
+                  "rate": 65,
+                  "withBan": false,
+                  "memberIndex": 3
+                },
+                {
+                  "name": "Conkeldurr",
+                  "rate": 64,
+                  "withBan": false,
+                  "memberIndex": 4
+                },
+                {
+                  "name": "Tyranitar",
+                  "rate": 63,
+                  "withBan": false,
+                  "memberIndex": 4
+                },
+                {
+                  "name": "Tyranitar",
+                  "rate": 64,
+                  "withBan": false,
+                  "memberIndex": 5
+                },
+                {
+                  "name": "Gardevoir",
+                  "rate": 65,
+                  "withBan": false,
+                  "memberIndex": 5
+                }
+              ],
               "alternateBans": []
             }
           }
@@ -14761,10 +16303,11 @@
         }
       },
       "uncertain": [
-        "Alternates: Mewtwo and Kyogre carry the OCR pairs for all six members; Dialga, Rayquaza, Kyurem, Arceus and Giratina Origin were transcribed by hand from the 640px columns. The other ten cards keep empty alternate lists because the column OCR lost or shifted a member on those cards: storing the shifted pairs would attach the wrong rate to a name, so they are left out instead.",
-        "The \"(Ban)\" marker is preserved in  on the alternate entries and in the alternate-bans list; the OCR spelling \"(Gan)\" was decoded as \"(Ban)\".",
-        "Palkia sixth slot: the board shows Whimsicott (Moonblast 80, Poison Powder 19), not Hydreigon; corrected.",
-        "Members and moves remain from the round-1 transcription; the alternates above are the round-2 addition."
+        "All 17 cards carry both teams' alternates. The board prints one OR line under each member; the lines are taken in order and attached to members 1-6, so a garbled member name cannot shift a rate onto the wrong Pokémon. Every team with a distinct alternate list has six OR lines; Giratina Origin's second team is printed as \"the same team\" and keeps an empty list.",
+        "On this board the alternate rates are plain text (for example `Scizor68`, `Rotom (Frost) (Ban) 67`), not plates: the trailing number after each name is the rate. All stored rates are integers; none is left null.",
+        "`(Gan)` and `(san)` are the OCR spelling of `(Ban)`; that alternate is marked `withBan` on every occurrence in the card, and the moves it bans are in the team's `alternateBans`, as the card's BANS section prints them.",
+        "The BANS section belongs to the team it follows. Regigigas's Gengar/Lampent section sits after `NO LEGENDARY`, so it is stored on the second team; the earlier draft had it on the first.",
+        "Members, moves and the two team titles remain the round-1 transcription; this round fills the alternate lists, their bans, and fixes Mewtwo's second-team alternates and all-but wording."
       ]
     },
     "elite2-teams": {
@@ -14824,13 +16367,13 @@
         "fights": [
           {
             "region": "Kanto",
-            "boss": "Articuno",
+            "boss": "Zapdos",
             "tiers": {
-              "1": null,
-              "2": null,
-              "3": null,
-              "4": null,
-              "5": null
+              "1": 100,
+              "2": 100,
+              "3": 89,
+              "4": 4,
+              "5": 0
             },
             "team": {
               "members": [
@@ -14922,19 +16465,456 @@
                   "bans": []
                 }
               ],
-              "alternates": []
+              "alternates": [
+                {
+                  "memberIndex": 0,
+                  "name": "Golem",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 0,
+                  "name": "Rhydon",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 1,
+                  "name": "Rotom (Frost)",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 1,
+                  "name": "Golem",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 2,
+                  "name": "Golem",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 2,
+                  "name": "Ampharos",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 3,
+                  "name": "Ampharos",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 3,
+                  "name": "Musharna",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 4,
+                  "name": "Golem",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 4,
+                  "name": "Nidoking",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 5,
+                  "name": "Magnezone",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 5,
+                  "name": "Rotom (Frost)",
+                  "rate": 100,
+                  "withBan": false
+                }
+              ],
+              "alternateBans": []
             },
             "banGain": null
           },
           {
             "region": "Kanto",
-            "boss": "Zapdos",
+            "boss": "Articuno",
             "tiers": {
-              "1": null,
-              "2": null,
-              "3": null,
-              "4": null,
-              "5": null
+              "1": 100,
+              "2": 100,
+              "3": 15,
+              "4": 0,
+              "5": 0
+            },
+            "team": {
+              "members": [
+                {
+                  "name": "Heatran",
+                  "legendary": true,
+                  "moves": [
+                    {
+                      "name": "Magma Storm",
+                      "tag": null,
+                      "share": 93
+                    },
+                    {
+                      "name": "Stone Edge",
+                      "tag": null,
+                      "share": 6
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Relicanth",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Head Smash",
+                      "tag": null,
+                      "share": 99
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Probopass",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Meteor Beam",
+                      "tag": null,
+                      "share": 76
+                    },
+                    {
+                      "name": "Thunder Wave",
+                      "tag": "PAR",
+                      "share": 23
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Gigalith",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Stone Edge",
+                      "tag": null,
+                      "share": 100
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Bronzong",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Iron Head",
+                      "tag": null,
+                      "share": 74
+                    },
+                    {
+                      "name": "Hypnosis",
+                      "tag": "SLP",
+                      "share": 18
+                    },
+                    {
+                      "name": "Confuse Ray",
+                      "tag": "CNF",
+                      "share": 8
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Carracosta",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Stone Edge",
+                      "tag": null,
+                      "share": 100
+                    }
+                  ],
+                  "bans": []
+                }
+              ],
+              "alternates": [
+                {
+                  "memberIndex": 0,
+                  "name": "Muk",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 0,
+                  "name": "Solrock",
+                  "rate": 98,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 1,
+                  "name": "Muk",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 1,
+                  "name": "Tyranitar",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 2,
+                  "name": "Muk",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 2,
+                  "name": "Arbok",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 3,
+                  "name": "Muk",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 3,
+                  "name": "Rampardos",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 4,
+                  "name": "Muk",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 4,
+                  "name": "Arbok",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 5,
+                  "name": "Muk",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 5,
+                  "name": "Rampardos",
+                  "rate": 100,
+                  "withBan": false
+                }
+              ],
+              "alternateBans": []
+            },
+            "banGain": null
+          },
+          {
+            "region": "Kanto",
+            "boss": "Moltres",
+            "tiers": {
+              "1": 100,
+              "2": 99,
+              "3": 17,
+              "4": 0,
+              "5": 0
+            },
+            "team": {
+              "members": [
+                {
+                  "name": "Arceus Rock",
+                  "legendary": true,
+                  "moves": [
+                    {
+                      "name": "Judgment",
+                      "tag": null,
+                      "share": 100
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Rampardos",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Head Smash",
+                      "tag": null,
+                      "share": 100
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Tyranitar",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Stone Edge",
+                      "tag": null,
+                      "share": 99
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Archeops",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Stone Edge",
+                      "tag": null,
+                      "share": 99
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Politoed",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Hydro Pump",
+                      "tag": null,
+                      "share": 88
+                    },
+                    {
+                      "name": "Hypnosis",
+                      "tag": "SLP",
+                      "share": 12
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Muk",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Gunk Shot",
+                      "tag": "PSN",
+                      "share": 84
+                    },
+                    {
+                      "name": "Toxic",
+                      "tag": "PSN",
+                      "share": 16
+                    }
+                  ],
+                  "bans": []
+                }
+              ],
+              "alternates": [
+                {
+                  "memberIndex": 0,
+                  "name": "Nidoqueen",
+                  "rate": 96,
+                  "withBan": true
+                },
+                {
+                  "memberIndex": 0,
+                  "name": "Aerodactyl",
+                  "rate": 98,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 1,
+                  "name": "Aerodactyl",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 1,
+                  "name": "Solrock",
+                  "rate": 92,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 2,
+                  "name": "Aerodactyl",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 2,
+                  "name": "Lunatone",
+                  "rate": 94,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 3,
+                  "name": "Swalot",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 3,
+                  "name": "Armaldo",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 4,
+                  "name": "Aerodactyl",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 4,
+                  "name": "Musharna",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 5,
+                  "name": "Swalot",
+                  "rate": 98,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 5,
+                  "name": "Garbodor",
+                  "rate": 98,
+                  "withBan": false
+                }
+              ],
+              "alternateBans": [
+                {
+                  "name": "Nidoqueen",
+                  "bans": [
+                    "11 attacks, all but its 8 Ground attacks"
+                  ]
+                }
+              ]
+            },
+            "banGain": null
+          },
+          {
+            "region": "Kanto",
+            "boss": "Mewtwo",
+            "tiers": {
+              "1": 100,
+              "2": 100,
+              "3": 100,
+              "4": 89,
+              "5": 21
             },
             "team": {
               "members": [
@@ -15041,39 +17021,289 @@
                   "bans": []
                 }
               ],
-              "alternates": []
+              "alternates": [
+                {
+                  "memberIndex": 0,
+                  "name": "Mandibuzz",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 0,
+                  "name": "Honchkrow",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 1,
+                  "name": "Hydreigon",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 1,
+                  "name": "Mandibuzz",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 2,
+                  "name": "Honchkrow",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 2,
+                  "name": "Mandibuzz",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 3,
+                  "name": "Hydreigon",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 3,
+                  "name": "Mandibuzz",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 4,
+                  "name": "Mandibuzz",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 4,
+                  "name": "Hydreigon",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 5,
+                  "name": "Mandibuzz",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 5,
+                  "name": "Scrafty",
+                  "rate": 100,
+                  "withBan": false
+                }
+              ],
+              "alternateBans": []
             },
             "banGain": null
           },
           {
             "region": "Kanto",
-            "boss": "Moltres",
+            "boss": "Mew",
             "tiers": {
-              "1": null,
-              "2": null,
-              "3": null,
-              "4": null,
-              "5": null
+              "1": 100,
+              "2": 100,
+              "3": 99,
+              "4": 28,
+              "5": 0
             },
             "team": {
               "members": [
                 {
-                  "name": "Heatran",
+                  "name": "Giratina Origin",
                   "legendary": true,
                   "moves": [
                     {
-                      "name": "Magma Storm",
+                      "name": "Shadow Force",
                       "tag": null,
-                      "share": 93
+                      "share": 99
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Escavalier",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Megahorn",
+                      "tag": null,
+                      "share": 99
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Spiritomb",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Poltergeist",
+                      "tag": null,
+                      "share": 79
                     },
                     {
-                      "name": "Stone Edge",
+                      "name": "Confuse Ray",
+                      "tag": "CNF",
+                      "share": 14
+                    },
+                    {
+                      "name": "Hypnosis",
+                      "tag": "SLP",
+                      "share": 7
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Drapion",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Throat Chop",
                       "tag": null,
+                      "share": 83
+                    },
+                    {
+                      "name": "Toxic",
+                      "tag": "PSN",
+                      "share": 17
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Bronzong",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Feint Attack",
+                      "tag": null,
+                      "share": 84
+                    },
+                    {
+                      "name": "Confuse Ray",
+                      "tag": "CNF",
+                      "share": 9
+                    },
+                    {
+                      "name": "Hypnosis",
+                      "tag": "SLP",
                       "share": 6
                     }
                   ],
                   "bans": []
                 },
+                {
+                  "name": "Exeggutor",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Leaf Storm",
+                      "tag": null,
+                      "share": 86
+                    },
+                    {
+                      "name": "Sleep Powder",
+                      "tag": "SLP",
+                      "share": 9
+                    }
+                  ],
+                  "bans": []
+                }
+              ],
+              "alternates": [
+                {
+                  "memberIndex": 0,
+                  "name": "Golurk",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 0,
+                  "name": "Dusknoir",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 1,
+                  "name": "Skuntank",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 1,
+                  "name": "Hypno",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 2,
+                  "name": "Skuntank",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 2,
+                  "name": "Scizor",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 3,
+                  "name": "Skuntank",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 3,
+                  "name": "Hydreigon",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 4,
+                  "name": "Skuntank",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 4,
+                  "name": "Scizor",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 5,
+                  "name": "Dusknoir",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 5,
+                  "name": "Hypno",
+                  "rate": 100,
+                  "withBan": false
+                }
+              ],
+              "alternateBans": []
+            },
+            "banGain": null
+          },
+          {
+            "region": "Johto",
+            "boss": "Ho-Oh",
+            "tiers": {
+              "1": 100,
+              "2": 89,
+              "3": 0,
+              "4": 0,
+              "5": 0
+            },
+            "team": {
+              "members": [
                 {
                   "name": "Relicanth",
                   "legendary": false,
@@ -15087,52 +17317,25 @@
                   "bans": []
                 },
                 {
-                  "name": "Probopass",
-                  "legendary": false,
-                  "moves": [
-                    {
-                      "name": "Meteor Beam",
-                      "tag": null,
-                      "share": 76
-                    },
-                    {
-                      "name": "Thunder Wave",
-                      "tag": "PAR",
-                      "share": 23
-                    }
-                  ],
-                  "bans": []
-                },
-                {
-                  "name": "Gigalith",
+                  "name": "Rhyperior",
                   "legendary": false,
                   "moves": [
                     {
                       "name": "Stone Edge",
                       "tag": null,
-                      "share": 100
+                      "share": 99
                     }
                   ],
                   "bans": []
                 },
                 {
-                  "name": "Bronzong",
+                  "name": "Rampardos",
                   "legendary": false,
                   "moves": [
                     {
-                      "name": "Iron Head",
+                      "name": "Head Smash",
                       "tag": null,
-                      "share": 74
-                    },
-                    {
-                      "name": "Hypnosis",
-                      "tag": "SLP",
-                      "share": 18
-                    },
-                    {
-                      "name": "Confuse Ray",
-                      "tag": "CNF",
-                      "share": 8
+                      "share": 100
                     }
                   ],
                   "bans": []
@@ -15144,36 +17347,193 @@
                     {
                       "name": "Stone Edge",
                       "tag": null,
-                      "share": 100
+                      "share": 99
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Politoed",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Struggle",
+                      "tag": null,
+                      "share": 58
+                    },
+                    {
+                      "name": "Hypnosis",
+                      "tag": "SLP",
+                      "share": 42
+                    }
+                  ],
+                  "bans": [],
+                  "banAllBut": 15,
+                  "banAllButNote": "15 attacks, all but Mud Shot, Earth Power"
+                },
+                {
+                  "name": "Gigalith",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Stone Edge",
+                      "tag": null,
+                      "share": 99
                     }
                   ],
                   "bans": []
                 }
               ],
-              "alternates": []
+              "alternates": [
+                {
+                  "memberIndex": 0,
+                  "name": "Sudowoodo",
+                  "rate": 69,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 0,
+                  "name": "Rhydon",
+                  "rate": 56,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 1,
+                  "name": "Kabutops",
+                  "rate": 62,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 1,
+                  "name": "Rhydon",
+                  "rate": 77,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 2,
+                  "name": "Quagsire",
+                  "rate": 69,
+                  "withBan": true
+                },
+                {
+                  "memberIndex": 2,
+                  "name": "Rhydon",
+                  "rate": 65,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 3,
+                  "name": "Rhydon",
+                  "rate": 67,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 3,
+                  "name": "Kabutops",
+                  "rate": 67,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 4,
+                  "name": "Poliwrath",
+                  "rate": 83,
+                  "withBan": true
+                },
+                {
+                  "memberIndex": 4,
+                  "name": "Quagsire",
+                  "rate": 75,
+                  "withBan": true
+                },
+                {
+                  "memberIndex": 5,
+                  "name": "Sudowoodo",
+                  "rate": 75,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 5,
+                  "name": "Kabutops",
+                  "rate": 67,
+                  "withBan": false
+                }
+              ],
+              "alternateBans": [
+                {
+                  "name": "Quagsire",
+                  "bans": [
+                    "5 attacks, all but its 5 Ground attacks"
+                  ]
+                },
+                {
+                  "name": "Poliwrath",
+                  "bans": [
+                    "14 attacks, all but Mud Shot, Earth Power"
+                  ]
+                }
+              ]
             },
-            "banGain": null
+            "banGain": 45
           },
           {
-            "region": "Kanto",
-            "boss": "Mewtwo",
+            "region": "Johto",
+            "boss": "Lugia",
             "tiers": {
-              "1": null,
-              "2": null,
-              "3": null,
-              "4": null,
-              "5": null
+              "1": 100,
+              "2": 98,
+              "3": 6,
+              "4": 0,
+              "5": 0
             },
             "team": {
               "members": [
                 {
-                  "name": "Arceus Rock",
+                  "name": "Zekrom",
                   "legendary": true,
                   "moves": [
                     {
-                      "name": "Judgment",
+                      "name": "Bolt Strike",
+                      "tag": "PAR",
+                      "share": 98
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Magnezone",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Zap Cannon",
+                      "tag": "PAR",
+                      "share": 77
+                    },
+                    {
+                      "name": "Supersonic",
+                      "tag": "CNF",
+                      "share": 13
+                    },
+                    {
+                      "name": "Thunder Wave",
+                      "tag": "PAR",
+                      "share": 9
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Nidoqueen",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Crunch",
                       "tag": null,
-                      "share": 100
+                      "share": 88
+                    },
+                    {
+                      "name": "Toxic",
+                      "tag": "PSN",
+                      "share": 12
                     }
                   ],
                   "bans": []
@@ -15203,83 +17563,528 @@
                   "bans": []
                 },
                 {
-                  "name": "Muk",
+                  "name": "Magneton",
                   "legendary": false,
                   "moves": [
                     {
-                      "name": "Gunk Shot",
-                      "tag": "PSN",
-                      "share": 89
+                      "name": "Zap Cannon",
+                      "tag": "PAR",
+                      "share": 75
                     },
                     {
-                      "name": "Toxic",
-                      "tag": "PSN",
-                      "share": 10
-                    }
-                  ],
-                  "bans": []
-                },
-                {
-                  "name": "Gigalith",
-                  "legendary": false,
-                  "moves": [
+                      "name": "Thunder Wave",
+                      "tag": "PAR",
+                      "share": 14
+                    },
                     {
-                      "name": "Stone Edge",
-                      "tag": null,
-                      "share": 100
-                    }
-                  ],
-                  "bans": []
-                },
-                {
-                  "name": "Carracosta",
-                  "legendary": false,
-                  "moves": [
-                    {
-                      "name": "Stone Edge",
-                      "tag": null,
-                      "share": 100
+                      "name": "Supersonic",
+                      "tag": "CNF",
+                      "share": 11
                     }
                   ],
                   "bans": []
                 }
               ],
-              "alternates": []
+              "alternates": [
+                {
+                  "memberIndex": 0,
+                  "name": "Ampharos",
+                  "rate": 79,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 0,
+                  "name": "Relicanth",
+                  "rate": 67,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 1,
+                  "name": "Ampharos",
+                  "rate": 96,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 1,
+                  "name": "Dusknoir",
+                  "rate": 75,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 2,
+                  "name": "Ampharos",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 2,
+                  "name": "Solrock",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 3,
+                  "name": "Dusknoir",
+                  "rate": 94,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 3,
+                  "name": "Ampharos",
+                  "rate": 98,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 4,
+                  "name": "Probopass",
+                  "rate": 96,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 4,
+                  "name": "Gigalith",
+                  "rate": 92,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 5,
+                  "name": "Ampharos",
+                  "rate": 94,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 5,
+                  "name": "Probopass",
+                  "rate": 100,
+                  "withBan": false
+                }
+              ],
+              "alternateBans": []
             },
             "banGain": null
           },
           {
-            "region": "Kanto",
-            "boss": "Mew",
+            "region": "Johto",
+            "boss": "Celebi",
             "tiers": {
-              "1": null,
-              "2": null,
-              "3": null,
-              "4": null,
-              "5": null
+              "1": 100,
+              "2": 99,
+              "3": 47,
+              "4": 1,
+              "5": 0
             },
             "team": {
               "members": [
                 {
-                  "name": "Articuno",
+                  "name": "Genesect",
                   "legendary": true,
                   "moves": [
                     {
-                      "name": "Blizzard",
-                      "tag": "FRZ",
-                      "share": 98
+                      "name": "Bug Buzz",
+                      "tag": null,
+                      "share": 93
+                    },
+                    {
+                      "name": "Leech Life",
+                      "tag": null,
+                      "share": 6
                     }
                   ],
                   "bans": []
                 },
                 {
-                  "name": "Heatran",
+                  "name": "Escavalier",
                   "legendary": false,
                   "moves": [
                     {
-                      "name": "Magma Storm",
+                      "name": "Megahorn",
                       "tag": null,
-                      "share": 93
+                      "share": 97
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Scizor",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Lunge",
+                      "tag": null,
+                      "share": 99
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Skuntank",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Gunk Shot",
+                      "tag": "PSN",
+                      "share": 85
+                    },
+                    {
+                      "name": "Toxic",
+                      "tag": "PSN",
+                      "share": 15
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Ferrothorn",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Pin Missile",
+                      "tag": null,
+                      "share": 100
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Altaria",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Sky Attack",
+                      "tag": null,
+                      "share": 89
+                    },
+                    {
+                      "name": "Sing",
+                      "tag": "SLP",
+                      "share": 11
+                    }
+                  ],
+                  "bans": []
+                }
+              ],
+              "alternates": [
+                {
+                  "memberIndex": 0,
+                  "name": "Drapion",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 0,
+                  "name": "Chandelure",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 1,
+                  "name": "Wormadam (Trash)",
+                  "rate": 90,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 1,
+                  "name": "Chandelure",
+                  "rate": 96,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 2,
+                  "name": "Forretress",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 2,
+                  "name": "Chandelure",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 3,
+                  "name": "Drapion",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 3,
+                  "name": "Sigilyph",
+                  "rate": 92,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 4,
+                  "name": "Drapion",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 4,
+                  "name": "Wormadam (Trash)",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 5,
+                  "name": "Yanmega",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 5,
+                  "name": "Forretress",
+                  "rate": 98,
+                  "withBan": false
+                }
+              ],
+              "alternateBans": []
+            },
+            "banGain": null
+          },
+          {
+            "region": "Johto",
+            "boss": "Raikou",
+            "tiers": {
+              "1": 100,
+              "2": 96,
+              "3": 1,
+              "4": 0,
+              "5": 0
+            },
+            "team": {
+              "members": [
+                {
+                  "name": "White Kyurem",
+                  "legendary": true,
+                  "moves": [
+                    {
+                      "name": "Ice Burn",
+                      "tag": "BRN",
+                      "share": 100
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Steelix",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Earthquake",
+                      "tag": null,
+                      "share": 99
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Garchomp",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Earthquake",
+                      "tag": null,
+                      "share": 100
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Krookodile",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Earthquake",
+                      "tag": null,
+                      "share": 99
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Excadrill",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Earthquake",
+                      "tag": null,
+                      "share": 100
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Quagsire",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Earthquake",
+                      "tag": null,
+                      "share": 89
+                    },
+                    {
+                      "name": "Toxic",
+                      "tag": "PSN",
+                      "share": 11
+                    }
+                  ],
+                  "bans": []
+                }
+              ],
+              "alternates": [
+                {
+                  "memberIndex": 0,
+                  "name": "Bellossom",
+                  "rate": 77,
+                  "withBan": true
+                },
+                {
+                  "memberIndex": 0,
+                  "name": "Muk",
+                  "rate": 65,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 1,
+                  "name": "Meganium",
+                  "rate": 94,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 1,
+                  "name": "Muk",
+                  "rate": 92,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 2,
+                  "name": "Tangrowth",
+                  "rate": 96,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 2,
+                  "name": "Muk",
+                  "rate": 92,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 3,
+                  "name": "Swampert",
+                  "rate": 69,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 3,
+                  "name": "Bellossom",
+                  "rate": 60,
+                  "withBan": true
+                },
+                {
+                  "memberIndex": 4,
+                  "name": "Swampert",
+                  "rate": 73,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 4,
+                  "name": "Bellossom",
+                  "rate": 88,
+                  "withBan": true
+                },
+                {
+                  "memberIndex": 5,
+                  "name": "Rhyperior",
+                  "rate": 85,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 5,
+                  "name": "Bellossom",
+                  "rate": 85,
+                  "withBan": true
+                }
+              ],
+              "alternateBans": [
+                {
+                  "name": "Bellossom",
+                  "bans": [
+                    "Giga Drain",
+                    "Leaf Storm",
+                    "Magical Leaf",
+                    "Petal Dance"
+                  ]
+                }
+              ]
+            },
+            "banGain": null
+          },
+          {
+            "region": "Johto",
+            "boss": "Entei",
+            "tiers": {
+              "1": 100,
+              "2": 99,
+              "3": 6,
+              "4": 0,
+              "5": 0
+            },
+            "team": {
+              "members": [
+                {
+                  "name": "Palkia",
+                  "legendary": true,
+                  "moves": [
+                    {
+                      "name": "Hydro Pump",
+                      "tag": null,
+                      "share": 99
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Quagsire",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Earthquake",
+                      "tag": null,
+                      "share": 82
+                    },
+                    {
+                      "name": "Toxic",
+                      "tag": "PSN",
+                      "share": 18
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Omastar",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Hydro Pump",
+                      "tag": null,
+                      "share": 100
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Solrock",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Stone Edge",
+                      "tag": null,
+                      "share": 84
+                    },
+                    {
+                      "name": "Hypnosis",
+                      "tag": "SLP",
+                      "share": 16
                     }
                   ],
                   "bans": []
@@ -15291,7 +18096,2159 @@
                     {
                       "name": "Head Smash",
                       "tag": null,
+                      "share": 100
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Rhyperior",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Earthquake",
+                      "tag": null,
                       "share": 99
+                    }
+                  ],
+                  "bans": []
+                }
+              ],
+              "alternates": [
+                {
+                  "memberIndex": 0,
+                  "name": "Kingdra",
+                  "rate": 85,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 0,
+                  "name": "Gigalith",
+                  "rate": 73,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 1,
+                  "name": "Swalot",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 1,
+                  "name": "Muk",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 2,
+                  "name": "Kingdra",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 2,
+                  "name": "Muk",
+                  "rate": 82,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 3,
+                  "name": "Muk",
+                  "rate": 98,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 3,
+                  "name": "Rampardos",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 4,
+                  "name": "Kingdra",
+                  "rate": 98,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 4,
+                  "name": "Gigalith",
+                  "rate": 94,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 5,
+                  "name": "Gigalith",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 5,
+                  "name": "Kingdra",
+                  "rate": 98,
+                  "withBan": false
+                }
+              ],
+              "alternateBans": []
+            },
+            "banGain": null
+          },
+          {
+            "region": "Johto",
+            "boss": "Suicune",
+            "tiers": {
+              "1": 100,
+              "2": 100,
+              "3": 55,
+              "4": 0,
+              "5": 0
+            },
+            "team": {
+              "members": [
+                {
+                  "name": "White Kyurem",
+                  "legendary": true,
+                  "moves": [
+                    {
+                      "name": "Draco Meteor",
+                      "tag": null,
+                      "share": 100
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Abomasnow",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Leaf Storm",
+                      "tag": null,
+                      "share": 90
+                    },
+                    {
+                      "name": "Wood Hammer",
+                      "tag": null,
+                      "share": 10
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Ferrothorn",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Power Whip",
+                      "tag": null,
+                      "share": 100
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Venusaur",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Leaf Storm",
+                      "tag": null,
+                      "share": 81
+                    },
+                    {
+                      "name": "Sleep Powder",
+                      "tag": "SLP",
+                      "share": 10
+                    },
+                    {
+                      "name": "Power Whip",
+                      "tag": null,
+                      "share": 6
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Muk",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Gunk Shot",
+                      "tag": "PSN",
+                      "share": 89
+                    },
+                    {
+                      "name": "Toxic",
+                      "tag": "PSN",
+                      "share": 11
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Tentacruel",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Gunk Shot",
+                      "tag": "PSN",
+                      "share": 77
+                    },
+                    {
+                      "name": "Supersonic",
+                      "tag": "CNF",
+                      "share": 23
+                    }
+                  ],
+                  "bans": []
+                }
+              ],
+              "alternates": [
+                {
+                  "memberIndex": 0,
+                  "name": "Bellossom",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 0,
+                  "name": "Exeggutor",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 1,
+                  "name": "Exeggutor",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 1,
+                  "name": "Roserade",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 2,
+                  "name": "Exeggutor",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 2,
+                  "name": "Amoonguss",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 3,
+                  "name": "Vileplume",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 3,
+                  "name": "Amoonguss",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 4,
+                  "name": "Skuntank",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 4,
+                  "name": "Bellossom",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 5,
+                  "name": "Ludicolo",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 5,
+                  "name": "Swalot",
+                  "rate": 100,
+                  "withBan": false
+                }
+              ],
+              "alternateBans": []
+            },
+            "banGain": null
+          },
+          {
+            "region": "Hoenn",
+            "boss": "Regirock",
+            "tiers": {
+              "1": 100,
+              "2": 99,
+              "3": 9,
+              "4": 0,
+              "5": 0
+            },
+            "team": {
+              "members": [
+                {
+                  "name": "Arceus Fighting",
+                  "legendary": true,
+                  "moves": [
+                    {
+                      "name": "Judgment",
+                      "tag": null,
+                      "share": 100
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Swampert",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Surf",
+                      "tag": null,
+                      "share": 84
+                    },
+                    {
+                      "name": "Supersonic",
+                      "tag": "CNF",
+                      "share": 15
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Tangrowth",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Leaf Storm",
+                      "tag": null,
+                      "share": 76
+                    },
+                    {
+                      "name": "Sleep Powder",
+                      "tag": "SLP",
+                      "share": 19
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Torterra",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Leaf Storm",
+                      "tag": null,
+                      "share": 99
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Seismitoad",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Hydro Pump",
+                      "tag": null,
+                      "share": 83
+                    },
+                    {
+                      "name": "Supersonic",
+                      "tag": "CNF",
+                      "share": 17
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Gastrodon",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Hydro Pump",
+                      "tag": null,
+                      "share": 99
+                    }
+                  ],
+                  "bans": []
+                }
+              ],
+              "alternates": [
+                {
+                  "memberIndex": 0,
+                  "name": "Quagsire",
+                  "rate": 94,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 0,
+                  "name": "Tangela",
+                  "rate": 98,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 1,
+                  "name": "Exeggutor",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 1,
+                  "name": "Lucario",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 2,
+                  "name": "Magnezone",
+                  "rate": 96,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 2,
+                  "name": "Nidoqueen",
+                  "rate": 92,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 3,
+                  "name": "Exeggutor",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 3,
+                  "name": "Tangela",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 4,
+                  "name": "Exeggutor",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 4,
+                  "name": "Quagsire",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 5,
+                  "name": "Exeggutor",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 5,
+                  "name": "Lucario",
+                  "rate": 100,
+                  "withBan": false
+                }
+              ],
+              "alternateBans": []
+            },
+            "banGain": null
+          },
+          {
+            "region": "Hoenn",
+            "boss": "Regice",
+            "tiers": {
+              "1": 100,
+              "2": 100,
+              "3": 41,
+              "4": 0,
+              "5": 0
+            },
+            "team": {
+              "members": [
+                {
+                  "name": "Ho-Oh",
+                  "legendary": true,
+                  "moves": [
+                    {
+                      "name": "Sacred Fire",
+                      "tag": "BRN",
+                      "share": 99
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Flareon",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Flare Blitz",
+                      "tag": "BRN",
+                      "share": 100
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Arcanine",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Flare Blitz",
+                      "tag": "BRN",
+                      "share": 100
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Bronzong",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Confuse Ray",
+                      "tag": "CNF",
+                      "share": 13
+                    },
+                    {
+                      "name": "Hypnosis",
+                      "tag": "SLP",
+                      "share": 11
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Tentacruel",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Gunk Shot",
+                      "tag": "PSN",
+                      "share": 81
+                    },
+                    {
+                      "name": "Supersonic",
+                      "tag": "CNF",
+                      "share": 19
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Poliwrath",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Superpower",
+                      "tag": null,
+                      "share": 94
+                    },
+                    {
+                      "name": "Hypnosis",
+                      "tag": "SLP",
+                      "share": 5
+                    }
+                  ],
+                  "bans": []
+                }
+              ],
+              "alternates": [
+                {
+                  "memberIndex": 0,
+                  "name": "Darmanitan",
+                  "rate": 96,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 0,
+                  "name": "Muk",
+                  "rate": 98,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 1,
+                  "name": "Emboar",
+                  "rate": 98,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 1,
+                  "name": "Darmanitan",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 2,
+                  "name": "Darmanitan",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 2,
+                  "name": "Emboar",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 3,
+                  "name": "Metagross",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 3,
+                  "name": "Gallade",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 4,
+                  "name": "Blaziken",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 4,
+                  "name": "Muk",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 5,
+                  "name": "Metagross",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 5,
+                  "name": "Gallade",
+                  "rate": 100,
+                  "withBan": false
+                }
+              ],
+              "alternateBans": []
+            },
+            "banGain": null
+          },
+          {
+            "region": "Hoenn",
+            "boss": "Registeel",
+            "tiers": {
+              "1": 100,
+              "2": 99,
+              "3": 19,
+              "4": 0,
+              "5": 0
+            },
+            "team": {
+              "members": [
+                {
+                  "name": "Reshiram",
+                  "legendary": true,
+                  "moves": [
+                    {
+                      "name": "Blue Flare",
+                      "tag": "BRN",
+                      "share": 99
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Chandelure",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Overheat",
+                      "tag": null,
+                      "share": 80
+                    },
+                    {
+                      "name": "Confuse Ray",
+                      "tag": "CNF",
+                      "share": 10
+                    },
+                    {
+                      "name": "Will-O-Wisp",
+                      "tag": "BRN",
+                      "share": 9
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Poliwrath",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Superpower",
+                      "tag": null,
+                      "share": 93
+                    },
+                    {
+                      "name": "Hypnosis",
+                      "tag": "SLP",
+                      "share": 7
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Swampert",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Earthquake",
+                      "tag": null,
+                      "share": 85
+                    },
+                    {
+                      "name": "Supersonic",
+                      "tag": "CNF",
+                      "share": 14
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Ninetales",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Overheat",
+                      "tag": null,
+                      "share": 80
+                    },
+                    {
+                      "name": "Will-O-Wisp",
+                      "tag": "BRN",
+                      "share": 11
+                    },
+                    {
+                      "name": "Confuse Ray",
+                      "tag": "CNF",
+                      "share": 9
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Typhlosion",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Eruption",
+                      "tag": null,
+                      "share": 99
+                    }
+                  ],
+                  "bans": []
+                }
+              ],
+              "alternates": [
+                {
+                  "memberIndex": 0,
+                  "name": "Emboar",
+                  "rate": 88,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 0,
+                  "name": "Volcarona",
+                  "rate": 75,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 1,
+                  "name": "Arcanine",
+                  "rate": 98,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 1,
+                  "name": "Lampent",
+                  "rate": 98,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 2,
+                  "name": "Arcanine",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 2,
+                  "name": "Volcarona",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 3,
+                  "name": "Darmanitan",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 3,
+                  "name": "Emboar",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 4,
+                  "name": "Blaziken",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 4,
+                  "name": "Emboar",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 5,
+                  "name": "Arcanine",
+                  "rate": 98,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 5,
+                  "name": "Emboar",
+                  "rate": 100,
+                  "withBan": false
+                }
+              ],
+              "alternateBans": []
+            },
+            "banGain": null
+          },
+          {
+            "region": "Hoenn",
+            "boss": "Groudon",
+            "tiers": {
+              "1": 100,
+              "2": 100,
+              "3": 94,
+              "4": 3,
+              "5": 0
+            },
+            "team": {
+              "members": [
+                {
+                  "name": "Ho-Oh",
+                  "legendary": true,
+                  "moves": [
+                    {
+                      "name": "Sacred Fire",
+                      "tag": "BRN",
+                      "share": 100
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Mantine",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Hydro Pump",
+                      "tag": null,
+                      "share": 88
+                    },
+                    {
+                      "name": "Confuse Ray",
+                      "tag": "CNF",
+                      "share": 12
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Pelipper",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Hydro Pump",
+                      "tag": null,
+                      "share": 90
+                    },
+                    {
+                      "name": "Supersonic",
+                      "tag": "CNF",
+                      "share": 9
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Gyarados",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Aqua Tail",
+                      "tag": null,
+                      "share": 100
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Dragonite",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Hurricane",
+                      "tag": "CNF",
+                      "share": 91
+                    },
+                    {
+                      "name": "Outrage",
+                      "tag": null,
+                      "share": 9
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Altaria",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Draco Meteor",
+                      "tag": null,
+                      "share": 89
+                    },
+                    {
+                      "name": "Sing",
+                      "tag": "SLP",
+                      "share": 10
+                    }
+                  ],
+                  "bans": []
+                }
+              ],
+              "alternates": [
+                {
+                  "memberIndex": 0,
+                  "name": "Salamence",
+                  "rate": 100,
+                  "withBan": true
+                },
+                {
+                  "memberIndex": 0,
+                  "name": "Vespiquen",
+                  "rate": 90,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 1,
+                  "name": "Togekiss",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 1,
+                  "name": "Swanna",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 2,
+                  "name": "Togekiss",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 2,
+                  "name": "Salamence",
+                  "rate": 100,
+                  "withBan": true
+                },
+                {
+                  "memberIndex": 3,
+                  "name": "Togekiss",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 3,
+                  "name": "Swanna",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 4,
+                  "name": "Swanna",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 4,
+                  "name": "Salamence",
+                  "rate": 100,
+                  "withBan": true
+                },
+                {
+                  "memberIndex": 5,
+                  "name": "Salamence",
+                  "rate": 100,
+                  "withBan": true
+                },
+                {
+                  "memberIndex": 5,
+                  "name": "Sigilyph",
+                  "rate": 100,
+                  "withBan": false
+                }
+              ],
+              "alternateBans": [
+                {
+                  "name": "Salamence",
+                  "bans": [
+                    "Fly",
+                    "Outrage"
+                  ]
+                }
+              ]
+            },
+            "banGain": null
+          },
+          {
+            "region": "Hoenn",
+            "boss": "Kyogre",
+            "tiers": {
+              "1": 99,
+              "2": 42,
+              "3": 0,
+              "4": 0,
+              "5": 0
+            },
+            "team": {
+              "members": [
+                {
+                  "name": "Zekrom",
+                  "legendary": true,
+                  "moves": [
+                    {
+                      "name": "Bolt Strike",
+                      "tag": "PAR",
+                      "share": 100
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Exeggutor",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Wood Hammer",
+                      "tag": null,
+                      "share": 90
+                    },
+                    {
+                      "name": "Sleep Powder",
+                      "tag": "SLP",
+                      "share": 7
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Ferrothorn",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Power Whip",
+                      "tag": null,
+                      "share": 99
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Abomasnow",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Wood Hammer",
+                      "tag": null,
+                      "share": 100
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Venusaur",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Power Whip",
+                      "tag": null,
+                      "share": 86
+                    },
+                    {
+                      "name": "Sleep Powder",
+                      "tag": "SLP",
+                      "share": 11
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Tentacruel",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Gunk Shot",
+                      "tag": "PSN",
+                      "share": 77
+                    },
+                    {
+                      "name": "Supersonic",
+                      "tag": "CNF",
+                      "share": 23
+                    }
+                  ],
+                  "bans": []
+                }
+              ],
+              "alternates": [
+                {
+                  "memberIndex": 0,
+                  "name": "Roserade",
+                  "rate": 12,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 0,
+                  "name": "Amoonguss",
+                  "rate": 17,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 1,
+                  "name": "Roserade",
+                  "rate": 42,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 1,
+                  "name": "Vileplume",
+                  "rate": 29,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 2,
+                  "name": "Ludicolo",
+                  "rate": 31,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 2,
+                  "name": "Vileplume",
+                  "rate": 42,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 3,
+                  "name": "Vileplume",
+                  "rate": 48,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 3,
+                  "name": "Roserade",
+                  "rate": 40,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 4,
+                  "name": "Victreebel",
+                  "rate": 40,
+                  "withBan": true
+                },
+                {
+                  "memberIndex": 4,
+                  "name": "Meganium",
+                  "rate": 29,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 5,
+                  "name": "Bayleef",
+                  "rate": 21,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 5,
+                  "name": "Carnivine",
+                  "rate": 17,
+                  "withBan": false
+                }
+              ],
+              "alternateBans": [
+                {
+                  "name": "Victreebel",
+                  "bans": [
+                    "Poison Powder",
+                    "Stun Spore"
+                  ]
+                }
+              ]
+            },
+            "banGain": null
+          },
+          {
+            "region": "Hoenn",
+            "boss": "Jirachi",
+            "tiers": {
+              "1": 100,
+              "2": 100,
+              "3": 45,
+              "4": 0,
+              "5": 0
+            },
+            "team": {
+              "members": [
+                {
+                  "name": "Ho-Oh",
+                  "legendary": true,
+                  "moves": [
+                    {
+                      "name": "Sacred Fire",
+                      "tag": "BRN",
+                      "share": 99
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Chandelure",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Overheat",
+                      "tag": null,
+                      "share": 80
+                    },
+                    {
+                      "name": "Confuse Ray",
+                      "tag": "CNF",
+                      "share": 14
+                    },
+                    {
+                      "name": "Will-O-Wisp",
+                      "tag": "BRN",
+                      "share": 7
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Volcarona",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Overheat",
+                      "tag": null,
+                      "share": 99
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Empoleon",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Hydro Pump",
+                      "tag": null,
+                      "share": 100
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Flareon",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Flare Blitz",
+                      "tag": "BRN",
+                      "share": 99
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Magnezone",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Zap Cannon",
+                      "tag": "PAR",
+                      "share": 80
+                    },
+                    {
+                      "name": "Supersonic",
+                      "tag": "CNF",
+                      "share": 14
+                    },
+                    {
+                      "name": "Thunder Wave",
+                      "tag": "PAR",
+                      "share": 5
+                    }
+                  ],
+                  "bans": []
+                }
+              ],
+              "alternates": [
+                {
+                  "memberIndex": 0,
+                  "name": "Ninetales",
+                  "rate": 81,
+                  "withBan": true
+                },
+                {
+                  "memberIndex": 0,
+                  "name": "Rotom (Heat)",
+                  "rate": 65,
+                  "withBan": true
+                },
+                {
+                  "memberIndex": 1,
+                  "name": "Rotom (Heat)",
+                  "rate": 100,
+                  "withBan": true
+                },
+                {
+                  "memberIndex": 1,
+                  "name": "Ninetales",
+                  "rate": 100,
+                  "withBan": true
+                },
+                {
+                  "memberIndex": 2,
+                  "name": "Magmortar",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 2,
+                  "name": "Ninetales",
+                  "rate": 100,
+                  "withBan": true
+                },
+                {
+                  "memberIndex": 3,
+                  "name": "Rotom (Heat)",
+                  "rate": 100,
+                  "withBan": true
+                },
+                {
+                  "memberIndex": 3,
+                  "name": "Magmortar",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 4,
+                  "name": "Rotom (Heat)",
+                  "rate": 100,
+                  "withBan": true
+                },
+                {
+                  "memberIndex": 4,
+                  "name": "Excadrill",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 5,
+                  "name": "Swampert",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 5,
+                  "name": "Ninetales",
+                  "rate": 100,
+                  "withBan": true
+                }
+              ],
+              "alternateBans": [
+                {
+                  "name": "Ninetales",
+                  "bans": [
+                    "Fire Blast",
+                    "Overheat"
+                  ]
+                },
+                {
+                  "name": "Rotom (Heat)",
+                  "bans": [
+                    "Thunder Wave"
+                  ]
+                }
+              ]
+            },
+            "banGain": null
+          },
+          {
+            "region": "Hoenn",
+            "boss": "Deoxys",
+            "tiers": {
+              "1": 100,
+              "2": 99,
+              "3": 44,
+              "4": 1,
+              "5": 0
+            },
+            "team": {
+              "members": [
+                {
+                  "name": "Arceus Dark",
+                  "legendary": true,
+                  "moves": [
+                    {
+                      "name": "Judgment",
+                      "tag": null,
+                      "share": 99
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Tyranitar",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Foul Play",
+                      "tag": null,
+                      "share": 99
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Bisharp",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Foul Play",
+                      "tag": null,
+                      "share": 99
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Skuntank",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Foul Play",
+                      "tag": null,
+                      "share": 79
+                    },
+                    {
+                      "name": "Toxic",
+                      "tag": "PSN",
+                      "share": 21
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Umbreon",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Foul Play",
+                      "tag": null,
+                      "share": 78
+                    },
+                    {
+                      "name": "Confuse Ray",
+                      "tag": "CNF",
+                      "share": 22
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Hydreigon",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Dark Pulse",
+                      "tag": null,
+                      "share": 99
+                    }
+                  ],
+                  "bans": []
+                }
+              ],
+              "alternates": [
+                {
+                  "memberIndex": 0,
+                  "name": "Weavile",
+                  "rate": 94,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 0,
+                  "name": "Drapion",
+                  "rate": 94,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 1,
+                  "name": "Drapion",
+                  "rate": 96,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 1,
+                  "name": "Krookodile",
+                  "rate": 85,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 2,
+                  "name": "Weavile",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 2,
+                  "name": "Scrafty",
+                  "rate": 98,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 3,
+                  "name": "Drapion",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 3,
+                  "name": "Scrafty",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 4,
+                  "name": "Drapion",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 4,
+                  "name": "Mandibuzz",
+                  "rate": 98,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 5,
+                  "name": "Mandibuzz",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 5,
+                  "name": "Krookodile",
+                  "rate": 100,
+                  "withBan": false
+                }
+              ],
+              "alternateBans": []
+            },
+            "banGain": null
+          },
+          {
+            "region": "Hoenn",
+            "boss": "Deoxys Attack",
+            "tiers": {
+              "1": 100,
+              "2": 100,
+              "3": 95,
+              "4": 18,
+              "5": 1
+            },
+            "team": {
+              "members": [
+                {
+                  "name": "Arceus Dark",
+                  "legendary": true,
+                  "moves": [
+                    {
+                      "name": "Judgment",
+                      "tag": null,
+                      "share": 99
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Tyranitar",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Foul Play",
+                      "tag": null,
+                      "share": 98
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Bisharp",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Foul Play",
+                      "tag": null,
+                      "share": 99
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Umbreon",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Foul Play",
+                      "tag": null,
+                      "share": 77
+                    },
+                    {
+                      "name": "Confuse Ray",
+                      "tag": "CNF",
+                      "share": 22
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Skuntank",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Foul Play",
+                      "tag": null,
+                      "share": 84
+                    },
+                    {
+                      "name": "Toxic",
+                      "tag": "PSN",
+                      "share": 15
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Drapion",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Throat Chop",
+                      "tag": null,
+                      "share": 79
+                    },
+                    {
+                      "name": "Toxic",
+                      "tag": "PSN",
+                      "share": 20
+                    }
+                  ],
+                  "bans": []
+                }
+              ],
+              "alternates": [
+                {
+                  "memberIndex": 0,
+                  "name": "Hydreigon",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 0,
+                  "name": "Scrafty",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 1,
+                  "name": "Scrafty",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 1,
+                  "name": "Weavile",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 2,
+                  "name": "Krookodile",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 2,
+                  "name": "Scrafty",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 3,
+                  "name": "Scrafty",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 3,
+                  "name": "Hydreigon",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 4,
+                  "name": "Krookodile",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 4,
+                  "name": "Scrafty",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 5,
+                  "name": "Weavile",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 5,
+                  "name": "Spiritomb",
+                  "rate": 100,
+                  "withBan": false
+                }
+              ],
+              "alternateBans": []
+            },
+            "banGain": null
+          },
+          {
+            "region": "Hoenn",
+            "boss": "Deoxys Defense",
+            "tiers": {
+              "1": 100,
+              "2": 100,
+              "3": 97,
+              "4": 24,
+              "5": 0
+            },
+            "team": {
+              "members": [
+                {
+                  "name": "Arceus Dark",
+                  "legendary": true,
+                  "moves": [
+                    {
+                      "name": "Judgment",
+                      "tag": null,
+                      "share": 100
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Tyranitar",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Foul Play",
+                      "tag": null,
+                      "share": 99
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Bisharp",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Foul Play",
+                      "tag": null,
+                      "share": 99
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Drapion",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Throat Chop",
+                      "tag": null,
+                      "share": 83
+                    },
+                    {
+                      "name": "Toxic",
+                      "tag": "PSN",
+                      "share": 16
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Umbreon",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Foul Play",
+                      "tag": null,
+                      "share": 79
+                    },
+                    {
+                      "name": "Confuse Ray",
+                      "tag": "CNF",
+                      "share": 20
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Skuntank",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Foul Play",
+                      "tag": null,
+                      "share": 88
+                    },
+                    {
+                      "name": "Toxic",
+                      "tag": "PSN",
+                      "share": 12
+                    }
+                  ],
+                  "bans": []
+                }
+              ],
+              "alternates": [
+                {
+                  "memberIndex": 0,
+                  "name": "Weavile",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 0,
+                  "name": "Hydreigon",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 1,
+                  "name": "Scrafty",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 1,
+                  "name": "Hydreigon",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 2,
+                  "name": "Hydreigon",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 2,
+                  "name": "Scrafty",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 3,
+                  "name": "Hydreigon",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 3,
+                  "name": "Krookodile",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 4,
+                  "name": "Spiritomb",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 4,
+                  "name": "Hydreigon",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 5,
+                  "name": "Scrafty",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 5,
+                  "name": "Spiritomb",
+                  "rate": 100,
+                  "withBan": false
+                }
+              ],
+              "alternateBans": []
+            },
+            "banGain": null
+          },
+          {
+            "region": "Hoenn",
+            "boss": "Deoxys Speed",
+            "tiers": {
+              "1": 100,
+              "2": 100,
+              "3": 94,
+              "4": 15,
+              "5": 0
+            },
+            "team": {
+              "members": [
+                {
+                  "name": "Arceus Dark",
+                  "legendary": true,
+                  "moves": [
+                    {
+                      "name": "Judgment",
+                      "tag": null,
+                      "share": 100
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Tyranitar",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Foul Play",
+                      "tag": null,
+                      "share": 99
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Bisharp",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Foul Play",
+                      "tag": null,
+                      "share": 99
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Umbreon",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Foul Play",
+                      "tag": null,
+                      "share": 77
+                    },
+                    {
+                      "name": "Confuse Ray",
+                      "tag": "CNF",
+                      "share": 22
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Skuntank",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Foul Play",
+                      "tag": null,
+                      "share": 80
+                    },
+                    {
+                      "name": "Toxic",
+                      "tag": "PSN",
+                      "share": 19
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Scrafty",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Foul Play",
+                      "tag": null,
+                      "share": 99
+                    }
+                  ],
+                  "bans": []
+                }
+              ],
+              "alternates": [
+                {
+                  "memberIndex": 0,
+                  "name": "Drapion",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 0,
+                  "name": "Hydreigon",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 1,
+                  "name": "Hydreigon",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 1,
+                  "name": "Drapion",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 2,
+                  "name": "Drapion",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 2,
+                  "name": "Hydreigon",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 3,
+                  "name": "Hydreigon",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 3,
+                  "name": "Krookodile",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 4,
+                  "name": "Hydreigon",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 4,
+                  "name": "Krookodile",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 5,
+                  "name": "Hydreigon",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 5,
+                  "name": "Weavile",
+                  "rate": 100,
+                  "withBan": false
+                }
+              ],
+              "alternateBans": []
+            },
+            "banGain": null
+          },
+          {
+            "region": "Hoenn",
+            "boss": "Rayquaza",
+            "tiers": {
+              "1": 100,
+              "2": 100,
+              "3": 92,
+              "4": 5,
+              "5": 0
+            },
+            "team": {
+              "members": [
+                {
+                  "name": "White Kyurem",
+                  "legendary": true,
+                  "moves": [
+                    {
+                      "name": "Ice Burn",
+                      "tag": "BRN",
+                      "share": 98
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Glaceon",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Blizzard",
+                      "tag": "FRZ",
+                      "share": 99
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Walrein",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Blizzard",
+                      "tag": "FRZ",
+                      "share": 100
                     }
                   ],
                   "bans": []
@@ -15303,19 +20260,3478 @@
                     {
                       "name": "Meteor Beam",
                       "tag": null,
-                      "share": 76
+                      "share": 90
+                    },
+                    {
+                      "name": "Thunder Wave",
+                      "tag": "PAR",
+                      "share": 10
                     }
                   ],
                   "bans": []
                 },
                 {
-                  "name": "Gigalith",
+                  "name": "Rotom (Frost)",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Blizzard",
+                      "tag": "FRZ",
+                      "share": 72
+                    },
+                    {
+                      "name": "Confuse Ray",
+                      "tag": "CNF",
+                      "share": 15
+                    },
+                    {
+                      "name": "Thunder Wave",
+                      "tag": "PAR",
+                      "share": 12
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Vanilluxe",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Blizzard",
+                      "tag": "FRZ",
+                      "share": 99
+                    }
+                  ],
+                  "bans": []
+                }
+              ],
+              "alternates": [
+                {
+                  "memberIndex": 0,
+                  "name": "Muk",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 0,
+                  "name": "Swalot",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 1,
+                  "name": "Weavile",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 1,
+                  "name": "Aggron",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 2,
+                  "name": "Lapras",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 2,
+                  "name": "Beartic",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 3,
+                  "name": "Muk",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 3,
+                  "name": "Weezing",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 4,
+                  "name": "Jynx",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 4,
+                  "name": "Weavile",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 5,
+                  "name": "Aggron",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 5,
+                  "name": "Beartic",
+                  "rate": 100,
+                  "withBan": false
+                }
+              ],
+              "alternateBans": []
+            },
+            "banGain": null
+          },
+          {
+            "region": "Hoenn",
+            "boss": "Latias",
+            "tiers": {
+              "1": 100,
+              "2": 90,
+              "3": 1,
+              "4": 0,
+              "5": 0
+            },
+            "team": {
+              "members": [
+                {
+                  "name": "Genesect",
+                  "legendary": true,
+                  "moves": [
+                    {
+                      "name": "Leech Life",
+                      "tag": null,
+                      "share": 99
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Escavalier",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Megahorn",
+                      "tag": null,
+                      "share": 99
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Hypno",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Headbutt",
+                      "tag": null,
+                      "share": 86
+                    },
+                    {
+                      "name": "Poison Gas",
+                      "tag": "PSN",
+                      "share": 14
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Gardevoir",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Hypnosis",
+                      "tag": "SLP",
+                      "share": 15
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Scizor",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Lunge",
+                      "tag": null,
+                      "share": 100
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Vespiquen",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Attack Order",
+                      "tag": null,
+                      "share": 75
+                    },
+                    {
+                      "name": "Confuse Ray",
+                      "tag": "CNF",
+                      "share": 12
+                    },
+                    {
+                      "name": "Toxic",
+                      "tag": "PSN",
+                      "share": 12
+                    }
+                  ],
+                  "bans": []
+                }
+              ],
+              "alternates": [
+                {
+                  "memberIndex": 0,
+                  "name": "Dusknoir",
+                  "rate": 88,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 0,
+                  "name": "Lapras",
+                  "rate": 94,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 1,
+                  "name": "Bisharp",
+                  "rate": 40,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 1,
+                  "name": "Dusknoir",
+                  "rate": 58,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 2,
+                  "name": "Dusknoir",
+                  "rate": 88,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 2,
+                  "name": "Tyranitar",
+                  "rate": 81,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 3,
+                  "name": "Bronzong",
+                  "rate": 65,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 3,
+                  "name": "Clefable",
+                  "rate": 44,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 4,
+                  "name": "Dusknoir",
+                  "rate": 92,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 4,
+                  "name": "Tyranitar",
+                  "rate": 92,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 5,
+                  "name": "Dusknoir",
+                  "rate": 90,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 5,
+                  "name": "Bisharp",
+                  "rate": 83,
+                  "withBan": false
+                }
+              ],
+              "alternateBans": []
+            },
+            "banGain": null
+          },
+          {
+            "region": "Hoenn",
+            "boss": "Latios",
+            "tiers": {
+              "1": 100,
+              "2": 87,
+              "3": 1,
+              "4": 0,
+              "5": 0
+            },
+            "team": {
+              "members": [
+                {
+                  "name": "Escavalier",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Megahorn",
+                      "tag": null,
+                      "share": 99
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Bellossom",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Sludge Bomb",
+                      "tag": "PSN",
+                      "share": 70
+                    },
+                    {
+                      "name": "Petal Blizzard",
+                      "tag": null,
+                      "share": 16
+                    },
+                    {
+                      "name": "Toxic",
+                      "tag": "PSN",
+                      "share": 14
+                    }
+                  ],
+                  "bans": [
+                    "Moonblast"
+                  ]
+                },
+                {
+                  "name": "Gardevoir",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Moonblast",
+                      "tag": null,
+                      "share": 87
+                    },
+                    {
+                      "name": "Hypnosis",
+                      "tag": "SLP",
+                      "share": 13
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Snorlax",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Double-Edge",
+                      "tag": null,
+                      "share": 100
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Bronzong",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Feint Attack",
+                      "tag": null,
+                      "share": 75
+                    },
+                    {
+                      "name": "Confuse Ray",
+                      "tag": "CNF",
+                      "share": 14
+                    },
+                    {
+                      "name": "Hypnosis",
+                      "tag": "SLP",
+                      "share": 11
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Bisharp",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Foul Play",
+                      "tag": null,
+                      "share": 100
+                    }
+                  ],
+                  "bans": []
+                }
+              ],
+              "alternates": [
+                {
+                  "memberIndex": 0,
+                  "name": "Tyranitar",
+                  "rate": 31,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 0,
+                  "name": "Scizor",
+                  "rate": 35,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 1,
+                  "name": "Dusknoir",
+                  "rate": 88,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 1,
+                  "name": "Hypno",
+                  "rate": 83,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 2,
+                  "name": "Jynx",
+                  "rate": 58,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 2,
+                  "name": "Weavile",
+                  "rate": 56,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 3,
+                  "name": "Tyranitar",
+                  "rate": 96,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 3,
+                  "name": "Vespiquen",
+                  "rate": 90,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 4,
+                  "name": "Tyranitar",
+                  "rate": 88,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 4,
+                  "name": "Hypno",
+                  "rate": 81,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 5,
+                  "name": "Tyranitar",
+                  "rate": 92,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 5,
+                  "name": "Metagross",
+                  "rate": 83,
+                  "withBan": false
+                }
+              ],
+              "alternateBans": []
+            },
+            "banGain": 15
+          },
+          {
+            "region": "Sinnoh",
+            "boss": "Uxie",
+            "tiers": {
+              "1": 100,
+              "2": 100,
+              "3": 31,
+              "4": 0,
+              "5": 0
+            },
+            "team": {
+              "members": [
+                {
+                  "name": "Arceus Dark",
+                  "legendary": true,
+                  "moves": [
+                    {
+                      "name": "Judgment",
+                      "tag": null,
+                      "share": 100
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Skuntank",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Foul Play",
+                      "tag": null,
+                      "share": 84
+                    },
+                    {
+                      "name": "Toxic",
+                      "tag": "PSN",
+                      "share": 15
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Umbreon",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Foul Play",
+                      "tag": null,
+                      "share": 79
+                    },
+                    {
+                      "name": "Confuse Ray",
+                      "tag": "CNF",
+                      "share": 21
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Tyranitar",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Foul Play",
+                      "tag": null,
+                      "share": 99
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Bisharp",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Foul Play",
+                      "tag": null,
+                      "share": 100
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Drapion",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Throat Chop",
+                      "tag": null,
+                      "share": 84
+                    },
+                    {
+                      "name": "Toxic",
+                      "tag": "PSN",
+                      "share": 16
+                    }
+                  ],
+                  "bans": []
+                }
+              ],
+              "alternates": [
+                {
+                  "memberIndex": 0,
+                  "name": "Hydreigon",
+                  "rate": 96,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 0,
+                  "name": "Krookodile",
+                  "rate": 96,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 1,
+                  "name": "Spiritomb",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 1,
+                  "name": "Hydreigon",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 2,
+                  "name": "Spiritomb",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 2,
+                  "name": "Weavile",
+                  "rate": 96,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 3,
+                  "name": "Hydreigon",
+                  "rate": 96,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 3,
+                  "name": "Spiritomb",
+                  "rate": 88,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 4,
+                  "name": "Scrafty",
+                  "rate": 98,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 4,
+                  "name": "Hydreigon",
+                  "rate": 98,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 5,
+                  "name": "Krookodile",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 5,
+                  "name": "Hydreigon",
+                  "rate": 100,
+                  "withBan": false
+                }
+              ],
+              "alternateBans": []
+            },
+            "banGain": null
+          },
+          {
+            "region": "Sinnoh",
+            "boss": "Azelf",
+            "tiers": {
+              "1": 100,
+              "2": 100,
+              "3": 52,
+              "4": 1,
+              "5": 0
+            },
+            "team": {
+              "members": [
+                {
+                  "name": "Arceus Dark",
+                  "legendary": true,
+                  "moves": [
+                    {
+                      "name": "Judgment",
+                      "tag": null,
+                      "share": 100
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Spiritomb",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Poltergeist",
+                      "tag": null,
+                      "share": 76
+                    },
+                    {
+                      "name": "Hypnosis",
+                      "tag": "SLP",
+                      "share": 15
+                    },
+                    {
+                      "name": "Confuse Ray",
+                      "tag": "CNF",
+                      "share": 8
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Umbreon",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Foul Play",
+                      "tag": null,
+                      "share": 81
+                    },
+                    {
+                      "name": "Confuse Ray",
+                      "tag": "CNF",
+                      "share": 18
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Tyranitar",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Foul Play",
+                      "tag": null,
+                      "share": 99
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Skuntank",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Foul Play",
+                      "tag": null,
+                      "share": 80
+                    },
+                    {
+                      "name": "Toxic",
+                      "tag": "PSN",
+                      "share": 19
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Bisharp",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Foul Play",
+                      "tag": null,
+                      "share": 99
+                    }
+                  ],
+                  "bans": []
+                }
+              ],
+              "alternates": [
+                {
+                  "memberIndex": 0,
+                  "name": "Scrafty",
+                  "rate": 98,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 0,
+                  "name": "Hydreigon",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 1,
+                  "name": "Hydreigon",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 1,
+                  "name": "Drapion",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 2,
+                  "name": "Hydreigon",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 2,
+                  "name": "Drapion",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 3,
+                  "name": "Hydreigon",
+                  "rate": 96,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 3,
+                  "name": "Drapion",
+                  "rate": 98,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 4,
+                  "name": "Drapion",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 4,
+                  "name": "Hydreigon",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 5,
+                  "name": "Drapion",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 5,
+                  "name": "Scrafty",
+                  "rate": 100,
+                  "withBan": false
+                }
+              ],
+              "alternateBans": []
+            },
+            "banGain": null
+          },
+          {
+            "region": "Sinnoh",
+            "boss": "Dialga",
+            "tiers": {
+              "1": 100,
+              "2": 94,
+              "3": 1,
+              "4": 0,
+              "5": 0
+            },
+            "team": {
+              "members": [
+                {
+                  "name": "Ho-Oh",
+                  "legendary": true,
+                  "moves": [
+                    {
+                      "name": "Sacred Fire",
+                      "tag": "BRN",
+                      "share": 99
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Gallade",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Close Combat",
+                      "tag": null,
+                      "share": 91
+                    },
+                    {
+                      "name": "Hypnosis",
+                      "tag": "SLP",
+                      "share": 9
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Lucario",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Focus Blast",
+                      "tag": null,
+                      "share": 88
+                    },
+                    {
+                      "name": "Close Combat",
+                      "tag": null,
+                      "share": 12
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Excadrill",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Earthquake",
+                      "tag": null,
+                      "share": 99
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Togekiss",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Dazzling Gleam",
+                      "tag": null,
+                      "share": 82
+                    },
+                    {
+                      "name": "Sweet Kiss",
+                      "tag": "CNF",
+                      "share": 17
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Clefable",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Moonblast",
+                      "tag": null,
+                      "share": 83
+                    },
+                    {
+                      "name": "Sweet Kiss",
+                      "tag": "CNF",
+                      "share": 11
+                    },
+                    {
+                      "name": "Sing",
+                      "tag": "SLP",
+                      "share": 5
+                    }
+                  ],
+                  "bans": []
+                }
+              ],
+              "alternates": [
+                {
+                  "memberIndex": 0,
+                  "name": "Ninetales",
+                  "rate": 65,
+                  "withBan": true
+                },
+                {
+                  "memberIndex": 0,
+                  "name": "Chandelure",
+                  "rate": 54,
+                  "withBan": true
+                },
+                {
+                  "memberIndex": 1,
+                  "name": "Snorlax",
+                  "rate": 94,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 1,
+                  "name": "Throh",
+                  "rate": 85,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 2,
+                  "name": "Snorlax",
+                  "rate": 96,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 2,
+                  "name": "Conkeldurr",
+                  "rate": 96,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 3,
+                  "name": "Poliwrath",
+                  "rate": 94,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 3,
+                  "name": "Snorlax",
+                  "rate": 94,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 4,
+                  "name": "Machamp",
+                  "rate": 94,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 4,
+                  "name": "Poliwrath",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 5,
+                  "name": "Poliwrath",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 5,
+                  "name": "Machamp",
+                  "rate": 100,
+                  "withBan": false
+                }
+              ],
+              "alternateBans": [
+                {
+                  "name": "Ninetales",
+                  "bans": [
+                    "Fire Blast",
+                    "Overheat"
+                  ]
+                },
+                {
+                  "name": "Chandelure",
+                  "bans": [
+                    "Overheat"
+                  ]
+                }
+              ]
+            },
+            "banGain": null
+          },
+          {
+            "region": "Sinnoh",
+            "boss": "Palkia",
+            "tiers": {
+              "1": 100,
+              "2": 100,
+              "3": 85,
+              "4": 1,
+              "5": 0
+            },
+            "team": {
+              "members": [
+                {
+                  "name": "Whimsicott",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Moonblast",
+                      "tag": null,
+                      "share": 83
+                    },
+                    {
+                      "name": "Poison Powder",
+                      "tag": "PSN",
+                      "share": 17
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Gardevoir",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Hypnosis",
+                      "tag": "SLP",
+                      "share": 13
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Clefable",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Moonblast",
+                      "tag": null,
+                      "share": 81
+                    },
+                    {
+                      "name": "Sweet Kiss",
+                      "tag": "CNF",
+                      "share": 12
+                    },
+                    {
+                      "name": "Sing",
+                      "tag": "SLP",
+                      "share": 6
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Granbull",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Play Rough",
+                      "tag": null,
+                      "share": 100
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Togekiss",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Dazzling Gleam",
+                      "tag": null,
+                      "share": 84
+                    },
+                    {
+                      "name": "Sweet Kiss",
+                      "tag": "CNF",
+                      "share": 15
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Azumarill",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Play Rough",
+                      "tag": null,
+                      "share": 100
+                    }
+                  ],
+                  "bans": []
+                }
+              ],
+              "alternates": [
+                {
+                  "memberIndex": 0,
+                  "name": "Muk",
+                  "rate": 96,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 0,
+                  "name": "Cottonee",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 1,
+                  "name": "Cottonee",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 1,
+                  "name": "Wigglytuff",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 2,
+                  "name": "Wigglytuff",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 2,
+                  "name": "Togetic",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 3,
+                  "name": "Cottonee",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 3,
+                  "name": "Wigglytuff",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 4,
+                  "name": "Cottonee",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 4,
+                  "name": "Wigglytuff",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 5,
+                  "name": "Cottonee",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 5,
+                  "name": "Wigglytuff",
+                  "rate": 100,
+                  "withBan": false
+                }
+              ],
+              "alternateBans": []
+            },
+            "banGain": null
+          },
+          {
+            "region": "Sinnoh",
+            "boss": "Giratina",
+            "tiers": {
+              "1": 100,
+              "2": 97,
+              "3": 7,
+              "4": 0,
+              "5": 0
+            },
+            "team": {
+              "members": [
+                {
+                  "name": "Regigigas",
+                  "legendary": true,
+                  "moves": [
+                    {
+                      "name": "Ice Punch",
+                      "tag": "FRZ",
+                      "share": 85
+                    },
+                    {
+                      "name": "Confuse Ray",
+                      "tag": "CNF",
+                      "share": 14
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Slaking",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Play Rough",
+                      "tag": null,
+                      "share": 99
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Skuntank",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Foul Play",
+                      "tag": null,
+                      "share": 78
+                    },
+                    {
+                      "name": "Toxic",
+                      "tag": "PSN",
+                      "share": 22
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Wigglytuff",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Dazzling Gleam",
+                      "tag": null,
+                      "share": 85
+                    },
+                    {
+                      "name": "Sweet Kiss",
+                      "tag": "CNF",
+                      "share": 15
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Kangaskhan",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Outrage",
+                      "tag": null,
+                      "share": 99
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Snorlax",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Crunch",
+                      "tag": null,
+                      "share": 100
+                    }
+                  ],
+                  "bans": []
+                }
+              ],
+              "alternates": [
+                {
+                  "memberIndex": 0,
+                  "name": "Noctowl",
+                  "rate": 90,
+                  "withBan": true
+                },
+                {
+                  "memberIndex": 0,
+                  "name": "Watchog",
+                  "rate": 92,
+                  "withBan": true
+                },
+                {
+                  "memberIndex": 1,
+                  "name": "Noctowl",
+                  "rate": 94,
+                  "withBan": true
+                },
+                {
+                  "memberIndex": 1,
+                  "name": "Stoutland",
+                  "rate": 92,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 2,
+                  "name": "Noctowl",
+                  "rate": 100,
+                  "withBan": true
+                },
+                {
+                  "memberIndex": 2,
+                  "name": "Stoutland",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 3,
+                  "name": "Tyranitar",
+                  "rate": 94,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 3,
+                  "name": "Watchog",
+                  "rate": 94,
+                  "withBan": true
+                },
+                {
+                  "memberIndex": 4,
+                  "name": "Tyranitar",
+                  "rate": 98,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 4,
+                  "name": "Noctowl",
+                  "rate": 100,
+                  "withBan": true
+                },
+                {
+                  "memberIndex": 5,
+                  "name": "Drapion",
+                  "rate": 92,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 5,
+                  "name": "Bouffalant",
+                  "rate": 98,
+                  "withBan": false
+                }
+              ],
+              "alternateBans": [
+                {
+                  "name": "Noctowl",
+                  "bans": [
+                    "8 attacks, all but its 4 Normal attacks"
+                  ]
+                },
+                {
+                  "name": "Watchog",
+                  "bans": [
+                    "2 attacks, all but its 5 Normal attacks"
+                  ]
+                }
+              ]
+            },
+            "banGain": null
+          },
+          {
+            "region": "Sinnoh",
+            "boss": "Giratina Origin",
+            "tiers": {
+              "1": 100,
+              "2": 98,
+              "3": 9,
+              "4": 0,
+              "5": 0
+            },
+            "team": {
+              "members": [
+                {
+                  "name": "Regigigas",
+                  "legendary": true,
+                  "moves": [
+                    {
+                      "name": "Ice Punch",
+                      "tag": "FRZ",
+                      "share": 87
+                    },
+                    {
+                      "name": "Confuse Ray",
+                      "tag": "CNF",
+                      "share": 12
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Slaking",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Play Rough",
+                      "tag": null,
+                      "share": 99
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Snorlax",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Crunch",
+                      "tag": null,
+                      "share": 100
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Wigglytuff",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Dazzling Gleam",
+                      "tag": null,
+                      "share": 83
+                    },
+                    {
+                      "name": "Sweet Kiss",
+                      "tag": "CNF",
+                      "share": 17
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Skuntank",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Foul Play",
+                      "tag": null,
+                      "share": 80
+                    },
+                    {
+                      "name": "Toxic",
+                      "tag": "PSN",
+                      "share": 20
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Kangaskhan",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Outrage",
+                      "tag": null,
+                      "share": 100
+                    }
+                  ],
+                  "bans": []
+                }
+              ],
+              "alternates": [
+                {
+                  "memberIndex": 0,
+                  "name": "Tangrowth",
+                  "rate": 92,
+                  "withBan": true
+                },
+                {
+                  "memberIndex": 0,
+                  "name": "Noctowl",
+                  "rate": 96,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 1,
+                  "name": "Tauros",
+                  "rate": 98,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 1,
+                  "name": "Bouffalant",
+                  "rate": 98,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 2,
+                  "name": "Tyranitar",
+                  "rate": 98,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 2,
+                  "name": "Glaceon",
+                  "rate": 92,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 3,
+                  "name": "Noctowl",
+                  "rate": 96,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 3,
+                  "name": "Tangrowth",
+                  "rate": 96,
+                  "withBan": true
+                },
+                {
+                  "memberIndex": 4,
+                  "name": "Stoutland",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 4,
+                  "name": "Ursaring",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 5,
+                  "name": "Glaceon",
+                  "rate": 92,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 5,
+                  "name": "Stoutland",
+                  "rate": 100,
+                  "withBan": false
+                }
+              ],
+              "alternateBans": [
+                {
+                  "name": "Tangrowth",
+                  "bans": [
+                    "14 attacks, all but Bind, Slam"
+                  ]
+                }
+              ]
+            },
+            "banGain": null
+          },
+          {
+            "region": "Sinnoh",
+            "boss": "Heatran",
+            "tiers": {
+              "1": 100,
+              "2": 100,
+              "3": 9,
+              "4": 0,
+              "5": 0
+            },
+            "team": {
+              "members": [
+                {
+                  "name": "Kyogre",
+                  "legendary": true,
+                  "moves": [
+                    {
+                      "name": "Origin Pulse",
+                      "tag": null,
+                      "share": 99
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Swampert",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Earthquake",
+                      "tag": null,
+                      "share": 77
+                    },
+                    {
+                      "name": "Supersonic",
+                      "tag": "CNF",
+                      "share": 22
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Garchomp",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Earthquake",
+                      "tag": null,
+                      "share": 99
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Gastrodon",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Earth Power",
+                      "tag": null,
+                      "share": 71
+                    },
+                    {
+                      "name": "Earthquake",
+                      "tag": null,
+                      "share": 27
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Poliwrath",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Superpower",
+                      "tag": null,
+                      "share": 86
+                    },
+                    {
+                      "name": "Hypnosis",
+                      "tag": "SLP",
+                      "share": 14
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Politoed",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Earth Power",
+                      "tag": null,
+                      "share": 84
+                    },
+                    {
+                      "name": "Hypnosis",
+                      "tag": "SLP",
+                      "share": 16
+                    }
+                  ],
+                  "bans": []
+                }
+              ],
+              "alternates": [
+                {
+                  "memberIndex": 0,
+                  "name": "Tyranitar",
+                  "rate": 90,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 0,
+                  "name": "Seismitoad",
+                  "rate": 94,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 1,
+                  "name": "Seismitoad",
+                  "rate": 98,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 1,
+                  "name": "Vaporeon",
+                  "rate": 98,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 2,
+                  "name": "Quagsire",
+                  "rate": 98,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 2,
+                  "name": "Seismitoad",
+                  "rate": 96,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 3,
+                  "name": "Quagsire",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 3,
+                  "name": "Tyranitar",
+                  "rate": 96,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 4,
+                  "name": "Seismitoad",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 4,
+                  "name": "Rhyperior",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 5,
+                  "name": "Quagsire",
+                  "rate": 94,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 5,
+                  "name": "Tyranitar",
+                  "rate": 94,
+                  "withBan": false
+                }
+              ],
+              "alternateBans": []
+            },
+            "banGain": null
+          },
+          {
+            "region": "Sinnoh",
+            "boss": "Regigigas",
+            "tiers": {
+              "1": 100,
+              "2": 100,
+              "3": 47,
+              "4": 0,
+              "5": 0
+            },
+            "team": {
+              "members": [
+                {
+                  "name": "Giratina",
+                  "legendary": true,
+                  "moves": [
+                    {
+                      "name": "Draco Meteor",
+                      "tag": null,
+                      "share": 94
+                    },
+                    {
+                      "name": "Outrage",
+                      "tag": null,
+                      "share": 6
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Dusknoir",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Future Sight",
+                      "tag": null,
+                      "share": 89
+                    },
+                    {
+                      "name": "Will-O-Wisp",
+                      "tag": "BRN",
+                      "share": 11
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Rhyperior",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Hammer Arm",
+                      "tag": null,
+                      "share": 100
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Spiritomb",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Foul Play",
+                      "tag": null,
+                      "share": 92
+                    },
+                    {
+                      "name": "Hypnosis",
+                      "tag": "SLP",
+                      "share": 8
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Cofagrigus",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Dark Pulse",
+                      "tag": null,
+                      "share": 93
+                    },
+                    {
+                      "name": "Will-O-Wisp",
+                      "tag": "BRN",
+                      "share": 7
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Chandelure",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Overheat",
+                      "tag": null,
+                      "share": 87
+                    },
+                    {
+                      "name": "Will-O-Wisp",
+                      "tag": "BRN",
+                      "share": 13
+                    }
+                  ],
+                  "bans": []
+                }
+              ],
+              "alternates": [
+                {
+                  "memberIndex": 0,
+                  "name": "Metagross",
+                  "rate": 98,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 0,
+                  "name": "Dusclops",
+                  "rate": 96,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 1,
+                  "name": "Dusclops",
+                  "rate": 98,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 1,
+                  "name": "Golurk",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 2,
+                  "name": "Dusclops",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 2,
+                  "name": "Lampent",
+                  "rate": 96,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 3,
+                  "name": "Rhydon",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 3,
+                  "name": "Dusclops",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 4,
+                  "name": "Dusclops",
+                  "rate": 96,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 4,
+                  "name": "Banette",
+                  "rate": 100,
+                  "withBan": true
+                },
+                {
+                  "memberIndex": 5,
+                  "name": "Dusclops",
+                  "rate": 98,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 5,
+                  "name": "Golurk",
+                  "rate": 94,
+                  "withBan": false
+                }
+              ],
+              "alternateBans": [
+                {
+                  "name": "Banette",
+                  "bans": [
+                    "2 attacks, all but its 8 Ghost attacks"
+                  ]
+                }
+              ]
+            },
+            "banGain": null
+          },
+          {
+            "region": "Sinnoh",
+            "boss": "Cresselia",
+            "tiers": {
+              "1": 100,
+              "2": 96,
+              "3": 3,
+              "4": 0,
+              "5": 0
+            },
+            "team": {
+              "members": [
+                {
+                  "name": "Victini",
+                  "legendary": true,
+                  "moves": [
+                    {
+                      "name": "V-create",
+                      "tag": null,
+                      "share": 99
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Escavalier",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Megahorn",
+                      "tag": null,
+                      "share": 99
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Metagross",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Meteor Mash",
+                      "tag": null,
+                      "share": 99
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Exeggutor",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Leaf Storm",
+                      "tag": null,
+                      "share": 60
+                    },
+                    {
+                      "name": "Sleep Powder",
+                      "tag": "SLP",
+                      "share": 17
+                    },
+                    {
+                      "name": "Wood Hammer",
+                      "tag": null,
+                      "share": 16
+                    },
+                    {
+                      "name": "Poison Powder",
+                      "tag": "PSN",
+                      "share": 7
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Bronzong",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Feint Attack",
+                      "tag": null,
+                      "share": 75
+                    },
+                    {
+                      "name": "Hypnosis",
+                      "tag": "SLP",
+                      "share": 14
+                    },
+                    {
+                      "name": "Confuse Ray",
+                      "tag": "CNF",
+                      "share": 11
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Golurk",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Poltergeist",
+                      "tag": null,
+                      "share": 100
+                    }
+                  ],
+                  "bans": []
+                }
+              ],
+              "alternates": [
+                {
+                  "memberIndex": 0,
+                  "name": "Dusknoir",
+                  "rate": 94,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 0,
+                  "name": "Swalot",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 1,
+                  "name": "Chandelure",
+                  "rate": 79,
+                  "withBan": true
+                },
+                {
+                  "memberIndex": 1,
+                  "name": "Skuntank",
+                  "rate": 69,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 2,
+                  "name": "Chandelure",
+                  "rate": 98,
+                  "withBan": true
+                },
+                {
+                  "memberIndex": 2,
+                  "name": "Muk",
+                  "rate": 98,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 3,
+                  "name": "Skuntank",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 3,
+                  "name": "Muk",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 4,
+                  "name": "Muk",
+                  "rate": 94,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 4,
+                  "name": "Skuntank",
+                  "rate": 98,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 5,
+                  "name": "Chandelure",
+                  "rate": 100,
+                  "withBan": true
+                },
+                {
+                  "memberIndex": 5,
+                  "name": "Muk",
+                  "rate": 100,
+                  "withBan": false
+                }
+              ],
+              "alternateBans": [
+                {
+                  "name": "Chandelure",
+                  "bans": [
+                    "Hex",
+                    "Night Shade",
+                    "Overheat",
+                    "Shadow Ball"
+                  ]
+                }
+              ]
+            },
+            "banGain": null
+          },
+          {
+            "region": "Sinnoh",
+            "boss": "Darkrai",
+            "tiers": {
+              "1": 100,
+              "2": 99,
+              "3": 17,
+              "4": 0,
+              "5": 0
+            },
+            "team": {
+              "members": [
+                {
+                  "name": "Arceus Fighting",
+                  "legendary": true,
+                  "moves": [
+                    {
+                      "name": "Judgment",
+                      "tag": null,
+                      "share": 99
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Scrafty",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "High Jump Kick",
+                      "tag": null,
+                      "share": 99
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Skuntank",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Gunk Shot",
+                      "tag": "PSN",
+                      "share": 85
+                    },
+                    {
+                      "name": "Toxic",
+                      "tag": "PSN",
+                      "share": 14
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Machamp",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Superpower",
+                      "tag": null,
+                      "share": 100
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Venomoth",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Bug Buzz",
+                      "tag": null,
+                      "share": 73
+                    },
+                    {
+                      "name": "Supersonic",
+                      "tag": "CNF",
+                      "share": 14
+                    },
+                    {
+                      "name": "Sleep Powder",
+                      "tag": "SLP",
+                      "share": 11
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Conkeldurr",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Superpower",
+                      "tag": null,
+                      "share": 100
+                    }
+                  ],
+                  "bans": []
+                }
+              ],
+              "alternates": [
+                {
+                  "memberIndex": 0,
+                  "name": "Heracross",
+                  "rate": 94,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 0,
+                  "name": "Togekiss",
+                  "rate": 98,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 1,
+                  "name": "Togekiss",
+                  "rate": 82,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 1,
+                  "name": "Toxicroak",
+                  "rate": 94,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 2,
+                  "name": "Muk",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 2,
+                  "name": "Toxicroak",
+                  "rate": 98,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 3,
+                  "name": "Hariyama",
+                  "rate": 98,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 3,
+                  "name": "Togekiss",
+                  "rate": 98,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 4,
+                  "name": "Togekiss",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 4,
+                  "name": "Heracross",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 5,
+                  "name": "Toxicroak",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 5,
+                  "name": "Throh",
+                  "rate": 100,
+                  "withBan": false
+                }
+              ],
+              "alternateBans": []
+            },
+            "banGain": null
+          },
+          {
+            "region": "Sinnoh",
+            "boss": "Shaymin",
+            "tiers": {
+              "1": 100,
+              "2": 85,
+              "3": 2,
+              "4": 0,
+              "5": 0
+            },
+            "team": {
+              "members": [
+                {
+                  "name": "Ho-Oh",
+                  "legendary": true,
+                  "moves": [
+                    {
+                      "name": "Sacred Fire",
+                      "tag": "BRN",
+                      "share": 98
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Venusaur",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Sludge Bomb",
+                      "tag": "PSN",
+                      "share": 91
+                    },
+                    {
+                      "name": "Sleep Powder",
+                      "tag": "SLP",
+                      "share": 8
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Volcarona",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Overheat",
+                      "tag": null,
+                      "share": 100
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Escavalier",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Megahorn",
+                      "tag": null,
+                      "share": 100
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Charizard",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Overheat",
+                      "tag": null,
+                      "share": 100
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Vespiquen",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Hurricane",
+                      "tag": "CNF",
+                      "share": 72
+                    },
+                    {
+                      "name": "Confuse Ray",
+                      "tag": "CNF",
+                      "share": 14
+                    },
+                    {
+                      "name": "Attack Order",
+                      "tag": null,
+                      "share": 9
+                    }
+                  ],
+                  "bans": []
+                }
+              ],
+              "alternates": [
+                {
+                  "memberIndex": 0,
+                  "name": "Amoonguss",
+                  "rate": 42,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 0,
+                  "name": "Yanmega",
+                  "rate": 29,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 1,
+                  "name": "Amoonguss",
+                  "rate": 85,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 1,
+                  "name": "Vileplume",
+                  "rate": 88,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 2,
+                  "name": "Scolipede",
+                  "rate": 71,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 2,
+                  "name": "Crobat",
+                  "rate": 75,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 3,
+                  "name": "Yanmega",
+                  "rate": 73,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 3,
+                  "name": "Roserade",
+                  "rate": 71,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 4,
+                  "name": "Amoonguss",
+                  "rate": 30,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 4,
+                  "name": "Vileplume",
+                  "rate": 96,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 5,
+                  "name": "Roserade",
+                  "rate": 83,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 5,
+                  "name": "Vileplume",
+                  "rate": 81,
+                  "withBan": false
+                }
+              ],
+              "alternateBans": []
+            },
+            "banGain": null
+          },
+          {
+            "region": "Sinnoh",
+            "boss": "Shaymin Sky",
+            "tiers": {
+              "1": 100,
+              "2": 100,
+              "3": 90,
+              "4": 3,
+              "5": 0
+            },
+            "team": {
+              "members": [
+                {
+                  "name": "White Kyurem",
+                  "legendary": true,
+                  "moves": [
+                    {
+                      "name": "Ice Burn",
+                      "tag": "BRN",
+                      "share": 97
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Charizard",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Overheat",
+                      "tag": null,
+                      "share": 100
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Crobat",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Brave Bird",
+                      "tag": null,
+                      "share": 81
+                    },
+                    {
+                      "name": "Confuse Ray",
+                      "tag": "CNF",
+                      "share": 16
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Muk",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Gunk Shot",
+                      "tag": "PSN",
+                      "share": 92
+                    },
+                    {
+                      "name": "Toxic",
+                      "tag": "PSN",
+                      "share": 7
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Magmortar",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Overheat",
+                      "tag": null,
+                      "share": 84
+                    },
+                    {
+                      "name": "Confuse Ray",
+                      "tag": "CNF",
+                      "share": 15
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Venusaur",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Sludge Bomb",
+                      "tag": "PSN",
+                      "share": 92
+                    },
+                    {
+                      "name": "Sleep Powder",
+                      "tag": "SLP",
+                      "share": 7
+                    }
+                  ],
+                  "bans": []
+                }
+              ],
+              "alternates": [
+                {
+                  "memberIndex": 0,
+                  "name": "Volcarona",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 0,
+                  "name": "Abomasnow",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 1,
+                  "name": "Altaria",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 1,
+                  "name": "Swalot",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 2,
+                  "name": "Volcarona",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 2,
+                  "name": "Chandelure",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 3,
+                  "name": "Vileplume",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 3,
+                  "name": "Roserade",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 4,
+                  "name": "Glaceon",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 4,
+                  "name": "Vanilluxe",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 5,
+                  "name": "Amoonguss",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 5,
+                  "name": "Altaria",
+                  "rate": 100,
+                  "withBan": false
+                }
+              ],
+              "alternateBans": []
+            },
+            "banGain": null
+          },
+          {
+            "region": "Sinnoh",
+            "boss": "Mesprit",
+            "tiers": {
+              "1": 100,
+              "2": 100,
+              "3": 42,
+              "4": 0,
+              "5": 0
+            },
+            "team": {
+              "members": [
+                {
+                  "name": "Arceus Dark",
+                  "legendary": true,
+                  "moves": [
+                    {
+                      "name": "Judgment",
+                      "tag": null,
+                      "share": 100
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Spiritomb",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Poltergeist",
+                      "tag": null,
+                      "share": 77
+                    },
+                    {
+                      "name": "Hypnosis",
+                      "tag": "SLP",
+                      "share": 14
+                    },
+                    {
+                      "name": "Confuse Ray",
+                      "tag": "CNF",
+                      "share": 9
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Bronzong",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Feint Attack",
+                      "tag": null,
+                      "share": 78
+                    },
+                    {
+                      "name": "Hypnosis",
+                      "tag": "SLP",
+                      "share": 12
+                    },
+                    {
+                      "name": "Confuse Ray",
+                      "tag": "CNF",
+                      "share": 9
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Tyranitar",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Foul Play",
+                      "tag": null,
+                      "share": 98
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Escavalier",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Megahorn",
+                      "tag": null,
+                      "share": 99
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Drapion",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Throat Chop",
+                      "tag": null,
+                      "share": 84
+                    },
+                    {
+                      "name": "Toxic",
+                      "tag": "PSN",
+                      "share": 16
+                    }
+                  ],
+                  "bans": []
+                }
+              ],
+              "alternates": [
+                {
+                  "memberIndex": 0,
+                  "name": "Bisharp",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 0,
+                  "name": "Sableye",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 1,
+                  "name": "Sableye",
+                  "rate": 98,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 1,
+                  "name": "Exeggutor",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 2,
+                  "name": "Skuntank",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 2,
+                  "name": "Bisharp",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 3,
+                  "name": "Bisharp",
+                  "rate": 98,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 3,
+                  "name": "Exeggutor",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 4,
+                  "name": "Bisharp",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 4,
+                  "name": "Skuntank",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 5,
+                  "name": "Skuntank",
+                  "rate": 98,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 5,
+                  "name": "Hypno",
+                  "rate": 100,
+                  "withBan": false
+                }
+              ],
+              "alternateBans": []
+            },
+            "banGain": null
+          },
+          {
+            "region": "Unova",
+            "boss": "Reshiram",
+            "tiers": {
+              "1": 100,
+              "2": 99,
+              "3": 39,
+              "4": 0,
+              "5": 0
+            },
+            "team": {
+              "members": [
+                {
+                  "name": "Dialga",
+                  "legendary": true,
+                  "moves": [
+                    {
+                      "name": "Roar of Time",
+                      "tag": null,
+                      "share": 89
+                    },
+                    {
+                      "name": "Outrage",
+                      "tag": null,
+                      "share": 10
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Tyranitar",
                   "legendary": false,
                   "moves": [
                     {
                       "name": "Stone Edge",
                       "tag": null,
+                      "share": 99
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Rampardos",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Head Smash",
+                      "tag": null,
                       "share": 100
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Swampert",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Earthquake",
+                      "tag": null,
+                      "share": 79
+                    },
+                    {
+                      "name": "Supersonic",
+                      "tag": "CNF",
+                      "share": 21
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Gardevoir",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Future Sight",
+                      "tag": null,
+                      "share": 85
+                    },
+                    {
+                      "name": "Hypnosis",
+                      "tag": "SLP",
+                      "share": 14
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Muk",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Gunk Shot",
+                      "tag": "PSN",
+                      "share": 87
+                    },
+                    {
+                      "name": "Toxic",
+                      "tag": "PSN",
+                      "share": 13
+                    }
+                  ],
+                  "bans": []
+                }
+              ],
+              "alternates": [
+                {
+                  "memberIndex": 0,
+                  "name": "Gigalith",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 0,
+                  "name": "Rhyperior",
+                  "rate": 98,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 1,
+                  "name": "Gigalith",
+                  "rate": 90,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 1,
+                  "name": "Rhyperior",
+                  "rate": 90,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 2,
+                  "name": "Solrock",
+                  "rate": 82,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 2,
+                  "name": "Gigalith",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 3,
+                  "name": "Gigalith",
+                  "rate": 98,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 3,
+                  "name": "Hypno",
+                  "rate": 94,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 4,
+                  "name": "Solrock",
+                  "rate": 98,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 4,
+                  "name": "Garbodor",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 5,
+                  "name": "Quagsire",
+                  "rate": 96,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 5,
+                  "name": "Garbodor",
+                  "rate": 96,
+                  "withBan": false
+                }
+              ],
+              "alternateBans": []
+            },
+            "banGain": null
+          },
+          {
+            "region": "Unova",
+            "boss": "Zekrom",
+            "tiers": {
+              "1": 100,
+              "2": 96,
+              "3": 7,
+              "4": 0,
+              "5": 0
+            },
+            "team": {
+              "members": [
+                {
+                  "name": "Dialga",
+                  "legendary": true,
+                  "moves": [
+                    {
+                      "name": "Roar of Time",
+                      "tag": null,
+                      "share": 100
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Steelix",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Earthquake",
+                      "tag": null,
+                      "share": 99
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Whimsicott",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Moonblast",
+                      "tag": null,
+                      "share": 82
+                    },
+                    {
+                      "name": "Poison Powder",
+                      "tag": "PSN",
+                      "share": 16
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Rhyperior",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Earthquake",
+                      "tag": null,
+                      "share": 100
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Gardevoir",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Hypnosis",
+                      "tag": "SLP",
+                      "share": 14
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Rhydon",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Earthquake",
+                      "tag": null,
+                      "share": 100
+                    }
+                  ],
+                  "bans": []
+                }
+              ],
+              "alternates": [
+                {
+                  "memberIndex": 0,
+                  "name": "Excadrill",
+                  "rate": 77,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 0,
+                  "name": "Torterra",
+                  "rate": 75,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 1,
+                  "name": "Excadrill",
+                  "rate": 81,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 1,
+                  "name": "Exeggutor",
+                  "rate": 85,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 2,
+                  "name": "Glaceon",
+                  "rate": 73,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 2,
+                  "name": "Cofagrigus",
+                  "rate": 77,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 3,
+                  "name": "Excadrill",
+                  "rate": 92,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 3,
+                  "name": "Torterra",
+                  "rate": 94,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 4,
+                  "name": "Cofagrigus",
+                  "rate": 77,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 4,
+                  "name": "Excadrill",
+                  "rate": 90,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 5,
+                  "name": "Donphan",
+                  "rate": 94,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 5,
+                  "name": "Glaceon",
+                  "rate": 92,
+                  "withBan": false
+                }
+              ],
+              "alternateBans": []
+            },
+            "banGain": null
+          },
+          {
+            "region": "Unova",
+            "boss": "Kyurem",
+            "tiers": {
+              "1": 100,
+              "2": 100,
+              "3": 11,
+              "4": 0,
+              "5": 0
+            },
+            "team": {
+              "members": [
+                {
+                  "name": "Arceus Steel",
+                  "legendary": true,
+                  "moves": [
+                    {
+                      "name": "Judgment",
+                      "tag": null,
+                      "share": 99
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Metagross",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Meteor Mash",
+                      "tag": null,
+                      "share": 99
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Bronzong",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Hypnosis",
+                      "tag": "SLP",
+                      "share": 16
+                    },
+                    {
+                      "name": "Confuse Ray",
+                      "tag": "CNF",
+                      "share": 10
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Escavalier",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Iron Head",
+                      "tag": null,
+                      "share": 100
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Gardevoir",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Moonblast",
+                      "tag": null,
+                      "share": 85
+                    },
+                    {
+                      "name": "Hypnosis",
+                      "tag": "SLP",
+                      "share": 15
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Empoleon",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Flash Cannon",
+                      "tag": null,
+                      "share": 100
+                    }
+                  ],
+                  "bans": []
+                }
+              ],
+              "alternates": [
+                {
+                  "memberIndex": 0,
+                  "name": "Toxicroak",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 0,
+                  "name": "Probopass",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 1,
+                  "name": "Muk",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 1,
+                  "name": "Swalot",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 2,
+                  "name": "Muk",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 2,
+                  "name": "Swalot",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 3,
+                  "name": "Muk",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 3,
+                  "name": "Toxicroak",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 4,
+                  "name": "Muk",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 4,
+                  "name": "Swalot",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 5,
+                  "name": "Muk",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 5,
+                  "name": "Swalot",
+                  "rate": 100,
+                  "withBan": false
+                }
+              ],
+              "alternateBans": []
+            },
+            "banGain": null
+          },
+          {
+            "region": "Unova",
+            "boss": "Black Kyurem",
+            "tiers": {
+              "1": 100,
+              "2": 100,
+              "3": 3,
+              "4": 0,
+              "5": 0
+            },
+            "team": {
+              "members": [
+                {
+                  "name": "Arceus Steel",
+                  "legendary": true,
+                  "moves": [
+                    {
+                      "name": "Judgment",
+                      "tag": null,
+                      "share": 100
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Metagross",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Meteor Mash",
+                      "tag": null,
+                      "share": 98
                     }
                   ],
                   "bans": []
@@ -15328,812 +23744,137 @@
                       "name": "Iron Head",
                       "tag": null,
                       "share": 74
+                    },
+                    {
+                      "name": "Hypnosis",
+                      "tag": "SLP",
+                      "share": 16
+                    },
+                    {
+                      "name": "Confuse Ray",
+                      "tag": "CNF",
+                      "share": 10
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Aggron",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Iron Tail",
+                      "tag": null,
+                      "share": 99
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Escavalier",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Iron Head",
+                      "tag": null,
+                      "share": 99
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Poliwrath",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Superpower",
+                      "tag": null,
+                      "share": 83
+                    },
+                    {
+                      "name": "Hypnosis",
+                      "tag": "SLP",
+                      "share": 17
                     }
                   ],
                   "bans": []
                 }
               ],
-              "alternates": []
-            },
-            "banGain": null
-          },
-          {
-            "region": "Johto",
-            "boss": "Raikou",
-            "tiers": {
-              "1": null,
-              "2": null,
-              "3": null,
-              "4": null,
-              "5": null
-            },
-            "team": {
-              "members": [],
-              "alternates": []
-            },
-            "banGain": null
-          },
-          {
-            "region": "Johto",
-            "boss": "Entei",
-            "tiers": {
-              "1": null,
-              "2": null,
-              "3": null,
-              "4": null,
-              "5": null
-            },
-            "team": {
-              "members": [],
-              "alternates": []
-            },
-            "banGain": null
-          },
-          {
-            "region": "Johto",
-            "boss": "Suicune",
-            "tiers": {
-              "1": null,
-              "2": null,
-              "3": null,
-              "4": null,
-              "5": null
-            },
-            "team": {
-              "members": [],
-              "alternates": []
-            },
-            "banGain": null
-          },
-          {
-            "region": "Johto",
-            "boss": "Lugia",
-            "tiers": {
-              "1": null,
-              "2": null,
-              "3": null,
-              "4": null,
-              "5": null
-            },
-            "team": {
-              "members": [],
-              "alternates": []
-            },
-            "banGain": null
-          },
-          {
-            "region": "Johto",
-            "boss": "Ho-Oh",
-            "tiers": {
-              "1": null,
-              "2": null,
-              "3": null,
-              "4": null,
-              "5": null
-            },
-            "team": {
-              "members": [],
-              "alternates": []
-            },
-            "banGain": null
-          },
-          {
-            "region": "Johto",
-            "boss": "Celebi",
-            "tiers": {
-              "1": null,
-              "2": null,
-              "3": null,
-              "4": null,
-              "5": null
-            },
-            "team": {
-              "members": [],
-              "alternates": []
-            },
-            "banGain": null
-          },
-          {
-            "region": "Hoenn",
-            "boss": "Regirock",
-            "tiers": {
-              "1": null,
-              "2": null,
-              "3": null,
-              "4": null,
-              "5": null
-            },
-            "team": {
-              "members": [],
-              "alternates": []
-            },
-            "banGain": null
-          },
-          {
-            "region": "Hoenn",
-            "boss": "Regice",
-            "tiers": {
-              "1": null,
-              "2": null,
-              "3": null,
-              "4": null,
-              "5": null
-            },
-            "team": {
-              "members": [],
-              "alternates": []
-            },
-            "banGain": null
-          },
-          {
-            "region": "Hoenn",
-            "boss": "Registeel",
-            "tiers": {
-              "1": null,
-              "2": null,
-              "3": null,
-              "4": null,
-              "5": null
-            },
-            "team": {
-              "members": [],
-              "alternates": []
-            },
-            "banGain": null
-          },
-          {
-            "region": "Hoenn",
-            "boss": "Latias",
-            "tiers": {
-              "1": null,
-              "2": null,
-              "3": null,
-              "4": null,
-              "5": null
-            },
-            "team": {
-              "members": [],
-              "alternates": []
-            },
-            "banGain": null
-          },
-          {
-            "region": "Hoenn",
-            "boss": "Latios",
-            "tiers": {
-              "1": null,
-              "2": null,
-              "3": null,
-              "4": null,
-              "5": null
-            },
-            "team": {
-              "members": [],
-              "alternates": []
-            },
-            "banGain": null
-          },
-          {
-            "region": "Hoenn",
-            "boss": "Kyogre",
-            "tiers": {
-              "1": null,
-              "2": null,
-              "3": null,
-              "4": null,
-              "5": null
-            },
-            "team": {
-              "members": [],
-              "alternates": []
-            },
-            "banGain": null
-          },
-          {
-            "region": "Hoenn",
-            "boss": "Groudon",
-            "tiers": {
-              "1": null,
-              "2": null,
-              "3": null,
-              "4": null,
-              "5": null
-            },
-            "team": {
-              "members": [],
-              "alternates": []
-            },
-            "banGain": null
-          },
-          {
-            "region": "Hoenn",
-            "boss": "Rayquaza",
-            "tiers": {
-              "1": null,
-              "2": null,
-              "3": null,
-              "4": null,
-              "5": null
-            },
-            "team": {
-              "members": [],
-              "alternates": []
-            },
-            "banGain": null
-          },
-          {
-            "region": "Hoenn",
-            "boss": "Jirachi",
-            "tiers": {
-              "1": null,
-              "2": null,
-              "3": null,
-              "4": null,
-              "5": null
-            },
-            "team": {
-              "members": [],
-              "alternates": []
-            },
-            "banGain": null
-          },
-          {
-            "region": "Hoenn",
-            "boss": "Deoxys",
-            "tiers": {
-              "1": null,
-              "2": null,
-              "3": null,
-              "4": null,
-              "5": null
-            },
-            "team": {
-              "members": [],
-              "alternates": []
-            },
-            "banGain": null
-          },
-          {
-            "region": "Hoenn",
-            "boss": "Deoxys Attack",
-            "tiers": {
-              "1": null,
-              "2": null,
-              "3": null,
-              "4": null,
-              "5": null
-            },
-            "team": {
-              "members": [],
-              "alternates": []
-            },
-            "banGain": null
-          },
-          {
-            "region": "Hoenn",
-            "boss": "Deoxys Defense",
-            "tiers": {
-              "1": null,
-              "2": null,
-              "3": null,
-              "4": null,
-              "5": null
-            },
-            "team": {
-              "members": [],
-              "alternates": []
-            },
-            "banGain": null
-          },
-          {
-            "region": "Hoenn",
-            "boss": "Deoxys Speed",
-            "tiers": {
-              "1": null,
-              "2": null,
-              "3": null,
-              "4": null,
-              "5": null
-            },
-            "team": {
-              "members": [],
-              "alternates": []
-            },
-            "banGain": null
-          },
-          {
-            "region": "Sinnoh",
-            "boss": "Uxie",
-            "tiers": {
-              "1": null,
-              "2": null,
-              "3": null,
-              "4": null,
-              "5": null
-            },
-            "team": {
-              "members": [],
-              "alternates": []
-            },
-            "banGain": null
-          },
-          {
-            "region": "Sinnoh",
-            "boss": "Mesprit",
-            "tiers": {
-              "1": null,
-              "2": null,
-              "3": null,
-              "4": null,
-              "5": null
-            },
-            "team": {
-              "members": [],
-              "alternates": []
-            },
-            "banGain": null
-          },
-          {
-            "region": "Sinnoh",
-            "boss": "Azelf",
-            "tiers": {
-              "1": null,
-              "2": null,
-              "3": null,
-              "4": null,
-              "5": null
-            },
-            "team": {
-              "members": [],
-              "alternates": []
-            },
-            "banGain": null
-          },
-          {
-            "region": "Sinnoh",
-            "boss": "Dialga",
-            "tiers": {
-              "1": null,
-              "2": null,
-              "3": null,
-              "4": null,
-              "5": null
-            },
-            "team": {
-              "members": [],
-              "alternates": []
-            },
-            "banGain": null
-          },
-          {
-            "region": "Sinnoh",
-            "boss": "Palkia",
-            "tiers": {
-              "1": null,
-              "2": null,
-              "3": null,
-              "4": null,
-              "5": null
-            },
-            "team": {
-              "members": [],
-              "alternates": []
-            },
-            "banGain": null
-          },
-          {
-            "region": "Sinnoh",
-            "boss": "Heatran",
-            "tiers": {
-              "1": null,
-              "2": null,
-              "3": null,
-              "4": null,
-              "5": null
-            },
-            "team": {
-              "members": [],
-              "alternates": []
-            },
-            "banGain": null
-          },
-          {
-            "region": "Sinnoh",
-            "boss": "Regigigas",
-            "tiers": {
-              "1": null,
-              "2": null,
-              "3": null,
-              "4": null,
-              "5": null
-            },
-            "team": {
-              "members": [],
-              "alternates": []
-            },
-            "banGain": null
-          },
-          {
-            "region": "Sinnoh",
-            "boss": "Giratina",
-            "tiers": {
-              "1": null,
-              "2": null,
-              "3": null,
-              "4": null,
-              "5": null
-            },
-            "team": {
-              "members": [],
-              "alternates": []
-            },
-            "banGain": null
-          },
-          {
-            "region": "Sinnoh",
-            "boss": "Giratina Origin",
-            "tiers": {
-              "1": null,
-              "2": null,
-              "3": null,
-              "4": null,
-              "5": null
-            },
-            "team": {
-              "members": [],
-              "alternates": []
-            },
-            "banGain": null
-          },
-          {
-            "region": "Sinnoh",
-            "boss": "Cresselia",
-            "tiers": {
-              "1": null,
-              "2": null,
-              "3": null,
-              "4": null,
-              "5": null
-            },
-            "team": {
-              "members": [],
-              "alternates": []
-            },
-            "banGain": null
-          },
-          {
-            "region": "Sinnoh",
-            "boss": "Darkrai",
-            "tiers": {
-              "1": null,
-              "2": null,
-              "3": null,
-              "4": null,
-              "5": null
-            },
-            "team": {
-              "members": [],
-              "alternates": []
-            },
-            "banGain": null
-          },
-          {
-            "region": "Sinnoh",
-            "boss": "Shaymin",
-            "tiers": {
-              "1": null,
-              "2": null,
-              "3": null,
-              "4": null,
-              "5": null
-            },
-            "team": {
-              "members": [],
-              "alternates": []
-            },
-            "banGain": null
-          },
-          {
-            "region": "Sinnoh",
-            "boss": "Shaymin Sky",
-            "tiers": {
-              "1": null,
-              "2": null,
-              "3": null,
-              "4": null,
-              "5": null
-            },
-            "team": {
-              "members": [],
-              "alternates": []
-            },
-            "banGain": null
-          },
-          {
-            "region": "Unova",
-            "boss": "Victini",
-            "tiers": {
-              "1": null,
-              "2": null,
-              "3": null,
-              "4": null,
-              "5": null
-            },
-            "team": {
-              "members": [],
-              "alternates": []
-            },
-            "banGain": null
-          },
-          {
-            "region": "Unova",
-            "boss": "Cobalion",
-            "tiers": {
-              "1": null,
-              "2": null,
-              "3": null,
-              "4": null,
-              "5": null
-            },
-            "team": {
-              "members": [],
-              "alternates": []
-            },
-            "banGain": null
-          },
-          {
-            "region": "Unova",
-            "boss": "Terrakion",
-            "tiers": {
-              "1": null,
-              "2": null,
-              "3": null,
-              "4": null,
-              "5": null
-            },
-            "team": {
-              "members": [],
-              "alternates": []
-            },
-            "banGain": null
-          },
-          {
-            "region": "Unova",
-            "boss": "Virizion",
-            "tiers": {
-              "1": null,
-              "2": null,
-              "3": null,
-              "4": null,
-              "5": null
-            },
-            "team": {
-              "members": [],
-              "alternates": []
-            },
-            "banGain": null
-          },
-          {
-            "region": "Unova",
-            "boss": "Tornadus",
-            "tiers": {
-              "1": null,
-              "2": null,
-              "3": null,
-              "4": null,
-              "5": null
-            },
-            "team": {
-              "members": [],
-              "alternates": []
-            },
-            "banGain": null
-          },
-          {
-            "region": "Unova",
-            "boss": "Thundurus",
-            "tiers": {
-              "1": null,
-              "2": null,
-              "3": null,
-              "4": null,
-              "5": null
-            },
-            "team": {
-              "members": [],
-              "alternates": []
-            },
-            "banGain": null
-          },
-          {
-            "region": "Unova",
-            "boss": "Landorus",
-            "tiers": {
-              "1": null,
-              "2": null,
-              "3": null,
-              "4": null,
-              "5": null
-            },
-            "team": {
-              "members": [],
-              "alternates": []
-            },
-            "banGain": null
-          },
-          {
-            "region": "Unova",
-            "boss": "Reshiram",
-            "tiers": {
-              "1": null,
-              "2": null,
-              "3": null,
-              "4": null,
-              "5": null
-            },
-            "team": {
-              "members": [],
-              "alternates": []
-            },
-            "banGain": null
-          },
-          {
-            "region": "Unova",
-            "boss": "Zekrom",
-            "tiers": {
-              "1": null,
-              "2": null,
-              "3": null,
-              "4": null,
-              "5": null
-            },
-            "team": {
-              "members": [],
-              "alternates": []
-            },
-            "banGain": null
-          },
-          {
-            "region": "Unova",
-            "boss": "Kyurem",
-            "tiers": {
-              "1": null,
-              "2": null,
-              "3": null,
-              "4": null,
-              "5": null
-            },
-            "team": {
-              "members": [],
-              "alternates": []
-            },
-            "banGain": null
-          },
-          {
-            "region": "Unova",
-            "boss": "Keldeo",
-            "tiers": {
-              "1": null,
-              "2": null,
-              "3": null,
-              "4": null,
-              "5": null
-            },
-            "team": {
-              "members": [],
-              "alternates": []
-            },
-            "banGain": null
-          },
-          {
-            "region": "Unova",
-            "boss": "Meloetta",
-            "tiers": {
-              "1": null,
-              "2": null,
-              "3": null,
-              "4": null,
-              "5": null
-            },
-            "team": {
-              "members": [],
-              "alternates": []
-            },
-            "banGain": null
-          },
-          {
-            "region": "Unova",
-            "boss": "Genesect",
-            "tiers": {
-              "1": null,
-              "2": null,
-              "3": null,
-              "4": null,
-              "5": null
-            },
-            "team": {
-              "members": [],
-              "alternates": []
-            },
-            "banGain": null
-          },
-          {
-            "region": "Unova",
-            "boss": "Tornadus Therian",
-            "tiers": {
-              "1": null,
-              "2": null,
-              "3": null,
-              "4": null,
-              "5": null
-            },
-            "team": {
-              "members": [],
-              "alternates": []
-            },
-            "banGain": null
-          },
-          {
-            "region": "Unova",
-            "boss": "Thundurus Therian",
-            "tiers": {
-              "1": null,
-              "2": null,
-              "3": null,
-              "4": null,
-              "5": null
-            },
-            "team": {
-              "members": [],
-              "alternates": []
-            },
-            "banGain": null
-          },
-          {
-            "region": "Unova",
-            "boss": "Landorus Therian",
-            "tiers": {
-              "1": null,
-              "2": null,
-              "3": null,
-              "4": null,
-              "5": null
-            },
-            "team": {
-              "members": [],
-              "alternates": []
-            },
-            "banGain": null
-          },
-          {
-            "region": "Unova",
-            "boss": "Meloetta Pirouette",
-            "tiers": {
-              "1": null,
-              "2": null,
-              "3": null,
-              "4": null,
-              "5": null
-            },
-            "team": {
-              "members": [],
-              "alternates": []
-            },
-            "banGain": null
-          },
-          {
-            "region": "Unova",
-            "boss": "Black Kyurem",
-            "tiers": {
-              "1": null,
-              "2": null,
-              "3": null,
-              "4": null,
-              "5": null
-            },
-            "team": {
-              "members": [],
-              "alternates": []
+              "alternates": [
+                {
+                  "memberIndex": 0,
+                  "name": "Conkeldurr",
+                  "rate": 94,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 0,
+                  "name": "Muk",
+                  "rate": 98,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 1,
+                  "name": "Muk",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 1,
+                  "name": "Magnezone",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 2,
+                  "name": "Muk",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 2,
+                  "name": "Conkeldurr",
+                  "rate": 98,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 3,
+                  "name": "Muk",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 3,
+                  "name": "Conkeldurr",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 4,
+                  "name": "Muk",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 4,
+                  "name": "Conkeldurr",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 5,
+                  "name": "Conkeldurr",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 5,
+                  "name": "Muk",
+                  "rate": 100,
+                  "withBan": false
+                }
+              ],
+              "alternateBans": []
             },
             "banGain": null
           },
@@ -16141,24 +23882,2776 @@
             "region": "Unova",
             "boss": "White Kyurem",
             "tiers": {
-              "1": null,
-              "2": null,
-              "3": null,
-              "4": null,
-              "5": null
+              "1": 100,
+              "2": 100,
+              "3": 100,
+              "4": 62,
+              "5": 1
             },
             "team": {
-              "members": [],
-              "alternates": []
+              "members": [
+                {
+                  "name": "Heatran",
+                  "legendary": true,
+                  "moves": [
+                    {
+                      "name": "Flash Cannon",
+                      "tag": null,
+                      "share": 86
+                    },
+                    {
+                      "name": "Iron Head",
+                      "tag": null,
+                      "share": 13
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Probopass",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Meteor Beam",
+                      "tag": null,
+                      "share": 85
+                    },
+                    {
+                      "name": "Thunder Wave",
+                      "tag": "PAR",
+                      "share": 15
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Empoleon",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Flash Cannon",
+                      "tag": null,
+                      "share": 8
+                    },
+                    {
+                      "name": "Steel Wing",
+                      "tag": null,
+                      "share": 13
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Gardevoir",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Moonblast",
+                      "tag": null,
+                      "share": 87
+                    },
+                    {
+                      "name": "Hypnosis",
+                      "tag": "SLP",
+                      "share": 13
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Gallade",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Close Combat",
+                      "tag": null,
+                      "share": 88
+                    },
+                    {
+                      "name": "Hypnosis",
+                      "tag": "SLP",
+                      "share": 12
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Tentacruel",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Gunk Shot",
+                      "tag": "PSN",
+                      "share": 75
+                    },
+                    {
+                      "name": "Supersonic",
+                      "tag": "CNF",
+                      "share": 25
+                    }
+                  ],
+                  "bans": []
+                }
+              ],
+              "alternates": [
+                {
+                  "memberIndex": 0,
+                  "name": "Heracross",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 0,
+                  "name": "Swalot",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 1,
+                  "name": "Tyranitar",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 1,
+                  "name": "Machamp",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 2,
+                  "name": "Heracross",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 2,
+                  "name": "Machamp",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 3,
+                  "name": "Tyranitar",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 3,
+                  "name": "Snorlax",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 4,
+                  "name": "Tyranitar",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 4,
+                  "name": "Snorlax",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 5,
+                  "name": "Heracross",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 5,
+                  "name": "Machamp",
+                  "rate": 100,
+                  "withBan": false
+                }
+              ],
+              "alternateBans": []
+            },
+            "banGain": null
+          },
+          {
+            "region": "Unova",
+            "boss": "Cobalion",
+            "tiers": {
+              "1": 100,
+              "2": 99,
+              "3": 6,
+              "4": 0,
+              "5": 0
+            },
+            "team": {
+              "members": [
+                {
+                  "name": "Victini",
+                  "legendary": true,
+                  "moves": [
+                    {
+                      "name": "Inferno",
+                      "tag": "BRN",
+                      "share": 100
+                    }
+                  ],
+                  "bans": [
+                    "Overheat"
+                  ]
+                },
+                {
+                  "name": "Chandelure",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Overheat",
+                      "tag": null,
+                      "share": 82
+                    },
+                    {
+                      "name": "Confuse Ray",
+                      "tag": "CNF",
+                      "share": 10
+                    },
+                    {
+                      "name": "Will-O-Wisp",
+                      "tag": "BRN",
+                      "share": 5
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Charizard",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Overheat",
+                      "tag": null,
+                      "share": 99
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Volcarona",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Overheat",
+                      "tag": null,
+                      "share": 99
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Gengar",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Shadow Ball",
+                      "tag": null,
+                      "share": 84
+                    },
+                    {
+                      "name": "Will-O-Wisp",
+                      "tag": "BRN",
+                      "share": 8
+                    },
+                    {
+                      "name": "Confuse Ray",
+                      "tag": "CNF",
+                      "share": 8
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Rotom (Heat)",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Overheat",
+                      "tag": null,
+                      "share": 83
+                    },
+                    {
+                      "name": "Confuse Ray",
+                      "tag": "CNF",
+                      "share": 13
+                    }
+                  ],
+                  "bans": []
+                }
+              ],
+              "alternates": [
+                {
+                  "memberIndex": 0,
+                  "name": "Lampent",
+                  "rate": 85,
+                  "withBan": true
+                },
+                {
+                  "memberIndex": 0,
+                  "name": "Jellicent",
+                  "rate": 75,
+                  "withBan": true
+                },
+                {
+                  "memberIndex": 1,
+                  "name": "Lampent",
+                  "rate": 85,
+                  "withBan": true
+                },
+                {
+                  "memberIndex": 1,
+                  "name": "Jellicent",
+                  "rate": 88,
+                  "withBan": true
+                },
+                {
+                  "memberIndex": 2,
+                  "name": "Jellicent",
+                  "rate": 100,
+                  "withBan": true
+                },
+                {
+                  "memberIndex": 2,
+                  "name": "Musharna",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 3,
+                  "name": "Jellicent",
+                  "rate": 100,
+                  "withBan": true
+                },
+                {
+                  "memberIndex": 3,
+                  "name": "Lampent",
+                  "rate": 100,
+                  "withBan": true
+                },
+                {
+                  "memberIndex": 4,
+                  "name": "Jellicent",
+                  "rate": 100,
+                  "withBan": true
+                },
+                {
+                  "memberIndex": 4,
+                  "name": "Lampent",
+                  "rate": 100,
+                  "withBan": true
+                },
+                {
+                  "memberIndex": 5,
+                  "name": "Torkoal",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 5,
+                  "name": "Lampent",
+                  "rate": 100,
+                  "withBan": true
+                }
+              ],
+              "alternateBans": [
+                {
+                  "name": "Lampent",
+                  "bans": [
+                    "Overheat"
+                  ]
+                },
+                {
+                  "name": "Jellicent",
+                  "bans": [
+                    "Hydro Pump",
+                    "Water Spout"
+                  ]
+                }
+              ]
+            },
+            "banGain": 17
+          },
+          {
+            "region": "Unova",
+            "boss": "Terrakion",
+            "tiers": {
+              "1": 100,
+              "2": 99,
+              "3": 10,
+              "4": 0,
+              "5": 0
+            },
+            "team": {
+              "members": [
+                {
+                  "name": "Mewtwo",
+                  "legendary": true,
+                  "moves": [
+                    {
+                      "name": "Psystrike",
+                      "tag": null,
+                      "share": 79
+                    },
+                    {
+                      "name": "Confuse Ray",
+                      "tag": "CNF",
+                      "share": 21
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Golurk",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Earthquake",
+                      "tag": null,
+                      "share": 99
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Tangrowth",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Leaf Storm",
+                      "tag": null,
+                      "share": 61
+                    },
+                    {
+                      "name": "Power Whip",
+                      "tag": null,
+                      "share": 25
+                    },
+                    {
+                      "name": "Sleep Powder",
+                      "tag": "SLP",
+                      "share": 8
+                    },
+                    {
+                      "name": "Poison Powder",
+                      "tag": "PSN",
+                      "share": 5
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Conkeldurr",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Superpower",
+                      "tag": null,
+                      "share": 98
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Gallade",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Close Combat",
+                      "tag": null,
+                      "share": 87
+                    },
+                    {
+                      "name": "Hypnosis",
+                      "tag": "SLP",
+                      "share": 12
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Exeggutor",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Leaf Storm",
+                      "tag": null,
+                      "share": 83
+                    },
+                    {
+                      "name": "Sleep Powder",
+                      "tag": "SLP",
+                      "share": 9
+                    },
+                    {
+                      "name": "Poison Powder",
+                      "tag": "PSN",
+                      "share": 8
+                    }
+                  ],
+                  "bans": []
+                }
+              ],
+              "alternates": [
+                {
+                  "memberIndex": 0,
+                  "name": "Musharna",
+                  "rate": 94,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 0,
+                  "name": "Nidoking",
+                  "rate": 98,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 1,
+                  "name": "Nidoqueen",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 1,
+                  "name": "Toxicroak",
+                  "rate": 98,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 2,
+                  "name": "Nidoqueen",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 2,
+                  "name": "Vileplume",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 3,
+                  "name": "Nidoqueen",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 3,
+                  "name": "Metagross",
+                  "rate": 94,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 4,
+                  "name": "Nidoqueen",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 4,
+                  "name": "Nidoking",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 5,
+                  "name": "Nidoqueen",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 5,
+                  "name": "Musharna",
+                  "rate": 100,
+                  "withBan": false
+                }
+              ],
+              "alternateBans": []
+            },
+            "banGain": null
+          },
+          {
+            "region": "Unova",
+            "boss": "Virizion",
+            "tiers": {
+              "1": 100,
+              "2": 99,
+              "3": 41,
+              "4": 1,
+              "5": 0
+            },
+            "team": {
+              "members": [
+                {
+                  "name": "Ho-Oh",
+                  "legendary": true,
+                  "moves": [
+                    {
+                      "name": "Sacred Fire",
+                      "tag": "BRN",
+                      "share": 100
+                    }
+                  ],
+                  "bans": [
+                    "Brave Bird",
+                    "Sky Attack"
+                  ]
+                },
+                {
+                  "name": "Unfezant",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Sky Attack",
+                      "tag": null,
+                      "share": 100
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Crobat",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Brave Bird",
+                      "tag": null,
+                      "share": 78
+                    },
+                    {
+                      "name": "Confuse Ray",
+                      "tag": "CNF",
+                      "share": 18
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Yanmega",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Air Slash",
+                      "tag": null,
+                      "share": 79
+                    },
+                    {
+                      "name": "Supersonic",
+                      "tag": "CNF",
+                      "share": 11
+                    },
+                    {
+                      "name": "Hypnosis",
+                      "tag": "SLP",
+                      "share": 10
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Dragonite",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Fly",
+                      "tag": null,
+                      "share": 93
+                    },
+                    {
+                      "name": "Thunder Wave",
+                      "tag": "PAR",
+                      "share": 7
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Abra",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Brave Bird",
+                      "tag": null,
+                      "share": 100
+                    }
+                  ],
+                  "bans": []
+                }
+              ],
+              "alternates": [
+                {
+                  "memberIndex": 0,
+                  "name": "Vespiquen",
+                  "rate": 79,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 0,
+                  "name": "Golbat",
+                  "rate": 65,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 1,
+                  "name": "Altaria",
+                  "rate": 98,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 1,
+                  "name": "Exeggutor",
+                  "rate": 98,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 2,
+                  "name": "Salamence",
+                  "rate": 98,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 2,
+                  "name": "Altaria",
+                  "rate": 96,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 3,
+                  "name": "Altaria",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 3,
+                  "name": "Vespiquen",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 4,
+                  "name": "Vespiquen",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 4,
+                  "name": "Altaria",
+                  "rate": 98,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 5,
+                  "name": "Sigilyph",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 5,
+                  "name": "Altaria",
+                  "rate": 100,
+                  "withBan": false
+                }
+              ],
+              "alternateBans": []
+            },
+            "banGain": 6
+          },
+          {
+            "region": "Unova",
+            "boss": "Genesect",
+            "tiers": {
+              "1": 100,
+              "2": 100,
+              "3": 30,
+              "4": 0,
+              "5": 0
+            },
+            "team": {
+              "members": [
+                {
+                  "name": "Reshiram",
+                  "legendary": true,
+                  "moves": [
+                    {
+                      "name": "Blue Flare",
+                      "tag": "BRN",
+                      "share": 99
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Camerupt",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Eruption",
+                      "tag": null,
+                      "share": 85
+                    },
+                    {
+                      "name": "Flare Blitz",
+                      "tag": "BRN",
+                      "share": 15
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Venomoth",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Air Slash",
+                      "tag": null,
+                      "share": 73
+                    },
+                    {
+                      "name": "Sleep Powder",
+                      "tag": "SLP",
+                      "share": 13
+                    },
+                    {
+                      "name": "Supersonic",
+                      "tag": "CNF",
+                      "share": 10
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Chandelure",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Overheat",
+                      "tag": null,
+                      "share": 78
+                    },
+                    {
+                      "name": "Confuse Ray",
+                      "tag": "CNF",
+                      "share": 12
+                    },
+                    {
+                      "name": "Will-O-Wisp",
+                      "tag": "BRN",
+                      "share": 9
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Volcarona",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Overheat",
+                      "tag": null,
+                      "share": 99
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Flareon",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Flare Blitz",
+                      "tag": "BRN",
+                      "share": 100
+                    }
+                  ],
+                  "bans": []
+                }
+              ],
+              "alternates": [
+                {
+                  "memberIndex": 0,
+                  "name": "Magmortar",
+                  "rate": 85,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 0,
+                  "name": "Darmanitan",
+                  "rate": 71,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 1,
+                  "name": "Rotom (Heat)",
+                  "rate": 96,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 1,
+                  "name": "Solrock",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 2,
+                  "name": "Ninetales",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 2,
+                  "name": "Magmortar",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 3,
+                  "name": "Dusknoir",
+                  "rate": 96,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 3,
+                  "name": "Ninetales",
+                  "rate": 98,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 4,
+                  "name": "Ninetales",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 4,
+                  "name": "Emboar",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 5,
+                  "name": "Magmortar",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 5,
+                  "name": "Spiritomb",
+                  "rate": 100,
+                  "withBan": false
+                }
+              ],
+              "alternateBans": []
+            },
+            "banGain": null
+          },
+          {
+            "region": "Unova",
+            "boss": "Victini",
+            "tiers": {
+              "1": 100,
+              "2": 99,
+              "3": 15,
+              "4": 0,
+              "5": 0
+            },
+            "team": {
+              "members": [
+                {
+                  "name": "Kyogre",
+                  "legendary": true,
+                  "moves": [
+                    {
+                      "name": "Origin Pulse",
+                      "tag": null,
+                      "share": 98
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Solrock",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Stone Edge",
+                      "tag": null,
+                      "share": 84
+                    },
+                    {
+                      "name": "Hypnosis",
+                      "tag": "SLP",
+                      "share": 16
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Tyranitar",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Stone Edge",
+                      "tag": null,
+                      "share": 98
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Politoed",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Hydro Pump",
+                      "tag": null,
+                      "share": 86
+                    },
+                    {
+                      "name": "Hypnosis",
+                      "tag": "SLP",
+                      "share": 12
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Rampardos",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Head Smash",
+                      "tag": null,
+                      "share": 100
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Slowking",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Hydro Pump",
+                      "tag": null,
+                      "share": 99
+                    }
+                  ],
+                  "bans": []
+                }
+              ],
+              "alternates": [
+                {
+                  "memberIndex": 0,
+                  "name": "Slowbro",
+                  "rate": 96,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 0,
+                  "name": "Quagsire",
+                  "rate": 77,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 1,
+                  "name": "Jellicent",
+                  "rate": 96,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 1,
+                  "name": "Lunatone",
+                  "rate": 98,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 2,
+                  "name": "Milotic",
+                  "rate": 98,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 2,
+                  "name": "Hydreigon",
+                  "rate": 94,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 3,
+                  "name": "Garchomp",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 3,
+                  "name": "Slowbro",
+                  "rate": 98,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 4,
+                  "name": "Garchomp",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 4,
+                  "name": "Jellicent",
+                  "rate": 98,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 5,
+                  "name": "Slowbro",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 5,
+                  "name": "Quagsire",
+                  "rate": 96,
+                  "withBan": false
+                }
+              ],
+              "alternateBans": []
+            },
+            "banGain": null
+          },
+          {
+            "region": "Unova",
+            "boss": "Meloetta",
+            "tiers": {
+              "1": 100,
+              "2": 100,
+              "3": 20,
+              "4": 0,
+              "5": 0
+            },
+            "team": {
+              "members": [
+                {
+                  "name": "Ho-Oh",
+                  "legendary": true,
+                  "moves": [
+                    {
+                      "name": "Sacred Fire",
+                      "tag": "BRN",
+                      "share": 99
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Escavalier",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Megahorn",
+                      "tag": null,
+                      "share": 99
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Spiritomb",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Foul Play",
+                      "tag": null,
+                      "share": 90
+                    },
+                    {
+                      "name": "Hypnosis",
+                      "tag": "SLP",
+                      "share": 9
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Jynx",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Blizzard",
+                      "tag": "FRZ",
+                      "share": 76
+                    },
+                    {
+                      "name": "Sweet Kiss",
+                      "tag": "CNF",
+                      "share": 15
+                    },
+                    {
+                      "name": "Lovely Kiss",
+                      "tag": "SLP",
+                      "share": 9
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Tyranitar",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Foul Play",
+                      "tag": null,
+                      "share": 100
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Sableye",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Foul Play",
+                      "tag": null,
+                      "share": 99
+                    }
+                  ],
+                  "bans": []
+                }
+              ],
+              "alternates": [
+                {
+                  "memberIndex": 0,
+                  "name": "Vespiquen",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 0,
+                  "name": "Skuntank",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 1,
+                  "name": "Scizor",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 1,
+                  "name": "Metagross",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 2,
+                  "name": "Bronzong",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 2,
+                  "name": "Scizor",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 3,
+                  "name": "Scizor",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 3,
+                  "name": "Slaking",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 4,
+                  "name": "Scizor",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 4,
+                  "name": "Krookodile",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 5,
+                  "name": "Scizor",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 5,
+                  "name": "Banette",
+                  "rate": 100,
+                  "withBan": false
+                }
+              ],
+              "alternateBans": []
+            },
+            "banGain": null
+          },
+          {
+            "region": "Unova",
+            "boss": "Meloetta Pirouette",
+            "tiers": {
+              "1": 100,
+              "2": 100,
+              "3": 29,
+              "4": 0,
+              "5": 0
+            },
+            "team": {
+              "members": [
+                {
+                  "name": "Lugia",
+                  "legendary": true,
+                  "moves": [
+                    {
+                      "name": "Aeroblast",
+                      "tag": null,
+                      "share": 91
+                    },
+                    {
+                      "name": "Sky Attack",
+                      "tag": null,
+                      "share": 8
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Togekiss",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Dazzling Gleam",
+                      "tag": null,
+                      "share": 78
+                    },
+                    {
+                      "name": "Sweet Kiss",
+                      "tag": "CNF",
+                      "share": 21
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Musharna",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Future Sight",
+                      "tag": null,
+                      "share": 98
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Dusknoir",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Struggle",
+                      "tag": null,
+                      "share": 67
+                    },
+                    {
+                      "name": "Will-O-Wisp",
+                      "tag": "BRN",
+                      "share": 33
+                    }
+                  ],
+                  "bans": [],
+                  "banAllBut": 2,
+                  "banAllButNote": "2 attacks, all but its 8 Ghost attacks"
+                },
+                {
+                  "name": "Gardevoir",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Future Sight",
+                      "tag": null,
+                      "share": 92
+                    },
+                    {
+                      "name": "Hypnosis",
+                      "tag": "SLP",
+                      "share": 8
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Sigilyph",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Future Sight",
+                      "tag": null,
+                      "share": 92
+                    },
+                    {
+                      "name": "Hypnosis",
+                      "tag": "SLP",
+                      "share": 8
+                    }
+                  ],
+                  "bans": []
+                }
+              ],
+              "alternates": [
+                {
+                  "memberIndex": 0,
+                  "name": "Chandelure",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 0,
+                  "name": "Dusclops",
+                  "rate": 98,
+                  "withBan": true
+                },
+                {
+                  "memberIndex": 1,
+                  "name": "Clefable",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 1,
+                  "name": "Vespiquen",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 2,
+                  "name": "Slowbro",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 2,
+                  "name": "Chandelure",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 3,
+                  "name": "Cofagrigus",
+                  "rate": 100,
+                  "withBan": true
+                },
+                {
+                  "memberIndex": 3,
+                  "name": "Dusclops",
+                  "rate": 100,
+                  "withBan": true
+                },
+                {
+                  "memberIndex": 4,
+                  "name": "Chandelure",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 4,
+                  "name": "Dusclops",
+                  "rate": 100,
+                  "withBan": true
+                },
+                {
+                  "memberIndex": 5,
+                  "name": "Chandelure",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 5,
+                  "name": "Slowbro",
+                  "rate": 100,
+                  "withBan": false
+                }
+              ],
+              "alternateBans": [
+                {
+                  "name": "Cofagrigus",
+                  "bans": [
+                    "1 attack, all but its 5 Ghost attacks"
+                  ]
+                },
+                {
+                  "name": "Dusclops",
+                  "bans": [
+                    "2 attacks, all but its 8 Ghost attacks"
+                  ]
+                }
+              ]
+            },
+            "banGain": 5
+          },
+          {
+            "region": "Unova",
+            "boss": "Keldeo",
+            "tiers": {
+              "1": 100,
+              "2": 98,
+              "3": 15,
+              "4": 0,
+              "5": 0
+            },
+            "team": {
+              "members": [
+                {
+                  "name": "Rayquaza",
+                  "legendary": true,
+                  "moves": [
+                    {
+                      "name": "Dragon Ascent",
+                      "tag": null,
+                      "share": 98
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Mantine",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Hurricane",
+                      "tag": "CNF",
+                      "share": 84
+                    },
+                    {
+                      "name": "Confuse Ray",
+                      "tag": "CNF",
+                      "share": 16
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Vileplume",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Leaf Storm",
+                      "tag": null,
+                      "share": 87
+                    },
+                    {
+                      "name": "Toxic",
+                      "tag": "PSN",
+                      "share": 12
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Slowking",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Future Sight",
+                      "tag": null,
+                      "share": 99
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Exeggutor",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Leaf Storm",
+                      "tag": null,
+                      "share": 86
+                    },
+                    {
+                      "name": "Sleep Powder",
+                      "tag": "SLP",
+                      "share": 9
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Venusaur",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Leaf Storm",
+                      "tag": null,
+                      "share": 72
+                    },
+                    {
+                      "name": "Power Whip",
+                      "tag": null,
+                      "share": 12
+                    },
+                    {
+                      "name": "Sleep Powder",
+                      "tag": "SLP",
+                      "share": 10
+                    },
+                    {
+                      "name": "Poison Powder",
+                      "tag": "PSN",
+                      "share": 5
+                    }
+                  ],
+                  "bans": []
+                }
+              ],
+              "alternates": [
+                {
+                  "memberIndex": 0,
+                  "name": "Tentacruel",
+                  "rate": 98,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 0,
+                  "name": "Altaria",
+                  "rate": 96,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 1,
+                  "name": "Amoonguss",
+                  "rate": 98,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 1,
+                  "name": "Muk",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 2,
+                  "name": "Roserade",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 2,
+                  "name": "Roselia",
+                  "rate": 96,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 3,
+                  "name": "Roserade",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 3,
+                  "name": "Hypno",
+                  "rate": 98,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 4,
+                  "name": "Roserade",
+                  "rate": 98,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 4,
+                  "name": "Tentacruel",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 5,
+                  "name": "Roserade",
+                  "rate": 96,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 5,
+                  "name": "Hypno",
+                  "rate": 94,
+                  "withBan": false
+                }
+              ],
+              "alternateBans": []
+            },
+            "banGain": null
+          },
+          {
+            "region": "Unova",
+            "boss": "Landorus",
+            "tiers": {
+              "1": 100,
+              "2": 100,
+              "3": 98,
+              "4": 9,
+              "5": 0
+            },
+            "team": {
+              "members": [
+                {
+                  "name": "White Kyurem",
+                  "legendary": true,
+                  "moves": [
+                    {
+                      "name": "Ice Burn",
+                      "tag": "BRN",
+                      "share": 97
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Glaceon",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Blizzard",
+                      "tag": "FRZ",
+                      "share": 99
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Cofagrigus",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Shadow Ball",
+                      "tag": null,
+                      "share": 91
+                    },
+                    {
+                      "name": "Will-O-Wisp",
+                      "tag": "BRN",
+                      "share": 9
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Walrein",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Blizzard",
+                      "tag": "FRZ",
+                      "share": 100
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Lapras",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Blizzard",
+                      "tag": "FRZ",
+                      "share": 77
+                    },
+                    {
+                      "name": "Confuse Ray",
+                      "tag": "CNF",
+                      "share": 21
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Mamoswine",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Icicle Spear",
+                      "tag": null,
+                      "share": 99
+                    }
+                  ],
+                  "bans": []
+                }
+              ],
+              "alternates": [
+                {
+                  "memberIndex": 0,
+                  "name": "Dusknoir",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 0,
+                  "name": "Tangrowth",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 1,
+                  "name": "Dusclops",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 1,
+                  "name": "Dusknoir",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 2,
+                  "name": "Dusknoir",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 2,
+                  "name": "Slowbro",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 3,
+                  "name": "Poliwrath",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 3,
+                  "name": "Tangrowth",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 4,
+                  "name": "Poliwrath",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 4,
+                  "name": "Dusclops",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 5,
+                  "name": "Piloswine",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 5,
+                  "name": "Samurott",
+                  "rate": 100,
+                  "withBan": false
+                }
+              ],
+              "alternateBans": []
+            },
+            "banGain": null
+          },
+          {
+            "region": "Unova",
+            "boss": "Tornadus Therian",
+            "tiers": {
+              "1": 100,
+              "2": 99,
+              "3": 17,
+              "4": 0,
+              "5": 0
+            },
+            "team": {
+              "members": [
+                {
+                  "name": "Zekrom",
+                  "legendary": true,
+                  "moves": [
+                    {
+                      "name": "Bolt Strike",
+                      "tag": "PAR",
+                      "share": 98
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Rampardos",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Head Smash",
+                      "tag": null,
+                      "share": 100
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Muk",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Gunk Shot",
+                      "tag": "PSN",
+                      "share": 86
+                    },
+                    {
+                      "name": "Toxic",
+                      "tag": "PSN",
+                      "share": 13
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Solrock",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Stone Edge",
+                      "tag": null,
+                      "share": 92
+                    },
+                    {
+                      "name": "Hypnosis",
+                      "tag": "SLP",
+                      "share": 8
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Rhyperior",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Stone Edge",
+                      "tag": null,
+                      "share": 99
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Relicanth",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Head Smash",
+                      "tag": null,
+                      "share": 100
+                    }
+                  ],
+                  "bans": []
+                }
+              ],
+              "alternates": [
+                {
+                  "memberIndex": 0,
+                  "name": "Politoed",
+                  "rate": 90,
+                  "withBan": true
+                },
+                {
+                  "memberIndex": 0,
+                  "name": "Ampharos",
+                  "rate": 85,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 1,
+                  "name": "Ampharos",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 1,
+                  "name": "Gigalith",
+                  "rate": 98,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 2,
+                  "name": "Nidoqueen",
+                  "rate": 98,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 2,
+                  "name": "Garbodor",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 3,
+                  "name": "Lunatone",
+                  "rate": 98,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 3,
+                  "name": "Musharna",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 4,
+                  "name": "Rhydon",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 4,
+                  "name": "Gigalith",
+                  "rate": 96,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 5,
+                  "name": "Lapras",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 5,
+                  "name": "Archeops",
+                  "rate": 98,
+                  "withBan": false
+                }
+              ],
+              "alternateBans": [
+                {
+                  "name": "Politoed",
+                  "bans": [
+                    "15 attacks, all but Mud Shot, Earth Power"
+                  ]
+                }
+              ]
+            },
+            "banGain": null
+          },
+          {
+            "region": "Unova",
+            "boss": "Thundurus Therian",
+            "tiers": {
+              "1": 100,
+              "2": 100,
+              "3": 66,
+              "4": 1,
+              "5": 0
+            },
+            "team": {
+              "members": [
+                {
+                  "name": "White Kyurem",
+                  "legendary": true,
+                  "moves": [
+                    {
+                      "name": "Ice Burn",
+                      "tag": "BRN",
+                      "share": 98
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Rhyperior",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Stone Edge",
+                      "tag": null,
+                      "share": 99
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Rampardos",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Head Smash",
+                      "tag": null,
+                      "share": 100
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Golem",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Stone Edge",
+                      "tag": null,
+                      "share": 99
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Muk",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Gunk Shot",
+                      "tag": "PSN",
+                      "share": 90
+                    },
+                    {
+                      "name": "Toxic",
+                      "tag": "PSN",
+                      "share": 10
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Gardevoir",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Future Sight",
+                      "tag": null,
+                      "share": 88
+                    },
+                    {
+                      "name": "Hypnosis",
+                      "tag": "SLP",
+                      "share": 12
+                    }
+                  ],
+                  "bans": []
+                }
+              ],
+              "alternates": [
+                {
+                  "memberIndex": 0,
+                  "name": "Garbodor",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 0,
+                  "name": "Swalot",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 1,
+                  "name": "Rhydon",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 1,
+                  "name": "Garchomp",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 2,
+                  "name": "Lapras",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 2,
+                  "name": "Gigalith",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 3,
+                  "name": "Rhydon",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 3,
+                  "name": "Garchomp",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 4,
+                  "name": "Lapras",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 4,
+                  "name": "Gigalith",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 5,
+                  "name": "Lapras",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 5,
+                  "name": "Glaceon",
+                  "rate": 100,
+                  "withBan": false
+                }
+              ],
+              "alternateBans": []
+            },
+            "banGain": null
+          },
+          {
+            "region": "Unova",
+            "boss": "Landorus Therian",
+            "tiers": {
+              "1": 100,
+              "2": 100,
+              "3": 99,
+              "4": 18,
+              "5": 0
+            },
+            "team": {
+              "members": [
+                {
+                  "name": "White Kyurem",
+                  "legendary": true,
+                  "moves": [
+                    {
+                      "name": "Ice Burn",
+                      "tag": "BRN",
+                      "share": 98
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Cofagrigus",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Shadow Ball",
+                      "tag": null,
+                      "share": 88
+                    },
+                    {
+                      "name": "Will-O-Wisp",
+                      "tag": "BRN",
+                      "share": 11
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Glaceon",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Blizzard",
+                      "tag": "FRZ",
+                      "share": 99
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Poliwrath",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Liquidation",
+                      "tag": null,
+                      "share": 90
+                    },
+                    {
+                      "name": "Hypnosis",
+                      "tag": "SLP",
+                      "share": 10
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Cloyster",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Blizzard",
+                      "tag": null,
+                      "share": 69
+                    },
+                    {
+                      "name": "Supersonic",
+                      "tag": "CNF",
+                      "share": 23
+                    },
+                    {
+                      "name": "Icicle Crash",
+                      "tag": null,
+                      "share": 7
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Walrein",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Blizzard",
+                      "tag": "FRZ",
+                      "share": 99
+                    }
+                  ],
+                  "bans": []
+                }
+              ],
+              "alternates": [
+                {
+                  "memberIndex": 0,
+                  "name": "Lapras",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 0,
+                  "name": "Beartic",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 1,
+                  "name": "Dusclops",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 1,
+                  "name": "Slowbro",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 2,
+                  "name": "Froslass",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 2,
+                  "name": "Slowbro",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 3,
+                  "name": "Dusknoir",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 3,
+                  "name": "Dusclops",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 4,
+                  "name": "Dusclops",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 4,
+                  "name": "Slowbro",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 5,
+                  "name": "Lapras",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 5,
+                  "name": "Mamoswine",
+                  "rate": 100,
+                  "withBan": false
+                }
+              ],
+              "alternateBans": []
+            },
+            "banGain": null
+          },
+          {
+            "region": "Unova",
+            "boss": "Tornadus",
+            "tiers": {
+              "1": 100,
+              "2": 100,
+              "3": 79,
+              "4": 0,
+              "5": 0
+            },
+            "team": {
+              "members": [
+                {
+                  "name": "Zekrom",
+                  "legendary": true,
+                  "moves": [
+                    {
+                      "name": "Bolt Strike",
+                      "tag": "PAR",
+                      "share": 98
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Rampardos",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Head Smash",
+                      "tag": null,
+                      "share": 100
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Muk",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Gunk Shot",
+                      "tag": "PSN",
+                      "share": 87
+                    },
+                    {
+                      "name": "Toxic",
+                      "tag": "PSN",
+                      "share": 13
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Rhyperior",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Stone Edge",
+                      "tag": null,
+                      "share": 99
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Gigalith",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Stone Edge",
+                      "tag": null,
+                      "share": 99
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Golem",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Stone Edge",
+                      "tag": null,
+                      "share": 100
+                    }
+                  ],
+                  "bans": []
+                }
+              ],
+              "alternates": [
+                {
+                  "memberIndex": 0,
+                  "name": "Solrock",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 0,
+                  "name": "Lunatone",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 1,
+                  "name": "Ampharos",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 1,
+                  "name": "Solrock",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 2,
+                  "name": "Swalot",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 2,
+                  "name": "Garbodor",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 3,
+                  "name": "Relicanth",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 3,
+                  "name": "Solrock",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 4,
+                  "name": "Ampharos",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 4,
+                  "name": "Lapras",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 5,
+                  "name": "Relicanth",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 5,
+                  "name": "Ampharos",
+                  "rate": 100,
+                  "withBan": false
+                }
+              ],
+              "alternateBans": []
+            },
+            "banGain": null
+          },
+          {
+            "region": "Unova",
+            "boss": "Thundurus",
+            "tiers": {
+              "1": 100,
+              "2": 100,
+              "3": 18,
+              "4": 0,
+              "5": 0
+            },
+            "team": {
+              "members": [
+                {
+                  "name": "Black Kyurem",
+                  "legendary": true,
+                  "moves": [
+                    {
+                      "name": "Freeze Shock",
+                      "tag": "PAR",
+                      "share": 99
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Rhyperior",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Stone Edge",
+                      "tag": null,
+                      "share": 99
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Gardevoir",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Future Sight",
+                      "tag": null,
+                      "share": 88
+                    },
+                    {
+                      "name": "Hypnosis",
+                      "tag": "SLP",
+                      "share": 11
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Rhydon",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Stone Edge",
+                      "tag": null,
+                      "share": 100
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Nidoqueen",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Poison Jab",
+                      "tag": "PSN",
+                      "share": 89
+                    },
+                    {
+                      "name": "Toxic",
+                      "tag": "PSN",
+                      "share": 10
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Rampardos",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Head Smash",
+                      "tag": null,
+                      "share": 100
+                    }
+                  ],
+                  "bans": []
+                }
+              ],
+              "alternates": [
+                {
+                  "memberIndex": 0,
+                  "name": "Muk",
+                  "rate": 94,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 0,
+                  "name": "Swalot",
+                  "rate": 98,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 1,
+                  "name": "Muk",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 1,
+                  "name": "Garbodor",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 2,
+                  "name": "Muk",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 2,
+                  "name": "Solrock",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 3,
+                  "name": "Muk",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 3,
+                  "name": "Armaldo",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 4,
+                  "name": "Muk",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 4,
+                  "name": "Garbodor",
+                  "rate": 100,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 5,
+                  "name": "Gigalith",
+                  "rate": 98,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 5,
+                  "name": "Muk",
+                  "rate": 100,
+                  "withBan": false
+                }
+              ],
+              "alternateBans": []
             },
             "banGain": null
           }
         ]
       },
       "uncertain": [
-        "This is the least complete transcription: the board lays 56 cards in four columns whose OCR lines interleave, and only the five Kanto cards' teams could be attributed with confidence. The other 51 fights carry the correct boss, region and shape, with empty `members`/`alternates` rather than guessed names.",
-        "The 56-boss roster is taken from the board's region counts (Kanto 5, Johto 6, Hoenn 13, Sinnoh 13, Unova 19) and the game's legendary roster; the per-card tier chips (I–V) and `banGain` values were not legible enough to attribute and are null.",
-        "The five Kanto teams' moves and shares are transcribed from the clearest card blocks; alternate slots are empty for the same layout reason."
+        "The board lays the 56 cards in four columns: each region's cards flow from its header column into the next column (Kanto col 0→1, Johto 2→3, Hoenn 0→1, Sinnoh 2→3, Unova 0→1→2→3). The fight order here follows that flow, which differs from the earlier draft for Latias/Latios and Mesprit. Every boss name was read from its own header, so no card was placed by elimination.",
+        "Alternate rates: some cards print low rates as plain text instead of a plate (Kyogre among them). Every line the plate reader could not read, and every line where its two scale passes disagreed (40 lines), was read directly from the board crop. All 672 rates are integers 0-100; none is left null.",
+        "The I-V cells are read from each card's header band; `banGain` is stored for the 5 cards that print `BANS +N WINS AT ELITE II`.",
+        "A BAN marker belongs to the alternate, not to the slot: the board prints it on the first mention (Ninetales and Rotom (Heat) on Jirachi, for example) and lists the moves at the card's bottom. Every occurrence of that alternate in the card carries `withBan`, and the card-level list is in `alternateBans`.",
+        "An all-but ban line with no name under it applies to the member above it (Ho-Oh's Politoed, Meloetta Pirouette's Dusknoir). Every other all-but line is an alternate ban, stored in the board's wording (\"14 attacks, all but Mud Shot, Earth Power\")."
       ]
     }
   };
