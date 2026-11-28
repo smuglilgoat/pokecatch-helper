@@ -7952,7 +7952,8 @@
             "Set each legendary to Rank 5, rank it in place or swap it into its best slot, and replay the same seeds.",
             "Elite: 45 legendary Elite fights + 5 Elite Leagues × 2 tiers, each at the first tier a Rank-0 team wins under half the time; 48 tries per fight, 24 per League; score = win rate + 0.2 × damage dealt.",
             "Underground: best Rank-0 trio per theme, 6 themes × 16 expeditions; score = gain in floors reached.",
-            "Scale each area's bars to the best legendary in that area; the tier is the average of the three."
+            "Scale each area's bars to the best legendary in that area; the tier is the average of the three.",
+            "Read each member's three bars off the board in pixels with tools/barmeasure.py; 76px is the full track, the best in that area."
           ],
           "parameters": {
             "box": "79 gemmable legendaries and forms + strong non-legendaries",
@@ -7967,6 +7968,13 @@
             "score": "Elite score = win rate + 0.2 × damage dealt; the Underground score is floors gained.",
             "sameSeeds": "Rank-0 and Rank-5 runs use the same seeds."
           }
+        },
+        "measurement": {
+          "source": "boards/legendary-rank-tiers-2.png (1200×3079)",
+          "helper": "python3 tools/barmeasure.py boards/legendary-rank-tiers-2.png prints every bar band and its run lengths",
+          "algorithm": "Each card prints three bars under LG (Elite Leagues), EL (Elite legendary fights), UG (Underground), coloured 255,203,61 / 201,168,255 / 91,224,160. A bar is a solid horizontal run about 6 rows tall (4 for the smallest); its length is the union of that colour over the band's rows, from the card's left edge. Read the runs left to right against the names printed above the row.",
+          "scale": "76px is the full track: the best legendary's bar reaches it in every area, so px / 76 is the area ratio the board draws.",
+          "units": "areas.<area>.px is the bar length in board pixels."
         },
         "gameFacts": [
           "Rank 5 multiplies stats by ×2.01; each rank gives ×1.15.",
@@ -8118,9 +8126,15 @@
                   "electric"
                 ],
                 "areas": {
-                  "eliteLeagues": null,
-                  "eliteFights": null,
-                  "underground": null
+                  "eliteLeagues": {
+                    "px": 66
+                  },
+                  "eliteFights": {
+                    "px": 45
+                  },
+                  "underground": {
+                    "px": 52
+                  }
                 }
               },
               {
@@ -8129,9 +8143,15 @@
                   "normal"
                 ],
                 "areas": {
-                  "eliteLeagues": null,
-                  "eliteFights": null,
-                  "underground": null
+                  "eliteLeagues": {
+                    "px": 48
+                  },
+                  "eliteFights": {
+                    "px": 40
+                  },
+                  "underground": {
+                    "px": 62
+                  }
                 }
               },
               {
@@ -8140,9 +8160,15 @@
                   "ice"
                 ],
                 "areas": {
-                  "eliteLeagues": null,
-                  "eliteFights": null,
-                  "underground": null
+                  "eliteLeagues": {
+                    "px": 59
+                  },
+                  "eliteFights": {
+                    "px": 37
+                  },
+                  "underground": {
+                    "px": 51
+                  }
                 }
               },
               {
@@ -8151,9 +8177,15 @@
                   "ground"
                 ],
                 "areas": {
-                  "eliteLeagues": null,
-                  "eliteFights": null,
-                  "underground": null
+                  "eliteLeagues": {
+                    "px": 55
+                  },
+                  "eliteFights": {
+                    "px": 39
+                  },
+                  "underground": {
+                    "px": 52
+                  }
                 }
               },
               {
@@ -8162,9 +8194,15 @@
                   "fire"
                 ],
                 "areas": {
-                  "eliteLeagues": null,
-                  "eliteFights": null,
-                  "underground": null
+                  "eliteLeagues": {
+                    "px": 35
+                  },
+                  "eliteFights": {
+                    "px": 59
+                  },
+                  "underground": {
+                    "px": 47
+                  }
                 }
               },
               {
@@ -8173,9 +8211,15 @@
                   "dark"
                 ],
                 "areas": {
-                  "eliteLeagues": null,
-                  "eliteFights": null,
-                  "underground": null
+                  "eliteLeagues": {
+                    "px": 53
+                  },
+                  "eliteFights": {
+                    "px": 39
+                  },
+                  "underground": {
+                    "px": 44
+                  }
                 }
               },
               {
@@ -8184,9 +8228,15 @@
                   "dragon"
                 ],
                 "areas": {
-                  "eliteLeagues": null,
-                  "eliteFights": null,
-                  "underground": null
+                  "eliteLeagues": {
+                    "px": 50
+                  },
+                  "eliteFights": {
+                    "px": 24
+                  },
+                  "underground": {
+                    "px": 46
+                  }
                 }
               },
               {
@@ -8196,9 +8246,15 @@
                   "flying"
                 ],
                 "areas": {
-                  "eliteLeagues": null,
-                  "eliteFights": null,
-                  "underground": null
+                  "eliteLeagues": {
+                    "px": 58
+                  },
+                  "eliteFights": {
+                    "px": 33
+                  },
+                  "underground": {
+                    "px": 49
+                  }
                 }
               },
               {
@@ -8207,9 +8263,15 @@
                   "electric"
                 ],
                 "areas": {
-                  "eliteLeagues": null,
-                  "eliteFights": null,
-                  "underground": null
+                  "eliteLeagues": {
+                    "px": 38
+                  },
+                  "eliteFights": {
+                    "px": 28
+                  },
+                  "underground": {
+                    "px": 45
+                  }
                 }
               },
               {
@@ -8218,9 +8280,15 @@
                   "water"
                 ],
                 "areas": {
-                  "eliteLeagues": null,
-                  "eliteFights": null,
-                  "underground": null
+                  "eliteLeagues": {
+                    "px": 55
+                  },
+                  "eliteFights": {
+                    "px": 14
+                  },
+                  "underground": {
+                    "px": 42
+                  }
                 }
               },
               {
@@ -8230,9 +8298,15 @@
                   "steel"
                 ],
                 "areas": {
-                  "eliteLeagues": null,
-                  "eliteFights": null,
-                  "underground": null
+                  "eliteLeagues": {
+                    "px": 43
+                  },
+                  "eliteFights": {
+                    "px": 25
+                  },
+                  "underground": {
+                    "px": 41
+                  }
                 }
               },
               {
@@ -8241,9 +8315,15 @@
                   "ground"
                 ],
                 "areas": {
-                  "eliteLeagues": null,
-                  "eliteFights": null,
-                  "underground": null
+                  "eliteLeagues": {
+                    "px": 41
+                  },
+                  "eliteFights": {
+                    "px": 26
+                  },
+                  "underground": {
+                    "px": 39
+                  }
                 }
               },
               {
@@ -8253,9 +8333,15 @@
                   "fire"
                 ],
                 "areas": {
-                  "eliteLeagues": null,
-                  "eliteFights": null,
-                  "underground": null
+                  "eliteLeagues": {
+                    "px": 26
+                  },
+                  "eliteFights": {
+                    "px": 39
+                  },
+                  "underground": {
+                    "px": 41
+                  }
                 }
               },
               {
@@ -8264,9 +8350,15 @@
                   "psychic"
                 ],
                 "areas": {
-                  "eliteLeagues": null,
-                  "eliteFights": null,
-                  "underground": null
+                  "eliteLeagues": {
+                    "px": 33
+                  },
+                  "eliteFights": {
+                    "px": 23
+                  },
+                  "underground": {
+                    "px": 52
+                  }
                 }
               },
               {
@@ -8275,9 +8367,15 @@
                   "flying"
                 ],
                 "areas": {
-                  "eliteLeagues": null,
-                  "eliteFights": null,
-                  "underground": null
+                  "eliteLeagues": {
+                    "px": 32
+                  },
+                  "eliteFights": {
+                    "px": 21
+                  },
+                  "underground": {
+                    "px": 47
+                  }
                 }
               },
               {
@@ -8286,9 +8384,15 @@
                   "rock"
                 ],
                 "areas": {
-                  "eliteLeagues": null,
-                  "eliteFights": null,
-                  "underground": null
+                  "eliteLeagues": {
+                    "px": 35
+                  },
+                  "eliteFights": {
+                    "px": 33
+                  },
+                  "underground": {
+                    "px": 32
+                  }
                 }
               },
               {
@@ -8298,9 +8402,15 @@
                   "flying"
                 ],
                 "areas": {
-                  "eliteLeagues": null,
-                  "eliteFights": null,
-                  "underground": null
+                  "eliteLeagues": {
+                    "px": 46
+                  },
+                  "eliteFights": {
+                    "px": 22
+                  },
+                  "underground": {
+                    "px": 32
+                  }
                 }
               },
               {
@@ -8309,9 +8419,15 @@
                   "fire"
                 ],
                 "areas": {
-                  "eliteLeagues": null,
-                  "eliteFights": null,
-                  "underground": null
+                  "eliteLeagues": {
+                    "px": 25
+                  },
+                  "eliteFights": {
+                    "px": 30
+                  },
+                  "underground": {
+                    "px": 41
+                  }
                 }
               },
               {
@@ -8321,9 +8437,15 @@
                   "steel"
                 ],
                 "areas": {
-                  "eliteLeagues": null,
-                  "eliteFights": null,
-                  "underground": null
+                  "eliteLeagues": {
+                    "px": 41
+                  },
+                  "eliteFights": {
+                    "px": 22
+                  },
+                  "underground": {
+                    "px": 35
+                  }
                 }
               },
               {
@@ -8332,9 +8454,15 @@
                   "psychic"
                 ],
                 "areas": {
-                  "eliteLeagues": null,
-                  "eliteFights": null,
-                  "underground": null
+                  "eliteLeagues": {
+                    "px": 12
+                  },
+                  "eliteFights": {
+                    "px": 4
+                  },
+                  "underground": {
+                    "px": 14
+                  }
                 }
               }
             ]
@@ -8342,7 +8470,7 @@
         ]
       },
       "uncertain": [
-        "The board's bars are pixel art and no area value is legible, so every `areas` value is null and the stored order is the board order.",
+        "`areas` holds each bar's length in board pixels (76px = the best in that area). The board prints no absolute score, and the rounded bar ends put each length within 1px. The stored order is the board order.",
         "The vertical tier grouping (which row belongs to which letter tier) is not legible; all members are stored in one 'board order' group.",
         "The OCR also read 'Arceus Flying?' with a question mark; the sprite chip follows the Flying plate row, so it is stored as Arceus Flying.",
         "Two best-sink names are ambiguous between a base and a form (Landorus vs Landorus Therian, Genesect vs Genesect Burn); both appear in the OCR rows and both are stored as separate entries."
