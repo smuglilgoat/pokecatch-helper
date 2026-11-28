@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Poke'Catch Team Optimizer
 // @namespace    pokecatch-helper
-// @version      1.14.0
+// @version      1.14.1
 // @description  Reads the current chapter events, then builds an optimal team of 6 from the PC with an offense preset, optimizes legendary, elite, underground and raid teams, prepares per-segment template teams, and a Helper page with community guides and the dashboard.
 // @author       GrumpyOwl
 // @match        https://pokecatch-online.netlify.app/*
@@ -27,7 +27,7 @@
    * 0. Small helpers
    * ------------------------------------------------------------------ */
   const SAVE_KEY = 'gachamon-save-v1';
-  const VERSION = '1.14.0';
+  const VERSION = '1.14.1';
   const UPDATE_URL = 'https://raw.githubusercontent.com/smuglilgoat/pokecatch-helper/main/pokecatch-team-optimizer.user.js';
   const $ = (sel, root = document) => root.querySelector(sel);
   const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
@@ -311,6 +311,49 @@
       const brace = src.indexOf('{', anchor + 'a.STATUS=function(){'.length);
       return evalLit(literalAt(src, brace));
     }) || {};
+    // the adventure page's own art: the scene catalog, the French place -> scene table and the bg fallback
+    const scenes = table('SCENES', false, () => {
+      const at = src.indexOf('a.SCENES=(');
+      if (at < 0) throw new Error('marker not found');
+      const ret = src.indexOf('catalog:', at);
+      const names = ret < 0 ? null : /catalog:([\w$]+),places:([\w$]+)/.exec(src.slice(ret, ret + 100));
+      if (!names) throw new Error('catalog/places not found');
+      const body = src.slice(at, ret);
+      const decl = n => {
+        const m = new RegExp('const\\s+' + n + '\\s*=\\s*\\{').exec(body);
+        if (!m) throw new Error('declaration of ' + n + ' not found');
+        return body.indexOf('{', m.index);
+      };
+      // the numbered scenes are a literal; named ones are generated from their key (s["hoenn-x"]={src:`…hoenn-x-710x400.webp`})
+      const catalog = {};
+      for (const [id, v] of Object.entries(evalLit(literalAt(body, decl(names[1]))))) catalog[id] = v.src;
+      const bgAt = body.search(/\{prairie:\d+,forest:\d+/);
+      const bg = bgAt < 0 ? {} : evalLit(literalAt(body, bgAt));
+      // the Unova name -> scene table sits just before the bg map; the game resolves its nodes from it, not from places
+      let unova = {};
+      if (bgAt > 0) {
+        const end = body.lastIndexOf('}', bgAt);
+        const start = body.indexOf('{', body.lastIndexOf('const ', end));
+        try {
+          const litAt = start < 0 ? '' : literalAt(body, start);
+          const t = litAt && start + litAt.length - 1 === end ? evalLit(litAt) : null;
+          if (t && t['Route 1'] && Object.values(t).some(v => /^unys-/.test(v))) unova = t;
+        } catch { /* a different table: Unova keeps the places fallback */ }
+      }
+      return { catalog, places: evalLit(literalAt(body, decl(names[2]))), bg, unova };
+    }) || null;
+    // the badge order the game itself draws: the chapters name badges in French, the boards in English
+    const badges = table('BADGE_IMG', false, () => {
+      const out = {};
+      for (const [reg, marker] of [['kanto', 'BADGE_IMG:'], ['johto', 'BADGE_IMG_JOHTO:'], ['hoenn', 'BADGE_IMG_HOENN:'],
+        ['sinnoh', 'BADGE_IMG_SINNOH:'], ['unova', 'BADGE_IMG_UNOVA:']]) {
+        const at = src.indexOf(marker);
+        if (at < 0) throw new Error('marker not found: ' + marker);
+        out[reg] = evalLit(literalAt(src, at + marker.length));
+      }
+      return out;
+    }) || {};
+    if (!scenes) log('warn', 'bundle: SCENES missing — farm and overnight scene thumbnails off');
     // legend zones live in the same bundle: reading them here means one fetch, not two
     let legends = null;
     try { legends = parseLegends(src); } catch (e) { logError('bundle: legends', e); }
@@ -344,6 +387,8 @@
       evo,
       enc,
       chapters,
+      scenes,
+      badges,
       regions,
       leagueTeams,
       baseExp,
@@ -5350,8 +5395,11 @@
       .pcopt-helper .map-head .ic img{width:22px;height:22px}
       .pcopt-hspr{display:inline-grid;place-items:center;width:30px;height:30px;flex:none}
       .pcopt-hspr img{max-width:30px;max-height:30px;image-rendering:pixelated}
+      .pcopt-mphero{display:inline-block;width:48px;height:27px;flex:none;border-radius:4px;margin-right:6px;
+        vertical-align:middle;border:1px solid color-mix(in srgb,var(--line) 80%,transparent);
+        background-size:cover;background-position:center;image-rendering:pixelated}
       .pcopt-htabs{display:flex;flex-wrap:wrap;gap:4px;margin:8px 0}
-      .pcopt-htabs button{font:inherit;font-size:12px;padding:4px 8px;border:1px solid var(--line);border-radius:7px;
+      .pcopt-htabs button{font-family:inherit;font-weight:inherit;font-size:21px;padding:4px 8px;border:1px solid var(--line);border-radius:7px;
         background:color-mix(in srgb,var(--panel-2) 65%,transparent);color:var(--text-2);cursor:pointer}
       .pcopt-htabs button.on{color:var(--text);border-color:var(--yellow);background:color-mix(in srgb,var(--yellow) 14%,var(--panel-2))}
       .pcopt-htabs .n{margin-left:4px;font-size:10px;color:var(--muted)}
@@ -5402,7 +5450,7 @@
       .pcopt-ban{font-size:11px;color:var(--red)}
       .pcopt-galt{font-size:12px;color:var(--muted);padding:2px 0}
       .pcopt-gregion{display:flex;flex-wrap:wrap;gap:4px;margin:6px 0}
-      .pcopt-gregion button{font:inherit;font-size:11px;padding:2px 8px;border-radius:12px;border:1px solid var(--line);
+      .pcopt-gregion button{font-family:inherit;font-weight:inherit;font-size:19px;padding:2px 8px;border-radius:12px;border:1px solid var(--line);
         background:transparent;color:var(--muted);cursor:pointer}
       .pcopt-gregion button.on{color:var(--text);border-color:var(--yellow)}
       .pcopt-gtiers{display:flex;gap:3px}
@@ -5417,6 +5465,41 @@
       .pcopt-helper details ul{padding-left:18px;margin:4px 0}
       .pcopt-hnote{font-size:11px;color:var(--muted);line-height:1.45;margin:4px 0}
       .pcopt-hsrc{font-size:11px;color:var(--muted);line-height:1.45}
+      /* the helper asks for 1.75x its design text; unitless line-heights follow their font-size */
+      #screen-pcopt-helper{font-size:35px}
+      #screen-pcopt-helper .map-head h2{font-size:49px}
+      #screen-pcopt-helper .map-sum{font-size:32px}
+      #screen-pcopt-helper .pcopt-title{font-size:26px}
+      #screen-pcopt-helper .pcopt-title small{font-size:19px}
+      #screen-pcopt-helper .pcopt-mut{font-size:23px}
+      #screen-pcopt-helper .btn.small{font-size:23px}
+      #screen-pcopt-helper .pcopt-htabs .n{font-size:18px}
+      #screen-pcopt-helper .pcopt-hsearch input{font-size:23px}
+      #screen-pcopt-helper .pcopt-gcard-h small{font-size:19px}
+      #screen-pcopt-helper .pcopt-movechip{font-size:19px}
+      #screen-pcopt-helper .pcopt-movechip i{font-size:16px}
+      #screen-pcopt-helper .pcopt-typechip{font-size:19px}
+      #screen-pcopt-helper .pcopt-rank{font-size:18px}
+      #screen-pcopt-helper .pcopt-ban{font-size:19px}
+      #screen-pcopt-helper .pcopt-galt{font-size:21px}
+      #screen-pcopt-helper .pcopt-gtiers span{font-size:18px}
+      #screen-pcopt-helper .pcopt-gtable{font-size:21px}
+      #screen-pcopt-helper .pcopt-gtable th{font-size:19px}
+      #screen-pcopt-helper .pcopt-helper summary{font-size:21px}
+      #screen-pcopt-helper .pcopt-helper details p,#screen-pcopt-helper .pcopt-helper details li{font-size:21px}
+      #screen-pcopt-helper .pcopt-hnote{font-size:19px}
+      #screen-pcopt-helper .pcopt-hsrc{font-size:19px}
+      #screen-pcopt-helper .pcopt-elite-wave{font-size:23px}
+      #screen-pcopt-helper .pcopt-elite-rank{font-size:18px}
+      #screen-pcopt-helper .pcopt-elite-name{font-size:25px}
+      #screen-pcopt-helper .pcopt-elite-name small{font-size:19px}
+      #screen-pcopt-helper .pcopt-elite-roam{font-size:18px}
+      #screen-pcopt-helper .pcopt-elite-meta{font-size:21px}
+      #screen-pcopt-helper .pcopt-elite-carry,#screen-pcopt-helper .pcopt-elite-needs{font-size:21px}
+      #screen-pcopt-helper .pcopt-tier{font-size:18px}
+      #screen-pcopt-helper .rp-pk small{font-size:calc(var(--fs-sm) * 1.75)}
+      #screen-pcopt-helper .rp-pk .mine{font-size:calc(var(--fs-micro) * 1.75)}
+      #screen-pcopt-helper .ug-theme{font-size:calc(var(--fs-sm) * 1.75)}
       @media(max-width:560px){
         .pcopt-elite-row{grid-template-columns:44px minmax(0,1fr)}
         .pcopt-elite-act{grid-column:2}
@@ -27826,12 +27909,15 @@
   const guideNorm = s => String(s || '').normalize('NFD').replace(/\p{Diacritic}/gu, '')
     .toLowerCase().replace(/&/g, ' and ').replace(/[^a-z0-9]+/g, ' ').trim()
     .split(/\s+/).filter(w => w && w !== 'forme' && w !== 'form').sort().join(' ');
-  let guideIdMap = null, guideIdMapKey = '';
+  let guideIdMap = null, guideIdMapKey = '', guideIdMapEn = null, guideEnAsked = false;
   /** Board name -> parsed dex id (base species and forms), or null. */
   function guideNameId(name) {
     const data = state.data;
     if (!data) return null;
-    if (guideIdMapKey !== (bundleUrl() || '')) {
+    const key = (bundleUrl() || '') + (englishData() ? '|en' : '|fr');
+    if (guideIdMapKey !== key) {
+      // the first render can beat boot()'s pack fetch: the French-keyed map is thrown away when the pack lands
+      if (guideIdMapEn === false && englishData()) log('info', 'guides: sprite names rebuilt with the English pack');
       guideIdMap = new Map();
       const put = (n, id) => { const k = guideNorm(n); if (k && !guideIdMap.has(k)) guideIdMap.set(k, id); };
       for (const id of Object.keys(data.species || {})) put(displayName(+id), +id);
@@ -27843,7 +27929,8 @@
         if (tail) put(displayName(base) + ' ' + tail, +id);
         put(englishText(f.form), +id);
       }
-      guideIdMapKey = bundleUrl() || '';
+      guideIdMapKey = key;
+      guideIdMapEn = !!englishData();
     }
     return guideIdMap.get(guideNorm(name)) ?? null;
   }
@@ -27871,10 +27958,10 @@
     const n = Math.max(0, Math.min(100, +v || 0));
     return `background:hsl(${Math.round(n * 1.2)} 55% 24%);color:#fff`;
   };
-  // the game's own berry art lives under assets/ui/; only oran, pecha, sitrus and leppa ship
+  // berry art: the farm berries ship under assets/ui/, every other berry under assets/items/ as <slug>-berry.png
   const berryArt = name => {
     const k = String(name || '').toLowerCase().replace(/\s+/g, '-');
-    return `assets/ui/berry-${/^(oran|pecha|sitrus|leppa)$/.test(k) ? k : k + '-berry'}.png`;
+    return /^(oran|pecha|sitrus|leppa)$/.test(k) ? `assets/ui/berry-${k}.png` : `assets/items/${k}-berry.png`;
   };
   const berryImg = name => `<img class="pcopt-icon" src="${berryArt(name)}" alt="">`;
   // English badge name -> [sprite sheet, 1-based icon in it]; the game draws them from 16px strips
@@ -27899,6 +27986,85 @@
     return `<span class="pcopt-bchip" title="${esc(name)}" style="background-image:url(assets/badges/${sheet === 'frlg' ? 'frlg-' + n : sheet}.png);background-position:${-16 * (n - 1)}px 0"></span>`;
   };
   const loopName = name => `${badgeChip(name)}${esc(name ?? '—')}`;
+  // the guide boards name maps in English; the game's own scene tables are French
+  const SCENE_SHEET_REGION = { frlg: 'kanto', gsc: 'johto', rse: 'hoenn', dppt: 'sinnoh', bw: 'unova' };
+  // these chapters carry no English area slug, so their board name maps straight to the game's chapter name
+  const SCENE_CHAPTER_ALIAS = {
+    'mt-chimney': 'Mont Chimnée', 'galactic-hq': 'QG Galaxie', 'the-lakes': 'Les Lacs',
+    'the-crisis': 'La crise', 'radio-tower': 'Tour Radio', 'distortion-world': 'Monde Distorsion'
+  };
+  const guideSlug = s => String(s || '').normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+  /** The game's scene image for one chapter step: SCENES.resolve's chain, with its Unova name table. */
+  const sceneStepSrc = (step, reg) => {
+    const scenes = state.data?.scenes;
+    if (!scenes || !step) return null;
+    const art = k => k == null ? null : (scenes.catalog[k] || (/^\d+$/.test(String(k)) ? null : `assets/bg/scenes/${k}-710x400.webp`));
+    if (step.type === 'heal' || step.kind === 'heal' || step.bg === 'pokecenter') return art(50);
+    if (step.scene != null) { const p = art(step.scene); if (p) return p; }
+    if (reg === 'unova' && scenes.unova?.[step.name || step.zone] != null) {
+      const p = art(scenes.unova[step.name || step.zone]);
+      if (p) return p;
+    }
+    return art(scenes.places[step.name || step.zone]) || art(scenes.bg[step.bg] ?? scenes.bg[step.fallback] ?? 1);
+  };
+  /** Board loop/map name -> the adventure-page scene the game shows for that chapter, or null. */
+  function guideSceneSrc(name, region) {
+    const chapters = state.data?.chapters || [];
+    const regOf = c => c.reg || 'kanto';
+    const gymOf = c => (c.steps || []).find(s => s.kind === 'gym' && s.badge && !s.champion);
+    const repOf = c => {
+      const steps = c.steps || [];
+      return [...steps].reverse().find(s => s.kind === 'gym') || [...steps].reverse().find(s => s.kind === 'static')
+        || steps.find(s => s.bg === 'cave' && s.kind !== 'heal') || steps[steps.length - 1];
+    };
+    const nm = String(name || '').trim();
+    const badge = /^(.+) badge$/i.exec(nm);
+    if (badge) {
+      const hit = BADGE_SPRITE[badge[1].toLowerCase()];
+      if (!hit) return null;
+      const reg = SCENE_SHEET_REGION[hit[0]];
+      // the sheet slot is the game's own badge index: its table gives the French name of that slot
+      const fr = Object.entries(state.data?.badges?.[reg] || {}).find(([, n]) => n === hit[1])?.[0];
+      const ch = chapters.find(c => regOf(c) === reg && !c.league && gymOf(c) && guideSlug(gymOf(c).badge) === guideSlug(fr));
+      return ch ? sceneStepSrc(gymOf(ch), reg) : null;
+    }
+    const league = /^(.*?)\s*league$/i.exec(nm);
+    if (league) {
+      const reg = (guideSlug(league[1]) || region || '').toLowerCase();
+      const cs = chapters.filter(c => c.league && regOf(c) === reg);
+      return cs.length ? sceneStepSrc(repOf(cs[cs.length - 1]), reg) : null;
+    }
+    const pref = /^(Kanto|Johto|Hoenn|Sinnoh|Unova)\s+(.+)$/i.exec(nm);
+    const reg = (pref ? pref[1] : region || '').toLowerCase() || null;
+    const slug = guideSlug(pref ? pref[2] : nm);
+    // a League's steps borrow any area as flavour: never treat one as a location match
+    let best = null, bestScore = 0;
+    for (const c of chapters) {
+      if (c.league || (reg && regOf(c) !== reg)) continue;
+      for (const s of c.steps || []) {
+        let score = 0;
+        for (const a of s.areas || []) {
+          const seg = guideSlug(String(a).replace(/^[a-z]+:/, ''));
+          const bare = seg.replace(/^(kanto|johto|hoenn|sinnoh|unova|unys|bw|rse|dppt|gsc)-/, '');
+          score = Math.max(score, seg === slug || bare === slug || bare === slug + '-area' ? 4
+            : seg.startsWith(slug + '-') || bare.startsWith(slug + '-') ? 3
+            : seg.includes('-' + slug + '-') || seg.endsWith('-' + slug) ? 1 : 0);
+        }
+        if (score > bestScore) { bestScore = score; best = { c, s }; }
+      }
+    }
+    if (best) return sceneStepSrc(best.s, regOf(best.c));
+    const alias = SCENE_CHAPTER_ALIAS[slug];
+    const ch = alias && chapters.find(c => guideSlug(c.name) === guideSlug(alias));
+    return ch ? sceneStepSrc(repOf(ch), regOf(ch)) : null;
+  }
+  const sceneThumb = (name, region) => {
+    const src = guideSceneSrc(name, region);
+    return src ? `<span class="pcopt-mphero" title="${esc(name)}" style="background-image:url(${esc(src)})"></span>` : '';
+  };
+  /** A farm/overnight row's map: the adventure-page art, else the game's badge icon, then the name. */
+  const loopScene = (name, region) => `${sceneThumb(name, region) || badgeChip(name)}${esc(name ?? '—')}`;
   const guideBoardLine = g => `${esc(g.board.gameVersion)} · build ${esc(g.board.build)} · pulled ${esc(g.board.pulled)} · community board by ${esc(g.credit)}`;
   const guideMatch = (obj, q) => !q || JSON.stringify(obj).toLowerCase().includes(q);
   const guideFold = g => `
@@ -28045,11 +28211,11 @@
   function renderFarming(g) {
     const q = (state.helperSearch || '').toLowerCase();
     const goals = (g.data.goals || []).filter(x => guideMatch(x, q));
-    return goals.map(x => `<div class="pcopt-gcard"><div class="pcopt-gcard-h static"><span class="grow"><b>${esc(x.goal)}</b><small>${loopName(x.best.loop)} · ${esc(x.best.perHour)}${x.best.lapSec ? ' · ' + esc(x.best.lapSec) + 's lap' : ''}</small></span></div>
+    return goals.map(x => `<div class="pcopt-gcard"><div class="pcopt-gcard-h static"><span class="grow"><b>${esc(x.goal)}</b><small>${loopScene(x.best.loop)} · ${esc(x.best.perHour)}${x.best.lapSec ? ' · ' + esc(x.best.lapSec) + 's lap' : ''}</small></span></div>
       <div class="pcopt-gbody"><div class="pcopt-hnote">${esc(x.best.note)}</div>
-      ${(x.runnerUps || []).length ? `<div class="pcopt-hnote">Runner-ups: ${x.runnerUps.map(r => `${loopName(r.loop)}${r.perHour ? ' ' + esc(r.perHour) : ''}`).join(' · ')}</div>` : ''}</div></div>`).join('')
+      ${(x.runnerUps || []).length ? `<div class="pcopt-hnote">Runner-ups: ${x.runnerUps.map(r => `${loopScene(r.loop)}${r.perHour ? ' ' + esc(r.perHour) : ''}`).join(' · ')}</div>` : ''}</div></div>`).join('')
       + `<table class="pcopt-gtable"><tr><th>Top 16 loop</th><th class="n">Money/h</th><th class="n">Battle XP/h</th><th class="n">Candy XP/h</th><th class="n">Lap</th></tr>
-      ${(g.data.topLoops || []).map(x => `<tr><td>${loopName(x.loop)}</td><td class="n">${esc(x.money ?? '—')}</td><td class="n">${esc(x.battleXp ?? '—')}</td><td class="n">${esc(x.candyXp ?? '—')}</td><td class="n">${x.lapSec ? esc(x.lapSec) + 's' : '—'}</td></tr>`).join('')}</table>
+      ${(g.data.topLoops || []).map(x => `<tr><td>${loopScene(x.loop)}</td><td class="n">${esc(x.money ?? '—')}</td><td class="n">${esc(x.battleXp ?? '—')}</td><td class="n">${esc(x.candyXp ?? '—')}</td><td class="n">${x.lapSec ? esc(x.lapSec) + 's' : '—'}</td></tr>`).join('')}</table>
       <table class="pcopt-gtable"><tr><th>League</th><th class="n">Battle XP</th><th class="n">Candy drops</th><th class="n">Bought</th><th class="n">Total XP</th></tr>
       ${(g.data.leagueCandy || []).map(x => `<tr><td>${esc(x.league)}</td><td class="n">${esc(x.battleXp)}</td><td class="n">${esc(x.candyDrops)}</td><td class="n">${esc(x.bought)}</td><td class="n">${esc(x.totalXp)}</td></tr>`).join('')}</table>
       <div class="pcopt-hnote">${(g.data.rules || []).map(esc).join(' · ')}</div>`;
@@ -28073,8 +28239,8 @@
   }
 
   function renderOvernight(g) {
-    const table = (title, rows, cells) => `<table class="pcopt-gtable"><tr>${cells.map(c => `<th>${esc(c)}</th>`).join('')}</tr>
-      ${rows.map(r => `<tr>${cells.map(c => c === 'map' ? `<td>${loopName(r[c])}</td>` : `<td>${esc(r[c] ?? '—')}</td>`).join('')}</tr>`).join('')}</table>`;
+    const table = (title, rows, cells, region) => `<table class="pcopt-gtable"><tr>${cells.map(c => `<th>${esc(c)}</th>`).join('')}</tr>
+      ${rows.map(r => `<tr>${cells.map(c => c === 'map' ? `<td>${loopScene(r[c], r.region || region)}</td>` : `<td>${esc(r[c] ?? '—')}</td>`).join('')}</tr>`).join('')}</table>`;
     return `<div class="pcopt-gcard"><div class="pcopt-gcard-h static"><span class="grow"><b>Most money per night</b></span></div><div class="pcopt-gbody">
       ${table('money', g.data.moneyTop, ['rank', 'map', 'region', 'money', 'note'])}</div></div>
       <div class="pcopt-gcard"><div class="pcopt-gcard-h static"><span class="grow"><b>Most EXP for a leveler (not the companion)</b></span></div><div class="pcopt-gbody">
@@ -28082,7 +28248,7 @@
       <table class="pcopt-gtable"><tr><th>From Lv</th><th class="n">*0</th><th class="n">*1</th><th class="n">*3</th><th class="n">*5</th><th>Verdict</th></tr>
       ${(g.data.xpNeed || []).map(x => `<tr><td>${esc(x.from)}</td>${['0', '1', '3', '5'].map(k => `<td class="n">${esc(x.byRank[k])}</td>`).join('')}<td>${esc(x.verdict)}</td></tr>`).join('')}</table>
       ${(g.data.regions || []).map(r => `<div class="pcopt-gcard"><div class="pcopt-gcard-h static"><span class="grow"><b>${esc(r.region)}</b><small>${r.maps.length} maps, story order</small></span></div>
-        <div class="pcopt-gbody">${table(r.region, r.maps, ['map', 'money', 'xp'])}</div></div>`).join('')}`;
+        <div class="pcopt-gbody">${table(r.region, r.maps, ['map', 'money', 'xp'], r.region)}</div></div>`).join('')}`;
   }
 
   function renderGuide(g) {
@@ -28181,6 +28347,14 @@
   function mountHelper() {
     const host = document.querySelector('#screen-pcopt-helper');
     if (!host) return;
+    // the guides' sprites are keyed by the English names: boot() asks for the pack, but the first render can win
+    if (!englishData() && !guideEnAsked) {
+      guideEnAsked = true;
+      log('info', 'guides: English pack not loaded yet, asking for it');
+      ensureEnglish()
+        .then(ok => { if (!ok) log('warn', 'guides: English pack still missing, sprite names stay French-keyed'); })
+        .catch(e => logError('guides: English pack', e));
+    }
     const nav = document.querySelector('#tabs [data-screen="pcopt-helper"]');
     if (nav) nav.classList.toggle('ping', !!(state.hunt?.running || state.loop?.running || state.poke?.running));
     if (!host.querySelector('.pcopt-helper')) {
@@ -28207,7 +28381,7 @@
     if (tab === 'elite-raids') { mountEliteRaids(body); return; }
     const g = GUIDES[tab];
     if (!g) { body.innerHTML = '<div class="pcopt-mut">guide not found</div>'; return; }
-    const sig = JSON.stringify([tab, state.helperSearch, state.helperRegion, state.helperOpen, !!state.data]);
+    const sig = JSON.stringify([tab, state.helperSearch, state.helperRegion, state.helperOpen, !!state.data, !!englishData()]);
     mountBlock(body, 'helper-guide', sig, renderGuide(g), el => bindGuide(el));
   }
 
@@ -28231,7 +28405,7 @@
         for (let waited = 0; !url && waited < 30000; waited += 250) { await sleep(250); url = bundleUrl(); }
       }
       if (!url) { state.errors = ['game bundle not loaded yet']; log('warn', 'data: the game bundle is not on the page yet'); return; }
-      const cacheKey = 'bundle:v20:' + url;
+      const cacheKey = 'bundle:v21:' + url;
       let data = store.get(cacheKey, null);
       if (data && !dataLooksValid(data)) {
         log('warn', 'data: the cached tables are invalid, parsing the bundle again');
@@ -29372,6 +29546,12 @@
       const badMoves = [...moveNames].filter(n => !guideMoveInfo(n));
       check('guide move names resolve to types', !state.data || !badMoves.length,
         state.data ? badMoves.slice(0, 8) : 'skipped: no game data');
+      // the farm/overnight map column draws the game's own adventure-page art
+      const sceneRows = [...GUIDES.farming.data.topLoops.map(x => [x.loop, null]),
+        ...GUIDES.overnight.data.moneyTop.map(x => [x.map, x.region])];
+      const noScene = sceneRows.filter(([n, r]) => !guideSceneSrc(n, r)).map(([n]) => n);
+      check('farming and overnight rows find the game scene art', !state.data?.scenes || !noScene.length,
+        state.data?.scenes ? noScene.slice(0, 8) : 'skipped: no parsed scenes');
       const liveThemes = state.data?.cfg?.UNDERGROUND?.THEMES || [];
       const badThemes = GUIDES.underground.data.themes.filter(t => !liveThemes.some(x => x.key === t.key)).map(t => t.key);
       check('underground guide themes exist in the bundle', !badThemes.length, badThemes);

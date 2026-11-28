@@ -41,9 +41,9 @@ Open `http://localhost:8765/pokecatch-team-optimizer.user.js`, accept Tampermonk
 - **Item Hunter**: pick a farmable story item and the chapter reruns until it drops
 - **Pokémon hunter**: pick a missing mon with a weather, night/day or season spawn and the script restarts its chapter inside the next window, then goes back to watching
 - **Dashboard**: run state, data source, errors, and the hunts on the Helper page
-- **Helper page**: the Elite raids chart, community guides (farming, berries, overnight, gem and investment tiers, catch and Elite II teams, underground) and the dashboard, between Progress and Team in the side nav
+- **Helper page**: the Elite raids chart, community guides (farming, berries, overnight, gem and investment tiers, catch and Elite II teams, underground) and the dashboard, between Progress and Team in the side nav; the farming and overnight rows lead with the game's own adventure-page scene art
 - **English names**: bundle ids read through the game's English language pack
-- **Selftest**: 97 checks on a healthy save, plus guards that only report when the bundle, the save or the run itself is broken
+- **Selftest**: 98 checks on a healthy save, plus guards that only report when the bundle, the save or the run itself is broken
 
 ## Where the blocks appear
 
@@ -79,7 +79,7 @@ node tools/regen-guides.mjs      # fetch the live bundle and re-validate every n
 
 The nine community boards live in `guides/data/` (one JSON per guide), each with its board provenance, its methodology and algorithm, and the transcribed data. Edit those files, never the generated `9c-0` block. `tools/embed-guides.mjs` validates and regenerates the block idempotently; `tools/regen-guides.mjs` runs after each game update, resolving every species/form name against the live dex and recomputing the Arceus-shield attacker list. See `guides/README.md` for the ingestion round.
 
-The script logs every action with `[pcopt]`, and the last 400 entries stay in `window.__pcopt.logs`. In the game console, `window.__pcopt.selftest()` runs the 97 checks on a healthy save (three guards only report a missing bundle, a missing save or a crash) and returns `{ ok, ms, results }`. `window.__pcopt.compareWithPokeApi(uid, info)` cross-checks one mon against PokeAPI; no button calls it. `window.__pcopt.GUIDES`, `mountHelper()` and `openHelper()` expose the guide data and the Helper page.
+The script logs every action with `[pcopt]`, and the last 400 entries stay in `window.__pcopt.logs`. In the game console, `window.__pcopt.selftest()` runs the 98 checks on a healthy save (three guards only report a missing bundle, a missing save or a crash) and returns `{ ok, ms, results }`. `window.__pcopt.compareWithPokeApi(uid, info)` cross-checks one mon against PokeAPI; no button calls it. `window.__pcopt.GUIDES`, `mountHelper()` and `openHelper()` expose the guide data and the Helper page.
 
 Two places carry the version: `@version` in the header and the `VERSION` constant near the top.
 
