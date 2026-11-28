@@ -1,0 +1,220 @@
+{
+  "id": "berry",
+  "title": "Berry Farming Guide",
+  "subject": "Where every berry comes from — odds from the game's own tables — per hour on auto-replay",
+  "credit": "@destryyy",
+  "board": {
+    "gameVersion": "v0.5.161",
+    "build": "d8622a1fb3",
+    "pulled": "2026-11-24",
+    "title": "Berry Farming Guide — per hour on auto-replay"
+  },
+  "ingested": "2026-11-28",
+  "sourceImage": "berry-guide-2.png",
+  "method": {
+    "summary": "Expected values from the game's own drop tables, not measured runs. Lap times come from the farming guide's simulation (best endgame team, every lap won). Town events are counted once per lap and at most 6 an hour; Battle Points and pachinko balls are not counted per hour. Badges unlock better berries: route ? and town events only drop a berry once the region has enough gym badges before that chapter — Golden Razz and Pecha 3, Nanab, Enigma and Sitrus 6, Starf and Belue 8. Belue and Rowap never drop on routes: town events, the shop and pachinko only. The shop sells common berries at 40 BP, Starf at 250 BP on floor 75+, Belue at 250 BP on floor 87+, always in stock. Pachinko gives about 2.5% of cup prizes as berries, one prize per ball in the cup. Underground loot rolls start at floor 150 and get better deeper.",
+    "algorithm": {
+      "goal": "Rank loops by expected good berries per hour and list each berry's best sources.",
+      "engine": "The game's own drop tables at build d8622a1fb3; lap times from the farming guide's simulation",
+      "steps": [
+        "Take each berry's drop chance from the game's route, town-event, shop, pachinko and Underground tables.",
+        "Apply the badge gates before a chapter: Golden Razz/Pecha 3 region badges, Nanab/Enigma/Sitrus 6, Starf/Belue 8.",
+        "Count town events once per lap, capped at 6 an hour.",
+        "Use the farming guide's lap time for each loop (best endgame team, every lap won).",
+        "Multiply expected drops per lap by laps per hour; report good berries/h, Starf/h and Oran-and-friends/h.",
+        "Ignore Battle Points and pachinko balls in the per-hour totals."
+      ],
+      "parameters": {
+        "lapTimes": "farming guide's simulation, every lap won",
+        "townEvents": "once per lap, at most 6/h",
+        "badgeGates": "Golden Razz & Pecha 3, Nanab/Enigma & Sitrus 6, Starf & Belue 8",
+        "build": "d8622a1fb3"
+      },
+      "acceptance": {
+        "expected": "Values are expected values from the drop tables, not measured runs.",
+        "excluded": "Battle Points and pachinko balls are not counted per hour."
+      }
+    },
+    "gameFacts": [
+      "Routes: 70% chance per item route, once per run, with 8+ region badges.",
+      "Town events: once per run, at most 6 an hour, 8+ region badges.",
+      "Shop: common berries 40 BP, Starf 250 BP at floor 75+, Belue 250 BP at floor 87+, always in stock.",
+      "Pachinko: about 2.5% of cup prizes, one prize per ball in the cup.",
+      "Underground: loot rolls at floor 150+, deeper is better.",
+      "Belue and Rowap never drop on routes.",
+      "Badge gates: Golden Razz & Pecha 3 region badges, Nanab/Enigma & Sitrus 6, Starf & Belue 8."
+    ]
+  },
+  "data": {
+    "berries": [
+      {
+        "name": "Belue",
+        "use": "shiny eggs ×2 (stacks to 4)",
+        "best": { "kind": "shop", "loop": "Battle Tower shop", "rate": "250 BP (floor 75+)", "lapSec": null, "why": "guaranteed source; loops only drop it from town events, at most 6 an hour" },
+        "runnerUps": [],
+        "buy": "250 BP (floor 75+)"
+      },
+      {
+        "name": "Starf",
+        "use": "shiny odds ×2",
+        "best": { "kind": "loop", "loop": "Giant Chasm", "rate": "0.9/h", "lapSec": 241, "why": "needs 8 badges in the region before the chapter, so only these late loops drop it" },
+        "runnerUps": [
+          { "loop": "Stark Mountain", "rate": "0.9/h" },
+          { "loop": "Sinnoh Victory Road", "rate": "0.8/h" }
+        ],
+        "buy": "250 BP (floor 75+)"
+      },
+      {
+        "name": "Nanab",
+        "use": "—",
+        "best": { "kind": "loop", "loop": "Freeze Badge", "rate": "4.4/h each", "lapSec": 102, "why": "a short loop with 6+ region badges: many ? rolls an hour" },
+        "runnerUps": [
+          { "loop": "Distortion World", "rate": "4.4/h" },
+          { "loop": "Dragonspiral Tower", "rate": "4.2/h each" }
+        ],
+        "buy": "40 BP"
+      },
+      {
+        "name": "Enigma",
+        "use": "—",
+        "best": { "kind": "loop", "loop": "Freeze Badge", "rate": "4.4/h each", "lapSec": 102, "why": "a short loop with 6+ region badges: many ? rolls an hour" },
+        "runnerUps": [
+          { "loop": "Distortion World", "rate": "4.4/h" },
+          { "loop": "Dragonspiral Tower", "rate": "4.2/h each" }
+        ],
+        "buy": "40 BP"
+      },
+      {
+        "name": "Golden Razz",
+        "use": "—",
+        "best": { "kind": "loop", "loop": "Balance Badge", "rate": "5.3/h", "lapSec": 96, "why": "3–5 region badges: Pecha is unlocked but Nanab and Enigma aren't, so it gets a bigger share" },
+        "runnerUps": [
+          { "loop": "Jet Badge", "rate": "5.1/h" },
+          { "loop": "Relic Castle", "rate": "4.8/h" }
+        ],
+        "buy": "40 BP"
+      },
+      {
+        "name": "Lansat",
+        "use": "money ×1.25 · XP ×1.25",
+        "best": { "kind": "loop", "loop": "?", "rate": "8.1/h each", "lapSec": 54, "why": "early chapters (0–2 region badges): the rarer berries are locked, so these take their share" },
+        "runnerUps": [
+          { "loop": "Trio Badge", "rate": "7.2/h" },
+          { "loop": "Boulder Badge", "rate": "6.9/h each" }
+        ],
+        "buy": "40 BP"
+      },
+      {
+        "name": "Pinap",
+        "use": "money ×1.25 · XP ×1.25",
+        "best": { "kind": "loop", "loop": "?", "rate": "8.1/h each", "lapSec": 54, "why": "early chapters (0–2 region badges): the rarer berries are locked, so these take their share" },
+        "runnerUps": [
+          { "loop": "Trio Badge", "rate": "7.2/h" },
+          { "loop": "Boulder Badge", "rate": "6.9/h each" }
+        ],
+        "buy": "40 BP"
+      },
+      {
+        "name": "Rowap",
+        "use": "—",
+        "best": { "kind": "townEvent", "loop": "Town event", "rate": "3.2%", "lapSec": null, "why": "never drops on routes; town events, the shop and pachinko only" },
+        "runnerUps": [],
+        "buy": "40 BP"
+      }
+    ],
+    "sources": {
+      "route": {
+        "note": "70% chance per item route, once per run, min 8+ region badges",
+        "table": [
+          { "name": "Oran", "chance": "19%" },
+          { "name": "Pecha", "chance": "8.4%" },
+          { "name": "Razz", "chance": "8.3%" },
+          { "name": "Golden Razz", "chance": "4.2%" },
+          { "name": "Nanab", "chance": "4.2%" },
+          { "name": "Enigma", "chance": "4.2%" },
+          { "name": "Lansat", "chance": "4.2%" },
+          { "name": "Pinap", "chance": "4.2%" },
+          { "name": "Sitrus", "chance": "3.1%" },
+          { "name": "Starf", "chance": "1%" }
+        ]
+      },
+      "townEvent": {
+        "note": "once per run, at most 6 an hour, min 8+ region badges",
+        "table": [
+          { "name": "Oran", "chance": "48%" },
+          { "name": "Golden Razz", "chance": "3.2%" },
+          { "name": "Nanab", "chance": "3.2%" },
+          { "name": "Enigma", "chance": "3.2%" },
+          { "name": "Rowap", "chance": "3.2%" },
+          { "name": "Razz", "chance": "3.2%" },
+          { "name": "Belue", "chance": "2.8%" },
+          { "name": "Starf", "chance": "2.8%" },
+          { "name": "Lansat", "chance": "2.4%" },
+          { "name": "Pinap", "chance": "2.4%" },
+          { "name": "Pecha", "chance": "2.4%" },
+          { "name": "Sitrus", "chance": "1.6%" }
+        ]
+      },
+      "shop": {
+        "table": [
+          { "name": "Golden Razz", "price": "40 BP" },
+          { "name": "Nanab", "price": "40 BP" },
+          { "name": "Enigma", "price": "40 BP" },
+          { "name": "Starf", "price": "250 BP (floor 75+)" },
+          { "name": "Rowap", "price": "40 BP" },
+          { "name": "Belue", "price": "250 BP (floor 87+)" }
+        ]
+      },
+      "pachinko": {
+        "note": "per loot roll in the cup, one prize each, 2.5% of cup prizes",
+        "table": [
+          { "name": "Golden Razz", "chance": "0.9%" },
+          { "name": "Oran", "chance": "0.9%" },
+          { "name": "Pecha", "chance": "0.9%" },
+          { "name": "Enigma", "chance": "0.9%" },
+          { "name": "Starf", "chance": "0.8%" },
+          { "name": "Lansat", "chance": "0.1%" },
+          { "name": "Pinap", "chance": "0.1%" },
+          { "name": "Razz", "chance": "0.1%" }
+        ]
+      },
+      "underground": {
+        "note": "per loot roll, floor 150+ (deeper = better)",
+        "table": []
+      }
+    },
+    "topLoops": [
+      { "loop": "Freeze Badge", "good": 22.1, "starf": null, "oranEtc": 31 },
+      { "loop": "Distortion World", "good": 22.1, "starf": null, "oranEtc": 31 },
+      { "loop": "Dragonspiral Tower", "good": 20.9, "starf": null, "oranEtc": 29 },
+      { "loop": "Rising Badge", "good": 18.9, "starf": null, "oranEtc": 26 },
+      { "loop": "Earth Badge", "good": 17.6, "starf": null, "oranEtc": 24 },
+      { "loop": "Giant Chasm", "good": 17.5, "starf": 0.94, "oranEtc": 23 },
+      { "loop": "Sinnoh Victory Road", "good": 16.9, "starf": 0.81, "oranEtc": 23 },
+      { "loop": "Stark Mountain", "good": 16.8, "starf": 0.90, "oranEtc": 22 },
+      { "loop": "Zephyr Badge", "good": 16.4, "starf": null, "oranEtc": 36 },
+      { "loop": "Balance Badge", "good": 15.9, "starf": null, "oranEtc": 33 },
+      { "loop": "Radio Tower", "good": null, "starf": null, "oranEtc": null },
+      { "loop": "Jet Badge", "good": 15.3, "starf": null, "oranEtc": 32 },
+      { "loop": "Icicle Badge", "good": 14.9, "starf": null, "oranEtc": 20 },
+      { "loop": "Lake of Rage", "good": 14.8, "starf": null, "oranEtc": 20 }
+    ],
+    "rules": [
+      "Expected values from the drop tables, not measured runs.",
+      "Lap times from the farming guide's simulation (best endgame team, every lap won).",
+      "Town events counted once per lap, at most 6 an hour.",
+      "Battle Points and pachinko balls are not counted per hour.",
+      "Badge gates: Golden Razz & Pecha 3 region badges, Nanab/Enigma & Sitrus 6, Starf & Belue 8.",
+      "Belue and Rowap never drop on routes: town events, the shop and pachinko only.",
+      "Shop prices: common berries 40 BP, Starf 250 BP at floor 75+, Belue 250 BP at floor 87+, always in stock.",
+      "Pachinko: about 2.5% of cup prizes, one prize per ball in the cup.",
+      "Underground loot rolls at floor 150+, deeper is better."
+    ]
+  },
+  "uncertain": [
+    "The Lansat/Pinap card's best loop is cut off in the OCR (the loop name is missing); the rate (8.1/h each) and lap time (54s) are legible, so the loop is stored as '?' rather than guessed.",
+    "Several route and town-event percentages are OCR-damaged: Pecha 8.4% (read '84%'), Razz 8.3%, Sitrus 3.1%, Starf 1% and the Belue/Starf/Sitrus tail of the table. The clear rows are stored; the damaged tail rows were left out instead of invented.",
+    "The Underground column's berry rows did not survive the OCR at all; only its floor rule is stored, with an empty table.",
+    "Radio Tower's good-berries/h and Oran/h are unreadable; kept as null in board order."
+  ]
+}

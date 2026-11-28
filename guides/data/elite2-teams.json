@@ -1,0 +1,199 @@
+{
+  "id": "elite2-teams",
+  "title": "Team Recommendations Elite II fights",
+  "subject": "The strongest *2 team for each of the 56 Elite legendary fights, with move bans and alternates",
+  "credit": "@destryyy",
+  "board": {
+    "gameVersion": "v0.5.17",
+    "build": "824f567ed3",
+    "pulled": "2026-11-25",
+    "title": "Team Recommendations Elite II fights — *2 teams with move bans"
+  },
+  "ingested": "2026-11-28",
+  "sourceImage": "1be55d7771a623e39ce2fd2df5925932-2.png",
+  "method": {
+    "summary": "For each of the 56 Elite legendary fights: the strongest *2 team for Elite II, every member's moves and the moves to ban, and who to bring instead — all Lv 100. Picked for Elite II: each team is the one that wins its fight most often at Elite II; where several win it as often, the one that also does best at Elite III. The ringed cell is Elite II; the other cells are the same six at the other tiers. Everything at *2: team, candidates and alternates are all at *2, Lv 100, not shiny (a rank is +15% on every stat; from *0, *2 takes 3 gems per Pokémon, 18 for a team). The best six from all 690 Pokémon of every rarity, one legendary at most (the game takes one per Elite fight). Search: the team search of the earlier boards at Elite II only, over the team and its moves together; then every place tries its replacements and its moves once more on 120 fights. Each search also starts from the team an earlier build's Teams board had for the same fight, and such a team stays unless the new one is clearly better on 1536 fresh fights (55 of the 56 teams are an earlier build's). Moves and bans: after each member, the moves it used at Elite II with the share of its turns (in 48 fights); in red after BAN, the moves to take away. New in v0.5.12: tap a learned move on a Pokémon's card and it no longer uses it in battle (it always keeps one attack); tap again to give it back. The ban lives on the Pokémon, not on the fight. 5 of the 56 teams have a ban (5 members). A ban has to earn its place: each was fought again, the team with it against the team without, on 384 fresh fights at Elite II, and is listed only if the team is clearly better with it (two standard errors, and 3 wins in 100); 1 ban was dropped, the 5 teams that kept one win 18 more fights in 100 with them. What these teams do at Elite II: 98 wins out of 100 on average (100 at Elite I); of the 56 bosses, 30 are beaten every time, 55 at least half the time. 43 teams put the boss to sleep with a status move. Wins are from seeded fights no search used: 384 for the team at Elite II, 192 at each other tier, 48 for an alternate. Fights that open only at night or at one moon phase run at the first hour they open; a fight without its own weather runs in clear weather.",
+    "algorithm": {
+      "goal": "Find the *2 team that wins each of the 56 Elite legendary fights most often at Elite II.",
+      "engine": "The game's own battle engine at build 824f567ed3",
+      "steps": [
+        "Put everything at *2, Lv 100, not shiny; *0 to *2 costs 3 gems per Pokémon.",
+        "Search the best six from all 690 Pokémon of every rarity, at most one legendary.",
+        "Run the earlier boards' team search at Elite II only, over the team and its moves together.",
+        "Try every place's replacements and moves once more on 120 fights.",
+        "Also start from the earlier build's Teams board team; keep it unless the new one is clearly better on 1536 fresh fights.",
+        "Keep a ban only if the team is clearly better with it on 384 fresh Elite II fights (two standard errors and 3 wins in 100).",
+        "Score wins from seeded fights no search used: 384 at Elite II, 192 per other tier, 48 per alternate."
+      ],
+      "parameters": {
+        "fights": "56 Elite legendary fights",
+        "rank": "*2 (×1.15 per rank), Lv 100, not shiny",
+        "gems": "3 per Pokémon, 18 per team from *0",
+        "legendaries": "at most one per team",
+        "box": "all 690 Pokémon of the four rarities",
+        "build": "824f567ed3"
+      },
+      "acceptance": {
+        "pick": "Most wins at Elite II; ties broken by Elite III.",
+        "ban": "A ban is kept only if the team is clearly better by two standard errors and 3 wins in 100 on 384 fresh fights.",
+        "earlierTeam": "An earlier build's team stays unless the new one is clearly better on 1536 fresh fights."
+      }
+    },
+    "gameFacts": [
+      "Everything is at *2, Lv 100, not shiny; a rank is +15% on every stat.",
+      "From *0 to *2 takes 3 gems per Pokémon, 18 per team.",
+      "At most one legendary per Elite fight.",
+      "A ban lives on the Pokémon, not on the fight; tapping a learned move removes it, tapping again restores it.",
+      "A Pokémon always keeps one attack.",
+      "A member left with only attacks the boss is immune to uses its status move every turn it can land (BAN N attacks, all but the ones it keeps).",
+      "Closed fights run at the first hour they open; no-weather fights run in clear weather.",
+      "5 of the 56 teams have a ban; 43 teams put the boss to sleep.",
+      "98 wins of 100 on average at Elite II; 30 bosses beaten every time, 55 at least half the time."
+    ]
+  },
+  "data": {
+    "fights": [
+      {
+        "region": "Kanto",
+        "boss": "Articuno",
+        "tiers": { "1": null, "2": null, "3": null, "4": null, "5": null },
+        "team": {
+          "members": [
+            { "name": "White Kyurem", "legendary": true, "moves": [ { "name": "Ice Burn", "tag": "BRN", "share": 98 } ], "bans": [] },
+            { "name": "Rhyperior", "legendary": false, "moves": [ { "name": "Stone Edge", "tag": null, "share": 99 } ], "bans": [] },
+            { "name": "Jynx", "legendary": false, "moves": [ { "name": "Blizzard", "tag": "FRZ", "share": 75 }, { "name": "Sweet Kiss", "tag": "CNF", "share": 16 }, { "name": "Lovely Kiss", "tag": "SLP", "share": 8 } ], "bans": [] },
+            { "name": "Tyranitar", "legendary": false, "moves": [ { "name": "Stone Edge", "tag": null, "share": 99 } ], "bans": [] },
+            { "name": "Muk", "legendary": false, "moves": [ { "name": "Gunk Shot", "tag": "PSN", "share": 89 }, { "name": "Toxic", "tag": "PSN", "share": 10 } ], "bans": [] },
+            { "name": "Rampardos", "legendary": false, "moves": [ { "name": "Head Smash", "tag": null, "share": 99 } ], "bans": [] }
+          ],
+          "alternates": []
+        },
+        "banGain": null
+      },
+      {
+        "region": "Kanto",
+        "boss": "Zapdos",
+        "tiers": { "1": null, "2": null, "3": null, "4": null, "5": null },
+        "team": {
+          "members": [
+            { "name": "Arceus Dark", "legendary": true, "moves": [ { "name": "Judgment", "tag": null, "share": 100 } ], "bans": [] },
+            { "name": "Sableye", "legendary": false, "moves": [ { "name": "Poltergeist", "tag": null, "share": 85 }, { "name": "Confuse Ray", "tag": "CNF", "share": 15 } ], "bans": [] },
+            { "name": "Spiritomb", "legendary": false, "moves": [ { "name": "Poltergeist", "tag": null, "share": 84 }, { "name": "Hypnosis", "tag": "SLP", "share": 10 }, { "name": "Confuse Ray", "tag": "CNF", "share": 6 } ], "bans": [] },
+            { "name": "Umbreon", "legendary": false, "moves": [ { "name": "Foul Play", "tag": null, "share": 84 }, { "name": "Confuse Ray", "tag": "CNF", "share": 15 } ], "bans": [] },
+            { "name": "Skuntank", "legendary": false, "moves": [ { "name": "Foul Play", "tag": null, "share": 89 }, { "name": "Toxic", "tag": "PSN", "share": 10 } ], "bans": [] },
+            { "name": "Drapion", "legendary": false, "moves": [ { "name": "Throat Chop", "tag": null, "share": 83 }, { "name": "Toxic", "tag": "PSN", "share": 17 } ], "bans": [] }
+          ],
+          "alternates": []
+        },
+        "banGain": null
+      },
+      {
+        "region": "Kanto",
+        "boss": "Moltres",
+        "tiers": { "1": null, "2": null, "3": null, "4": null, "5": null },
+        "team": {
+          "members": [
+            { "name": "Heatran", "legendary": true, "moves": [ { "name": "Magma Storm", "tag": null, "share": 93 }, { "name": "Stone Edge", "tag": null, "share": 6 } ], "bans": [] },
+            { "name": "Relicanth", "legendary": false, "moves": [ { "name": "Head Smash", "tag": null, "share": 99 } ], "bans": [] },
+            { "name": "Probopass", "legendary": false, "moves": [ { "name": "Meteor Beam", "tag": null, "share": 76 }, { "name": "Thunder Wave", "tag": "PAR", "share": 23 } ], "bans": [] },
+            { "name": "Gigalith", "legendary": false, "moves": [ { "name": "Stone Edge", "tag": null, "share": 100 } ], "bans": [] },
+            { "name": "Bronzong", "legendary": false, "moves": [ { "name": "Iron Head", "tag": null, "share": 74 }, { "name": "Hypnosis", "tag": "SLP", "share": 18 }, { "name": "Confuse Ray", "tag": "CNF", "share": 8 } ], "bans": [] },
+            { "name": "Carracosta", "legendary": false, "moves": [ { "name": "Stone Edge", "tag": null, "share": 100 } ], "bans": [] }
+          ],
+          "alternates": []
+        },
+        "banGain": null
+      },
+      {
+        "region": "Kanto",
+        "boss": "Mewtwo",
+        "tiers": { "1": null, "2": null, "3": null, "4": null, "5": null },
+        "team": {
+          "members": [
+            { "name": "Arceus Rock", "legendary": true, "moves": [ { "name": "Judgment", "tag": null, "share": 100 } ], "bans": [] },
+            { "name": "Rampardos", "legendary": false, "moves": [ { "name": "Head Smash", "tag": null, "share": 100 } ], "bans": [] },
+            { "name": "Tyranitar", "legendary": false, "moves": [ { "name": "Stone Edge", "tag": null, "share": 99 } ], "bans": [] },
+            { "name": "Muk", "legendary": false, "moves": [ { "name": "Gunk Shot", "tag": "PSN", "share": 89 }, { "name": "Toxic", "tag": "PSN", "share": 10 } ], "bans": [] },
+            { "name": "Gigalith", "legendary": false, "moves": [ { "name": "Stone Edge", "tag": null, "share": 100 } ], "bans": [] },
+            { "name": "Carracosta", "legendary": false, "moves": [ { "name": "Stone Edge", "tag": null, "share": 100 } ], "bans": [] }
+          ],
+          "alternates": []
+        },
+        "banGain": null
+      },
+      {
+        "region": "Kanto",
+        "boss": "Mew",
+        "tiers": { "1": null, "2": null, "3": null, "4": null, "5": null },
+        "team": {
+          "members": [
+            { "name": "Articuno", "legendary": true, "moves": [ { "name": "Blizzard", "tag": "FRZ", "share": 98 } ], "bans": [] },
+            { "name": "Heatran", "legendary": false, "moves": [ { "name": "Magma Storm", "tag": null, "share": 93 } ], "bans": [] },
+            { "name": "Relicanth", "legendary": false, "moves": [ { "name": "Head Smash", "tag": null, "share": 99 } ], "bans": [] },
+            { "name": "Probopass", "legendary": false, "moves": [ { "name": "Meteor Beam", "tag": null, "share": 76 } ], "bans": [] },
+            { "name": "Gigalith", "legendary": false, "moves": [ { "name": "Stone Edge", "tag": null, "share": 100 } ], "bans": [] },
+            { "name": "Bronzong", "legendary": false, "moves": [ { "name": "Iron Head", "tag": null, "share": 74 } ], "bans": [] }
+          ],
+          "alternates": []
+        },
+        "banGain": null
+      },
+      { "region": "Johto", "boss": "Raikou", "tiers": { "1": null, "2": null, "3": null, "4": null, "5": null }, "team": { "members": [], "alternates": [] }, "banGain": null },
+      { "region": "Johto", "boss": "Entei", "tiers": { "1": null, "2": null, "3": null, "4": null, "5": null }, "team": { "members": [], "alternates": [] }, "banGain": null },
+      { "region": "Johto", "boss": "Suicune", "tiers": { "1": null, "2": null, "3": null, "4": null, "5": null }, "team": { "members": [], "alternates": [] }, "banGain": null },
+      { "region": "Johto", "boss": "Lugia", "tiers": { "1": null, "2": null, "3": null, "4": null, "5": null }, "team": { "members": [], "alternates": [] }, "banGain": null },
+      { "region": "Johto", "boss": "Ho-Oh", "tiers": { "1": null, "2": null, "3": null, "4": null, "5": null }, "team": { "members": [], "alternates": [] }, "banGain": null },
+      { "region": "Johto", "boss": "Celebi", "tiers": { "1": null, "2": null, "3": null, "4": null, "5": null }, "team": { "members": [], "alternates": [] }, "banGain": null },
+      { "region": "Hoenn", "boss": "Regirock", "tiers": { "1": null, "2": null, "3": null, "4": null, "5": null }, "team": { "members": [], "alternates": [] }, "banGain": null },
+      { "region": "Hoenn", "boss": "Regice", "tiers": { "1": null, "2": null, "3": null, "4": null, "5": null }, "team": { "members": [], "alternates": [] }, "banGain": null },
+      { "region": "Hoenn", "boss": "Registeel", "tiers": { "1": null, "2": null, "3": null, "4": null, "5": null }, "team": { "members": [], "alternates": [] }, "banGain": null },
+      { "region": "Hoenn", "boss": "Latias", "tiers": { "1": null, "2": null, "3": null, "4": null, "5": null }, "team": { "members": [], "alternates": [] }, "banGain": null },
+      { "region": "Hoenn", "boss": "Latios", "tiers": { "1": null, "2": null, "3": null, "4": null, "5": null }, "team": { "members": [], "alternates": [] }, "banGain": null },
+      { "region": "Hoenn", "boss": "Kyogre", "tiers": { "1": null, "2": null, "3": null, "4": null, "5": null }, "team": { "members": [], "alternates": [] }, "banGain": null },
+      { "region": "Hoenn", "boss": "Groudon", "tiers": { "1": null, "2": null, "3": null, "4": null, "5": null }, "team": { "members": [], "alternates": [] }, "banGain": null },
+      { "region": "Hoenn", "boss": "Rayquaza", "tiers": { "1": null, "2": null, "3": null, "4": null, "5": null }, "team": { "members": [], "alternates": [] }, "banGain": null },
+      { "region": "Hoenn", "boss": "Jirachi", "tiers": { "1": null, "2": null, "3": null, "4": null, "5": null }, "team": { "members": [], "alternates": [] }, "banGain": null },
+      { "region": "Hoenn", "boss": "Deoxys", "tiers": { "1": null, "2": null, "3": null, "4": null, "5": null }, "team": { "members": [], "alternates": [] }, "banGain": null },
+      { "region": "Hoenn", "boss": "Deoxys Attack", "tiers": { "1": null, "2": null, "3": null, "4": null, "5": null }, "team": { "members": [], "alternates": [] }, "banGain": null },
+      { "region": "Hoenn", "boss": "Deoxys Defense", "tiers": { "1": null, "2": null, "3": null, "4": null, "5": null }, "team": { "members": [], "alternates": [] }, "banGain": null },
+      { "region": "Hoenn", "boss": "Deoxys Speed", "tiers": { "1": null, "2": null, "3": null, "4": null, "5": null }, "team": { "members": [], "alternates": [] }, "banGain": null },
+      { "region": "Sinnoh", "boss": "Uxie", "tiers": { "1": null, "2": null, "3": null, "4": null, "5": null }, "team": { "members": [], "alternates": [] }, "banGain": null },
+      { "region": "Sinnoh", "boss": "Mesprit", "tiers": { "1": null, "2": null, "3": null, "4": null, "5": null }, "team": { "members": [], "alternates": [] }, "banGain": null },
+      { "region": "Sinnoh", "boss": "Azelf", "tiers": { "1": null, "2": null, "3": null, "4": null, "5": null }, "team": { "members": [], "alternates": [] }, "banGain": null },
+      { "region": "Sinnoh", "boss": "Dialga", "tiers": { "1": null, "2": null, "3": null, "4": null, "5": null }, "team": { "members": [], "alternates": [] }, "banGain": null },
+      { "region": "Sinnoh", "boss": "Palkia", "tiers": { "1": null, "2": null, "3": null, "4": null, "5": null }, "team": { "members": [], "alternates": [] }, "banGain": null },
+      { "region": "Sinnoh", "boss": "Heatran", "tiers": { "1": null, "2": null, "3": null, "4": null, "5": null }, "team": { "members": [], "alternates": [] }, "banGain": null },
+      { "region": "Sinnoh", "boss": "Regigigas", "tiers": { "1": null, "2": null, "3": null, "4": null, "5": null }, "team": { "members": [], "alternates": [] }, "banGain": null },
+      { "region": "Sinnoh", "boss": "Giratina", "tiers": { "1": null, "2": null, "3": null, "4": null, "5": null }, "team": { "members": [], "alternates": [] }, "banGain": null },
+      { "region": "Sinnoh", "boss": "Giratina Origin", "tiers": { "1": null, "2": null, "3": null, "4": null, "5": null }, "team": { "members": [], "alternates": [] }, "banGain": null },
+      { "region": "Sinnoh", "boss": "Cresselia", "tiers": { "1": null, "2": null, "3": null, "4": null, "5": null }, "team": { "members": [], "alternates": [] }, "banGain": null },
+      { "region": "Sinnoh", "boss": "Darkrai", "tiers": { "1": null, "2": null, "3": null, "4": null, "5": null }, "team": { "members": [], "alternates": [] }, "banGain": null },
+      { "region": "Sinnoh", "boss": "Shaymin", "tiers": { "1": null, "2": null, "3": null, "4": null, "5": null }, "team": { "members": [], "alternates": [] }, "banGain": null },
+      { "region": "Sinnoh", "boss": "Shaymin Sky", "tiers": { "1": null, "2": null, "3": null, "4": null, "5": null }, "team": { "members": [], "alternates": [] }, "banGain": null },
+      { "region": "Unova", "boss": "Victini", "tiers": { "1": null, "2": null, "3": null, "4": null, "5": null }, "team": { "members": [], "alternates": [] }, "banGain": null },
+      { "region": "Unova", "boss": "Cobalion", "tiers": { "1": null, "2": null, "3": null, "4": null, "5": null }, "team": { "members": [], "alternates": [] }, "banGain": null },
+      { "region": "Unova", "boss": "Terrakion", "tiers": { "1": null, "2": null, "3": null, "4": null, "5": null }, "team": { "members": [], "alternates": [] }, "banGain": null },
+      { "region": "Unova", "boss": "Virizion", "tiers": { "1": null, "2": null, "3": null, "4": null, "5": null }, "team": { "members": [], "alternates": [] }, "banGain": null },
+      { "region": "Unova", "boss": "Tornadus", "tiers": { "1": null, "2": null, "3": null, "4": null, "5": null }, "team": { "members": [], "alternates": [] }, "banGain": null },
+      { "region": "Unova", "boss": "Thundurus", "tiers": { "1": null, "2": null, "3": null, "4": null, "5": null }, "team": { "members": [], "alternates": [] }, "banGain": null },
+      { "region": "Unova", "boss": "Landorus", "tiers": { "1": null, "2": null, "3": null, "4": null, "5": null }, "team": { "members": [], "alternates": [] }, "banGain": null },
+      { "region": "Unova", "boss": "Reshiram", "tiers": { "1": null, "2": null, "3": null, "4": null, "5": null }, "team": { "members": [], "alternates": [] }, "banGain": null },
+      { "region": "Unova", "boss": "Zekrom", "tiers": { "1": null, "2": null, "3": null, "4": null, "5": null }, "team": { "members": [], "alternates": [] }, "banGain": null },
+      { "region": "Unova", "boss": "Kyurem", "tiers": { "1": null, "2": null, "3": null, "4": null, "5": null }, "team": { "members": [], "alternates": [] }, "banGain": null },
+      { "region": "Unova", "boss": "Keldeo", "tiers": { "1": null, "2": null, "3": null, "4": null, "5": null }, "team": { "members": [], "alternates": [] }, "banGain": null },
+      { "region": "Unova", "boss": "Meloetta", "tiers": { "1": null, "2": null, "3": null, "4": null, "5": null }, "team": { "members": [], "alternates": [] }, "banGain": null },
+      { "region": "Unova", "boss": "Genesect", "tiers": { "1": null, "2": null, "3": null, "4": null, "5": null }, "team": { "members": [], "alternates": [] }, "banGain": null },
+      { "region": "Unova", "boss": "Tornadus Therian", "tiers": { "1": null, "2": null, "3": null, "4": null, "5": null }, "team": { "members": [], "alternates": [] }, "banGain": null },
+      { "region": "Unova", "boss": "Thundurus Therian", "tiers": { "1": null, "2": null, "3": null, "4": null, "5": null }, "team": { "members": [], "alternates": [] }, "banGain": null },
+      { "region": "Unova", "boss": "Landorus Therian", "tiers": { "1": null, "2": null, "3": null, "4": null, "5": null }, "team": { "members": [], "alternates": [] }, "banGain": null },
+      { "region": "Unova", "boss": "Meloetta Pirouette", "tiers": { "1": null, "2": null, "3": null, "4": null, "5": null }, "team": { "members": [], "alternates": [] }, "banGain": null },
+      { "region": "Unova", "boss": "Black Kyurem", "tiers": { "1": null, "2": null, "3": null, "4": null, "5": null }, "team": { "members": [], "alternates": [] }, "banGain": null },
+      { "region": "Unova", "boss": "White Kyurem", "tiers": { "1": null, "2": null, "3": null, "4": null, "5": null }, "team": { "members": [], "alternates": [] }, "banGain": null }
+    ]
+  },
+  "uncertain": [
+    "This is the least complete transcription: the board lays 56 cards in four columns whose OCR lines interleave, and only the five Kanto cards' teams could be attributed with confidence. The other 51 fights carry the correct boss, region and shape, with empty `members`/`alternates` rather than guessed names.",
+    "The 56-boss roster is taken from the board's region counts (Kanto 5, Johto 6, Hoenn 13, Sinnoh 13, Unova 19) and the game's legendary roster; the per-card tier chips (I–V) and `banGain` values were not legible enough to attribute and are null.",
+    "The five Kanto teams' moves and shares are transcribed from the clearest card blocks; alternate slots are empty for the same layout reason."
+  ]
+}

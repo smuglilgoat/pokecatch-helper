@@ -1,0 +1,108 @@
+{
+  "id": "gem-tiers",
+  "title": "Legendary Gem Tier List Rank *0 → *5",
+  "subject": "Which legendaries gain the most from gems — Elite Leagues, Elite legendary fights and the Underground",
+  "credit": "@destryyy",
+  "board": {
+    "gameVersion": "v0.5.161",
+    "build": "d8622a1fb3",
+    "pulled": "2026-11-24",
+    "title": "Legendary Gem Tier List Rank *0 — *5 — all Lv 100"
+  },
+  "ingested": "2026-11-28",
+  "sourceImage": "legendary-rank-tiers-2.png",
+  "method": {
+    "summary": "Rank 5 doubles a Pokémon's stats (×1.15 per rank, ×2.01 at 5). This list shows who gains the most: each legendary ranked to *5 alone and dropped into the best *0 team. White Kyurem is still #1 overall, but no longer everywhere: Dialga now leads the Elite Leagues and Ho-Oh the Elite legendary fights. Since v0.5.03, Ho-Oh (60 → 80), Entei (33 → 63), Dialga, Reshiram and Kyogre climbed the most. Gems are type-locked: a legendary only ranks up with gems of the types tagged under it, and each Arceus plate is a separate Pokémon with its own gem type. Simulated with the game's own battle engine on build d8622a1fb3. Box: all 79 gemmable legendaries and forms plus strong non-legendaries, all Lv 100, Rank 0, not shiny. For each fight the best Rank-0 team was searched, then each legendary was set to Rank 5, ranked in place or swapped into its best slot, and replayed on the same seeds. Elite: 45 legendary Elite fights + 5 Elite Leagues × 2 tiers, each at the first tier a Rank-0 team wins under half the time (48 tries per fight, 24 per League; win rate + 0.2 × damage dealt). Underground: best Rank-0 trio per theme, 6 themes × 16 expeditions, gain in floors reached. Bars are scaled to the best legendary in each area; the tier is the average of the three. Changes since v0.5.03 that matter: signature moves (v0.5.08) help Ho-Oh and Entei most; draining moves no longer heal (v0.5.141); status lands ≤75% and sleep/freeze/paralysis stack resistance (v0.5.13); boss fights got small tweaks (v0.5.142).",
+    "algorithm": {
+      "goal": "Rank every gemmable legendary by how much going from Rank 0 to Rank 5 improves Elite Leagues, Elite legendary fights and the Underground.",
+      "engine": "The game's own battle engine at build d8622a1fb3",
+      "steps": [
+        "Build the box: all 79 gemmable legendaries and forms plus strong non-legendaries, Lv 100, Rank 0, not shiny.",
+        "For each fight, search the best Rank-0 team.",
+        "Set each legendary to Rank 5, rank it in place or swap it into its best slot, and replay the same seeds.",
+        "Elite: 45 legendary Elite fights + 5 Elite Leagues × 2 tiers, each at the first tier a Rank-0 team wins under half the time; 48 tries per fight, 24 per League; score = win rate + 0.2 × damage dealt.",
+        "Underground: best Rank-0 trio per theme, 6 themes × 16 expeditions; score = gain in floors reached.",
+        "Scale each area's bars to the best legendary in that area; the tier is the average of the three."
+      ],
+      "parameters": {
+        "box": "79 gemmable legendaries and forms + strong non-legendaries",
+        "level": "100",
+        "rank": "0 and 5 (×1.15 per rank, ×2.01 at 5)",
+        "elite": "45 legendary fights + 5 Leagues × 2 tiers; 48 tries/fight, 24/League",
+        "underground": "6 themes × 16 expeditions",
+        "build": "d8622a1fb3"
+      },
+      "acceptance": {
+        "eliteTier": "A Rank-0 team must win under half the time at the chosen tier.",
+        "score": "Elite score = win rate + 0.2 × damage dealt; the Underground score is floors gained.",
+        "sameSeeds": "Rank-0 and Rank-5 runs use the same seeds."
+      }
+    },
+    "gameFacts": [
+      "Rank 5 multiplies stats by ×2.01; each rank gives ×1.15.",
+      "Gems are type-locked: a legendary only ranks up with gems of its own types.",
+      "Each Arceus plate is a separate Pokémon with its own gem type.",
+      "Signature moves (v0.5.08) count as the strongest move of their type; Ho-Oh and Entei gain the most.",
+      "Draining moves no longer heal (v0.5.141).",
+      "Status moves land 75% at most; sleep, freeze and paralysis stack resistance on both sides (v0.5.13).",
+      "Boss fights had small adjustments in v0.5.142."
+    ]
+  },
+  "data": {
+    "bestSinks": [
+      { "name": "Zekrom", "gemTypes": ["dragon", "electric"] },
+      { "name": "Regigigas", "gemTypes": ["normal"] },
+      { "name": "Arceus Ice", "gemTypes": ["ice"] },
+      { "name": "Groudon", "gemTypes": ["ground"] },
+      { "name": "Entei", "gemTypes": ["fire"] },
+      { "name": "Arceus Dark", "gemTypes": ["dark"] },
+      { "name": "Arceus Dragon", "gemTypes": ["dragon"] },
+      { "name": "Landorus Therian", "gemTypes": ["ground", "flying"] },
+      { "name": "Arceus Electric", "gemTypes": ["electric"] },
+      { "name": "Suicune", "gemTypes": ["water"] },
+      { "name": "Genesect Burn", "gemTypes": ["bug", "steel"] },
+      { "name": "Arceus Ground", "gemTypes": ["ground"] },
+      { "name": "Victini", "gemTypes": ["psychic", "fire"] },
+      { "name": "Arceus Psychic", "gemTypes": ["psychic"] },
+      { "name": "Arceus Flying", "gemTypes": ["flying"] },
+      { "name": "Arceus Rock", "gemTypes": ["rock"] },
+      { "name": "Landorus", "gemTypes": ["ground", "flying"] },
+      { "name": "Arceus Fire", "gemTypes": ["fire"] },
+      { "name": "Genesect", "gemTypes": ["bug", "steel"] },
+      { "name": "Deoxys Defense", "gemTypes": ["psychic"] }
+    ],
+    "tiers": [
+      {
+        "label": "Best gem sinks (board order)",
+        "members": [
+          { "name": "Zekrom", "gemTypes": ["dragon", "electric"], "areas": { "eliteLeagues": null, "eliteFights": null, "underground": null } },
+          { "name": "Regigigas", "gemTypes": ["normal"], "areas": { "eliteLeagues": null, "eliteFights": null, "underground": null } },
+          { "name": "Arceus Ice", "gemTypes": ["ice"], "areas": { "eliteLeagues": null, "eliteFights": null, "underground": null } },
+          { "name": "Groudon", "gemTypes": ["ground"], "areas": { "eliteLeagues": null, "eliteFights": null, "underground": null } },
+          { "name": "Entei", "gemTypes": ["fire"], "areas": { "eliteLeagues": null, "eliteFights": null, "underground": null } },
+          { "name": "Arceus Dark", "gemTypes": ["dark"], "areas": { "eliteLeagues": null, "eliteFights": null, "underground": null } },
+          { "name": "Arceus Dragon", "gemTypes": ["dragon"], "areas": { "eliteLeagues": null, "eliteFights": null, "underground": null } },
+          { "name": "Landorus Therian", "gemTypes": ["ground", "flying"], "areas": { "eliteLeagues": null, "eliteFights": null, "underground": null } },
+          { "name": "Arceus Electric", "gemTypes": ["electric"], "areas": { "eliteLeagues": null, "eliteFights": null, "underground": null } },
+          { "name": "Suicune", "gemTypes": ["water"], "areas": { "eliteLeagues": null, "eliteFights": null, "underground": null } },
+          { "name": "Genesect Burn", "gemTypes": ["bug", "steel"], "areas": { "eliteLeagues": null, "eliteFights": null, "underground": null } },
+          { "name": "Arceus Ground", "gemTypes": ["ground"], "areas": { "eliteLeagues": null, "eliteFights": null, "underground": null } },
+          { "name": "Victini", "gemTypes": ["psychic", "fire"], "areas": { "eliteLeagues": null, "eliteFights": null, "underground": null } },
+          { "name": "Arceus Psychic", "gemTypes": ["psychic"], "areas": { "eliteLeagues": null, "eliteFights": null, "underground": null } },
+          { "name": "Arceus Flying", "gemTypes": ["flying"], "areas": { "eliteLeagues": null, "eliteFights": null, "underground": null } },
+          { "name": "Arceus Rock", "gemTypes": ["rock"], "areas": { "eliteLeagues": null, "eliteFights": null, "underground": null } },
+          { "name": "Landorus", "gemTypes": ["ground", "flying"], "areas": { "eliteLeagues": null, "eliteFights": null, "underground": null } },
+          { "name": "Arceus Fire", "gemTypes": ["fire"], "areas": { "eliteLeagues": null, "eliteFights": null, "underground": null } },
+          { "name": "Genesect", "gemTypes": ["bug", "steel"], "areas": { "eliteLeagues": null, "eliteFights": null, "underground": null } },
+          { "name": "Deoxys Defense", "gemTypes": ["psychic"], "areas": { "eliteLeagues": null, "eliteFights": null, "underground": null } }
+        ]
+      }
+    ]
+  },
+  "uncertain": [
+    "The board's bars are pixel art and no area value is legible, so every `areas` value is null and the stored order is the board order.",
+    "The vertical tier grouping (which row belongs to which letter tier) is not legible; all members are stored in one 'board order' group.",
+    "The OCR also read 'Arceus Flying?' with a question mark; the sprite chip follows the Flying plate row, so it is stored as Arceus Flying.",
+    "Two best-sink names are ambiguous between a base and a form (Landorus vs Landorus Therian, Genesect vs Genesect Burn); both appear in the OCR rows and both are stored as separate entries."
+  ]
+}

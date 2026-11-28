@@ -1,0 +1,390 @@
+{
+  "id": "type-picks",
+  "title": "Best by Type",
+  "subject": "Whose gems to spend first",
+  "credit": "@destryyy",
+  "board": {
+    "gameVersion": "v0.5.17",
+    "build": "824f567ed3",
+    "pulled": "2026-11-25",
+    "title": "Best by Type — 18 types, six picks each, most helpful first"
+  },
+  "ingested": "2026-11-28",
+  "sourceImage": "type_picks-2.png",
+  "method": {
+    "summary": "For each of the 18 types, the Pokémon that help most at *5 inside the best *2 teams of the 56 Elite legendary fights: one legendary and five others of any rarity, then who to rank instead. A Pokémon only takes gems of one of its own types and of its own rarity, and three gems fuse into one of the same type a rarity up, up to rare, so each type has one pick for its legendary gems and five for the others; the letter on a chip (R, U, C) says which gems it takes, and a Pokémon with two types shows up under both. Help: in each of the 56 Elite legendary fights the Pokémon goes to *5 inside that fight's best *2 team, in its own place if it is on the team, else in place of the weakest member of its kind (the legendary, or the weakest of the others), next to the teammates it would really fight with, the rest at *2 with their banned moves. Each fight runs at the first Elite tier where that team wins under half the time, on 6 seeded fights. The Pokémon comes with the moves that suit it best there (as it is, or with one move choice changed if that does better on 6 other fights). A fight where it would make the team worse counts as 0. The six picks are picked on their own: the six need not make a team. Then, per rarity, the next 4 of the type in the same order, with their wins. Not the tier lists: a tier list puts each Pokémon at *5 in a team of its own rarity only; here it fights beside the best team's other members. Smaller numbers than on the earlier boards: there the team was at *0, so a *5 Pokémon was twice as strong as its teammates and helped in half the fights; here the team is at *2, a *5 Pokémon is 1.5 times as strong, the fights are at higher Elite tiers, and it helps in fewer of them — the order is what to read. Everyone is tried: all 690 Pokémon of the four rarities, commons too.",
+    "algorithm": {
+      "goal": "For each type, rank the legendary gem pick, five other picks and the next four per rarity by help at *5 inside the best *2 Elite teams.",
+      "engine": "The game's own battles against each boss at build 824f567ed3",
+      "steps": [
+        "For each of the 56 Elite legendary fights, take the best *2 team from the *2 Teams board.",
+        "For each candidate of the type, put it at *5: in its own place if it is on the team, else in place of the weakest member of its kind (the legendary, or the weakest of the others).",
+        "Keep the teammates at *2 with their banned moves.",
+        "Run the fight at the first Elite tier where that team wins under half the time, on 6 seeded fights.",
+        "Try the candidate with its best moves: as-is, or with one move choice changed if that does better on 6 other fights.",
+        "Score a fight where the candidate makes the team worse as 0; count wins first and 5% of the boss's HP as one win.",
+        "Pick the legendary and five others independently; then list the next 4 per rarity in the same order."
+      ],
+      "parameters": {
+        "types": "18 canonical types",
+        "fights": "56 Elite legendary fights",
+        "teamRank": "*2, banned moves kept",
+        "candidateRank": "*5",
+        "seededFights": "6 per fight",
+        "moveTrial": "6 other fights for a single move change",
+        "box": "all 690 Pokémon of the four rarities",
+        "build": "824f567ed3"
+      },
+      "acceptance": {
+        "zero": "A fight where the candidate would make the team worse counts as 0.",
+        "win": "Wins count first; 5% of the boss's HP counts as one win.",
+        "independent": "The six picks are picked independently and need not form a team."
+      }
+    },
+    "gameFacts": [
+      "Gems are type- and rarity-locked; three gems fuse into one of the same type a rarity up, up to rare.",
+      "A dual-type Pokémon appears under both types.",
+      "The team is at *2 with its banned moves; the candidate is at *5.",
+      "Each fight runs at the first Elite tier where the team wins under half the time.",
+      "Wins count first; 5% of the boss's HP = one win.",
+      "All 690 Pokémon of the four rarities are tried, commons too.",
+      "Numbers are smaller than on the *0 boards; only the order compares."
+    ]
+  },
+  "data": {
+    "types": [
+      {
+        "type": "bug",
+        "legendary": { "name": "Genesect Chill", "wins": 9, "hp": "+1%", "fights": "13/56" },
+        "others": [
+          { "name": "Escavalier", "rarity": "R", "wins": 18, "hp": "+4%", "fights": "21/56" },
+          { "name": "Volcarona", "rarity": "R", "wins": 13, "hp": "+3%", "fights": "16/56" },
+          { "name": "Scizor", "rarity": "R", "wins": 12, "hp": "+2%", "fights": "15/56" },
+          { "name": "Heracross", "rarity": "R", "wins": 11, "hp": "+2%", "fights": "14/56" },
+          { "name": "Vespiquen", "rarity": "U", "wins": 9, "hp": "+2%", "fights": "11/56" }
+        ],
+        "legendaryNext": [],
+        "next": {
+          "R": [ { "name": "Armaldo", "wins": 8 }, { "name": "Butterfree", "wins": 7 }, { "name": "Scolipede", "wins": 5 } ],
+          "U": [ { "name": "Crustle", "wins": 6 }, { "name": "Forretress", "wins": 5 }, { "name": "Parasect", "wins": 4 }, { "name": "Durant", "wins": 4 } ],
+          "C": [ { "name": "Paras", "wins": 2 }, { "name": "Venonat", "wins": 2 }, { "name": "Nincada", "wins": 1 }, { "name": "Illumise", "wins": 1 } ],
+          "more": { "R": 16, "U": 18, "C": 14 }
+        }
+      },
+      {
+        "type": "dark",
+        "legendary": { "name": "Arceus Dark", "wins": 14, "hp": "+3%", "fights": "15/56" },
+        "others": [
+          { "name": "Tyranitar", "rarity": "R", "wins": 26, "hp": "+6%", "fights": "31/56" },
+          { "name": "Skuntank", "rarity": "R", "wins": 18, "hp": "+5%", "fights": "24/56" },
+          { "name": "Drapion", "rarity": "R", "wins": 17, "hp": "+3%", "fights": "24/56" },
+          { "name": "Bisharp", "rarity": "U", "wins": 16, "hp": "+4%", "fights": "19/56" },
+          { "name": "Hydreigon", "rarity": "R", "wins": 15, "hp": "+4%", "fights": "23/56" }
+        ],
+        "legendaryNext": [],
+        "next": {
+          "R": [ { "name": "Spiritomb", "wins": 15 }, { "name": "Krookodile", "wins": 13 }, { "name": "Houndoom", "wins": 12 } ],
+          "U": [ { "name": "Scrafty", "wins": 14 }, { "name": "Cacturne", "wins": 7 }, { "name": "Crawdaunt", "wins": 5 } ],
+          "C": [ { "name": "Scraggy", "wins": 4 }, { "name": "Stunky", "wins": 3 }, { "name": "Vullaby", "wins": 2 }, { "name": "Purrloin", "wins": 1 } ],
+          "more": { "R": 12, "U": 8, "C": 3 }
+        }
+      },
+      {
+        "type": "dragon",
+        "legendary": { "name": "White Kyurem", "wins": 30, "hp": "+6%", "fights": "27/56" },
+        "others": [
+          { "name": "Garchomp", "rarity": "R", "wins": 17, "hp": "+3%", "fights": "23/56" },
+          { "name": "Hydreigon", "rarity": "R", "wins": 15, "hp": "+4%", "fights": "23/56" },
+          { "name": "Dragonite", "rarity": "R", "wins": 13, "hp": "+2%", "fights": "18/56" },
+          { "name": "Salamence", "rarity": "R", "wins": 11, "hp": "+2%", "fights": "24/56" },
+          { "name": "Kingdra", "rarity": "R", "wins": 10, "hp": "+2%", "fights": "16/56" }
+        ],
+        "legendaryNext": [ { "name": "Black Kyurem", "wins": 22 }, { "name": "Dialga", "wins": 20 }, { "name": "Reshiram", "wins": 18 } ],
+        "next": {
+          "R": [ { "name": "Altaria", "wins": 9 }, { "name": "Druddigon", "wins": 8 }, { "name": "Haxorus", "wins": 7 }, { "name": "Flygon", "wins": 5 } ],
+          "U": [ { "name": "Vibrava", "wins": 1 } ],
+          "C": [],
+          "more": { "R": 10, "U": null, "C": null }
+        }
+      },
+      {
+        "type": "electric",
+        "legendary": { "name": "Zekrom", "wins": 14, "hp": "+3%", "fights": "20/56" },
+        "others": [
+          { "name": "Magnezone", "rarity": "R", "wins": 10, "hp": "+3%", "fights": "19/56" },
+          { "name": "Rotom (Frost)", "rarity": "R", "wins": 8, "hp": "+2%", "fights": "13/56" },
+          { "name": "Rotom (Heat)", "rarity": "R", "wins": 7, "hp": "+2%", "fights": "13/56" },
+          { "name": "Lanturn", "rarity": "U", "wins": 6, "hp": "+2%", "fights": "13/56" },
+          { "name": "Stunfisk", "rarity": "U", "wins": 6, "hp": "+2%", "fights": "14/56" }
+        ],
+        "legendaryNext": [ { "name": "Arceus Electric", "wins": 6 }, { "name": "Zapdos", "wins": 3 } ],
+        "next": {
+          "R": [ { "name": "Rotom (Wash)", "wins": 6 }, { "name": "Rotom (Fan)", "wins": 5 }, { "name": "Ampharos", "wins": 4 } ],
+          "U": [ { "name": "Magneton", "wins": 4 }, { "name": "Raichu", "wins": 2 }, { "name": "Zebstrika", "wins": 1 }, { "name": "Flaaffy", "wins": 1 } ],
+          "C": [ { "name": "Magnemite", "wins": 2 }, { "name": "Plusle", "wins": 1 }, { "name": "Chinchou", "wins": 1 }, { "name": "Blitzle", "wins": 1 } ],
+          "more": { "R": 10, "U": 5, "C": 9 }
+        }
+      },
+      {
+        "type": "fairy",
+        "legendary": null,
+        "others": [
+          { "name": "Gardevoir", "rarity": "R", "wins": 9, "hp": "+2%", "fights": "14/56" },
+          { "name": "Togekiss", "rarity": "R", "wins": 8, "hp": "+2%", "fights": "13/56" },
+          { "name": "Wigglytuff", "rarity": "U", "wins": 8, "hp": "+1%", "fights": "12/56" },
+          { "name": "Clefable", "rarity": "R", "wins": 7, "hp": "+2%", "fights": "15/56" },
+          { "name": "Granbull", "rarity": "U", "wins": 6, "hp": "+1%", "fights": "16/56" },
+          { "name": "Whimsicott", "rarity": "U", "wins": 6, "hp": "+2%", "fights": "8/56" }
+        ],
+        "legendaryNext": [],
+        "next": {
+          "R": [ { "name": "Mawile", "wins": 3 }, { "name": "Mr. Mime", "wins": 2 }, { "name": "Togetic", "wins": 2 } ],
+          "U": [ { "name": "Azumarill", "wins": 4 }, { "name": "Kirlia", "wins": 1 } ],
+          "C": [ { "name": "Cottonee", "wins": 2 }, { "name": "Igglybuff", "wins": 2 }, { "name": "Mime Jr.", "wins": 2 }, { "name": "Togepi", "wins": 2 } ],
+          "more": { "R": null, "U": null, "C": 7 }
+        }
+      },
+      {
+        "type": "fighting",
+        "legendary": { "name": "Arceus Fighting", "wins": 8, "hp": "+2%", "fights": "11/56" },
+        "others": [
+          { "name": "Conkeldurr", "rarity": "R", "wins": 14, "hp": "+3%", "fights": "21/56" },
+          { "name": "Scrafty", "rarity": "U", "wins": 14, "hp": "+4%", "fights": "17/56" },
+          { "name": "Heracross", "rarity": "R", "wins": 11, "hp": "+2%", "fights": "17/56" },
+          { "name": "Poliwrath", "rarity": "U", "wins": 12, "hp": "+3%", "fights": "14/56" },
+          { "name": "Emboar", "rarity": "R", "wins": 13, "hp": "+3%", "fights": "18/56" }
+        ],
+        "legendaryNext": [ { "name": "Terrakion", "wins": 7 }, { "name": "Keldeo", "wins": 7 }, { "name": "Cobalion", "wins": 6 } ],
+        "next": {
+          "R": [ { "name": "Gallade", "wins": 11 }, { "name": "Machamp", "wins": 11 }, { "name": "Blaziken", "wins": 11 } ],
+          "U": [ { "name": "Toxicroak", "wins": 10 }, { "name": "Hariyama", "wins": 10 }, { "name": "Breloom", "wins": 9 } ],
+          "C": [ { "name": "Scraggy", "wins": 4 }, { "name": "Mienfoo", "wins": 2 }, { "name": "Mankey", "wins": 1 }, { "name": "Meditite", "wins": 1 } ],
+          "more": { "R": 2, "U": 11, "C": 4 }
+        }
+      },
+      {
+        "type": "fire",
+        "legendary": { "name": "Ho-Oh", "wins": 35, "hp": "+6%", "fights": "32/56" },
+        "others": [
+          { "name": "Ninetales", "rarity": "R", "wins": 14, "hp": "+4%", "fights": "25/56" },
+          { "name": "Chandelure", "rarity": "R", "wins": 20, "hp": "+4%", "fights": "25/56" },
+          { "name": "Volcarona", "rarity": "R", "wins": 13, "hp": "+3%", "fights": "21/56" },
+          { "name": "Emboar", "rarity": "R", "wins": 13, "hp": "+3%", "fights": "18/56" },
+          { "name": "Typhlosion", "rarity": "R", "wins": 14, "hp": "+3%", "fights": "16/56" }
+        ],
+        "legendaryNext": [ { "name": "Victini", "wins": 22 }, { "name": "Heatran", "wins": 19 }, { "name": "Reshiram", "wins": 18 }, { "name": "Entei", "wins": 16 } ],
+        "next": {
+          "R": [ { "name": "Charizard", "wins": 12 }, { "name": "Arcanine", "wins": 12 }, { "name": "Houndoom", "wins": 12 } ],
+          "U": [ { "name": "Darmanitan", "wins": 10 }, { "name": "Torkoal", "wins": 8 }, { "name": "Camerupt", "wins": 8 } ],
+          "C": [ { "name": "Litwick", "wins": 5 }, { "name": "Ponyta", "wins": 2 }, { "name": "Vulpix", "wins": 2 }, { "name": "Numel", "wins": 1 } ],
+          "more": { "R": 22, "U": 5, "C": 2 }
+        }
+      },
+      {
+        "type": "flying",
+        "legendary": { "name": "Ho-Oh", "wins": 35, "hp": "+6%", "fights": "32/56" },
+        "others": [
+          { "name": "Charizard", "rarity": "R", "wins": 12, "hp": "+3%", "fights": "18/56" },
+          { "name": "Dragonite", "rarity": "R", "wins": 13, "hp": "+2%", "fights": "17/56" },
+          { "name": "Mantine", "rarity": "U", "wins": 10, "hp": "+3%", "fights": "24/56" },
+          { "name": "Mandibuzz", "rarity": "U", "wins": 10, "hp": "+3%", "fights": "15/56" },
+          { "name": "Salamence", "rarity": "R", "wins": 11, "hp": "+2%", "fights": "13/56" }
+        ],
+        "legendaryNext": [ { "name": "Rayquaza", "wins": 10 }, { "name": "Lugia", "wins": 7 }, { "name": "Landorus", "wins": 6 } ],
+        "next": {
+          "R": [ { "name": "Gyarados", "wins": 10 }, { "name": "Altaria", "wins": 9 }, { "name": "Honchkrow", "wins": 9 } ],
+          "U": [ { "name": "Noctowl", "wins": 7 }, { "name": "Golbat", "wins": 5 }, { "name": "Drifblim", "wins": 5 }, { "name": "Tropius", "wins": 4 } ],
+          "C": [ { "name": "Vullaby", "wins": 2 }, { "name": "Natu", "wins": 2 }, { "name": "Swablu", "wins": 2 }, { "name": "Hoothoot", "wins": 1 } ],
+          "more": { "R": 33, "U": 12, "C": 13 }
+        }
+      },
+      {
+        "type": "ghost",
+        "legendary": { "name": "Giratina Origin", "wins": 12, "hp": "+2%", "fights": "24/56" },
+        "others": [
+          { "name": "Dusknoir", "rarity": "R", "wins": 16, "hp": "+4%", "fights": "16/56" },
+          { "name": "Chandelure", "rarity": "R", "wins": 20, "hp": "+4%", "fights": "25/56" },
+          { "name": "Jellicent", "rarity": "U", "wins": 14, "hp": "+3%", "fights": "20/56" },
+          { "name": "Spiritomb", "rarity": "R", "wins": 15, "hp": "+4%", "fights": "22/56" },
+          { "name": "Golurk", "rarity": "U", "wins": 12, "hp": "+2%", "fights": "20/56" }
+        ],
+        "legendaryNext": [ { "name": "Giratina", "wins": 12 }, { "name": "Arceus Ghost", "wins": 7 } ],
+        "next": {
+          "R": [ { "name": "Sableye", "wins": 8 }, { "name": "Gengar", "wins": 6 }, { "name": "Banette", "wins": 5 }, { "name": "Mismagius", "wins": 3 } ],
+          "U": [ { "name": "Cofagrigus", "wins": 10 }, { "name": "Dusclops", "wins": 10 }, { "name": "Froslass", "wins": 7 } ],
+          "C": [ { "name": "Litwick", "wins": 5 }, { "name": "Golett", "wins": 3 }, { "name": "Frillish", "wins": 2 }, { "name": "Gastly", "wins": 2 } ],
+          "more": { "R": 3, "U": 3, "C": 4 }
+        }
+      },
+      {
+        "type": "grass",
+        "legendary": { "name": "Arceus Grass", "wins": 4, "hp": "+1%", "fights": "8/56" },
+        "others": [
+          { "name": "Ferrothorn", "rarity": "U", "wins": 11, "hp": "+2%", "fights": "17/56" },
+          { "name": "Exeggutor", "rarity": "R", "wins": 12, "hp": "+3%", "fights": "20/56" },
+          { "name": "Torterra", "rarity": "R", "wins": 10, "hp": "+2%", "fights": "18/56" },
+          { "name": "Abomasnow", "rarity": "U", "wins": 10, "hp": "+2%", "fights": "14/56" },
+          { "name": "Amoonguss", "rarity": "U", "wins": 9, "hp": "+2%", "fights": "19/56" }
+        ],
+        "legendaryNext": [ { "name": "Celebi", "wins": 3 }, { "name": "Shaymin", "wins": 3 }, { "name": "Shaymin Sky", "wins": 2 }, { "name": "Virizion", "wins": 2 } ],
+        "next": {
+          "R": [ { "name": "Meganium", "wins": 9 }, { "name": "Vileplume", "wins": 9 }, { "name": "Tangrowth", "wins": 9 } ],
+          "U": [ { "name": "Breloom", "wins": 9 }, { "name": "Cacturne", "wins": 7 }, { "name": "Whimsicott", "wins": 6 } ],
+          "C": [ { "name": "Deerling", "wins": 2 }, { "name": "Cottonee", "wins": 2 }, { "name": "Paras", "wins": 2 }, { "name": "Roselia", "wins": 1 } ],
+          "more": { "R": 28, "U": 16, "C": 14 }
+        }
+      },
+      {
+        "type": "ground",
+        "legendary": { "name": "Groudon", "wins": 15, "hp": "+3%", "fights": "18/56" },
+        "others": [
+          { "name": "Rhyperior", "rarity": "R", "wins": 21, "hp": "+5%", "fights": "24/56" },
+          { "name": "Garchomp", "rarity": "R", "wins": 17, "hp": "+3%", "fights": "23/56" },
+          { "name": "Krookodile", "rarity": "R", "wins": 13, "hp": "+3%", "fights": "21/56" },
+          { "name": "Nidoqueen", "rarity": "R", "wins": 14, "hp": "+3%", "fights": "20/56" },
+          { "name": "Swampert", "rarity": "R", "wins": 12, "hp": "+3%", "fights": "18/56" }
+        ],
+        "legendaryNext": [ { "name": "Arceus Ground", "wins": 8 }, { "name": "Landorus", "wins": 6 }, { "name": "Landorus Therian", "wins": 6 } ],
+        "next": {
+          "R": [ { "name": "Seismitoad", "wins": 12 }, { "name": "Excadrill", "wins": 12 }, { "name": "Golem", "wins": 10 } ],
+          "U": [ { "name": "Golurk", "wins": 12 }, { "name": "Rhydon", "wins": 12 }, { "name": "Quagsire", "wins": 10 } ],
+          "C": [ { "name": "Golett", "wins": 3 }, { "name": "Trapinch", "wins": 2 }, { "name": "Hippopotas", "wins": 2 } ],
+          "more": { "R": 17, "U": 15, "C": 11 }
+        }
+      },
+      {
+        "type": "ice",
+        "legendary": { "name": "White Kyurem", "wins": 30, "hp": "+6%", "fights": "18/56" },
+        "others": [
+          { "name": "Glaceon", "rarity": "R", "wins": 13, "hp": "+3%", "fights": "27/56" },
+          { "name": "Lapras", "rarity": "R", "wins": 12, "hp": "+3%", "fights": "17/56" },
+          { "name": "Weavile", "rarity": "R", "wins": 10, "hp": "+3%", "fights": "15/56" },
+          { "name": "Vanilluxe", "rarity": "U", "wins": 11, "hp": "+2%", "fights": "15/56" },
+          { "name": "Walrein", "rarity": "R", "wins": 11, "hp": "+3%", "fights": "18/56" }
+        ],
+        "legendaryNext": [ { "name": "Black Kyurem", "wins": 22 }, { "name": "Kyurem", "wins": 10 }, { "name": "Arceus Ice", "wins": 10 } ],
+        "next": {
+          "R": [ { "name": "Beartic", "wins": 10 }, { "name": "Mamoswine", "wins": 9 }, { "name": "Rotom (Frost)", "wins": 8 } ],
+          "U": [ { "name": "Abomasnow", "wins": 10 }, { "name": "Froslass", "wins": 7 }, { "name": "Glalie", "wins": 6 } ],
+          "C": [ { "name": "Swinub", "wins": 1 }, { "name": "Spheal", "wins": 1 }, { "name": "Vanillite", "wins": 1 }, { "name": "Snorunt", "wins": 1 } ],
+          "more": { "R": 6, "U": 7, "C": null }
+        }
+      },
+      {
+        "type": "normal",
+        "legendary": { "name": "Regigigas", "wins": 7, "hp": "+2%", "fights": "11/56" },
+        "others": [
+          { "name": "Snorlax", "rarity": "R", "wins": 16, "hp": "+4%", "fights": "23/56" },
+          { "name": "Exploud", "rarity": "U", "wins": 13, "hp": "+3%", "fights": "18/56" },
+          { "name": "Braviary", "rarity": "U", "wins": 8, "hp": "+1%", "fights": "15/56" },
+          { "name": "Wigglytuff", "rarity": "U", "wins": 8, "hp": "+1%", "fights": "12/56" },
+          { "name": "Kangaskhan", "rarity": "R", "wins": 7, "hp": "+1%", "fights": "12/56" }
+        ],
+        "legendaryNext": [ { "name": "Meloetta Pirouette", "wins": 5 }, { "name": "Arceus", "wins": 3 }, { "name": "Meloetta", "wins": 3 } ],
+        "next": {
+          "R": [ { "name": "Bouffalant", "wins": 7 }, { "name": "Unfezant", "wins": 6 }, { "name": "Ursaring", "wins": 6 } ],
+          "U": [ { "name": "Noctowl", "wins": 7 }, { "name": "Sawsbuck", "wins": 4 }, { "name": "Fearow", "wins": 3 } ],
+          "C": [ { "name": "Spinda", "wins": 3 }, { "name": "Deerling", "wins": 2 }, { "name": "Igglybuff", "wins": 2 } ],
+          "more": { "R": 25, "U": 20, "C": 27 }
+        }
+      },
+      {
+        "type": "poison",
+        "legendary": { "name": "Arceus Poison", "wins": 3, "hp": "+1%", "fights": "6/56" },
+        "others": [
+          { "name": "Skuntank", "rarity": "R", "wins": 18, "hp": "+5%", "fights": "24/56" },
+          { "name": "Muk", "rarity": "U", "wins": 18, "hp": "+4%", "fights": "25/56" },
+          { "name": "Tentacruel", "rarity": "U", "wins": 10, "hp": "+2%", "fights": "21/56" },
+          { "name": "Drapion", "rarity": "R", "wins": 17, "hp": "+3%", "fights": "24/56" },
+          { "name": "Nidoqueen", "rarity": "R", "wins": 14, "hp": "+3%", "fights": "17/56" }
+        ],
+        "legendaryNext": [],
+        "next": {
+          "R": [ { "name": "Vileplume", "wins": 9 }, { "name": "Roserade", "wins": 8 }, { "name": "Venusaur", "wins": 8 } ],
+          "U": [ { "name": "Toxicroak", "wins": 10 }, { "name": "Amoonguss", "wins": 9 }, { "name": "Weezing", "wins": 9 } ],
+          "C": [ { "name": "Grimer", "wins": 3 }, { "name": "Stunky", "wins": 3 }, { "name": "Koffing", "wins": 3 }, { "name": "Gastly", "wins": 2 } ],
+          "more": { "R": 10, "U": 15, "C": 17 }
+        }
+      },
+      {
+        "type": "psychic",
+        "legendary": { "name": "Victini", "wins": 22, "hp": "+5%", "fights": "24/56" },
+        "others": [
+          { "name": "Metagross", "rarity": "R", "wins": 16, "hp": "+4%", "fights": "22/56" },
+          { "name": "Bronzong", "rarity": "U", "wins": 14, "hp": "+3%", "fights": "25/56" },
+          { "name": "Gallade", "rarity": "R", "wins": 11, "hp": "+2%", "fights": "17/56" },
+          { "name": "Solrock", "rarity": "R", "wins": 11, "hp": "+2%", "fights": "14/56" },
+          { "name": "Exeggutor", "rarity": "R", "wins": 12, "hp": "+3%", "fights": "20/56" }
+        ],
+        "legendaryNext": [ { "name": "Jirachi", "wins": 9 }, { "name": "Lugia", "wins": 7 }, { "name": "Mewtwo", "wins": 5 } ],
+        "next": {
+          "R": [ { "name": "Gardevoir", "wins": 9 }, { "name": "Reuniclus", "wins": 8 }, { "name": "Starmie", "wins": 7 }, { "name": "Jynx", "wins": 7 } ],
+          "U": [ { "name": "Slowbro", "wins": 11 }, { "name": "Slowking", "wins": 9 }, { "name": "Musharna", "wins": 8 } ],
+          "C": [ { "name": "Bronzor", "wins": 3 }, { "name": "Munna", "wins": 3 }, { "name": "Wynaut", "wins": 2 }, { "name": "Drowzee", "wins": 2 } ],
+          "more": { "R": 13, "U": 12, "C": 13 }
+        }
+      },
+      {
+        "type": "rock",
+        "legendary": { "name": "Arceus Rock", "wins": 9, "hp": "+2%", "fights": "14/56" },
+        "others": [
+          { "name": "Tyranitar", "rarity": "R", "wins": 26, "hp": "+6%", "fights": "31/56" },
+          { "name": "Rhyperior", "rarity": "R", "wins": 21, "hp": "+5%", "fights": "24/56" },
+          { "name": "Gigalith", "rarity": "U", "wins": 15, "hp": "+4%", "fights": "20/56" },
+          { "name": "Relicanth", "rarity": "U", "wins": 13, "hp": "+3%", "fights": "20/56" },
+          { "name": "Rampardos", "rarity": "R", "wins": 15, "hp": "+3%", "fights": "20/56" }
+        ],
+        "legendaryNext": [ { "name": "Terrakion", "wins": 7 }, { "name": "Regirock", "wins": 4 } ],
+        "next": {
+          "R": [ { "name": "Solrock", "wins": 11 }, { "name": "Probopass", "wins": 11 }, { "name": "Golem", "wins": 10 } ],
+          "U": [ { "name": "Rhydon", "wins": 12 }, { "name": "Sudowoodo", "wins": 10 }, { "name": "Crustle", "wins": 6 } ],
+          "C": [ { "name": "Roggenrola", "wins": 2 }, { "name": "Geodude", "wins": 2 }, { "name": "Bonsly", "wins": 1 } ],
+          "more": { "R": 22, "U": 6, "C": 3 }
+        }
+      },
+      {
+        "type": "steel",
+        "legendary": { "name": "Dialga", "wins": 20, "hp": "+4%", "fights": "21/56" },
+        "others": [
+          { "name": "Escavalier", "rarity": "R", "wins": 18, "hp": "+4%", "fights": "22/56" },
+          { "name": "Metagross", "rarity": "R", "wins": 16, "hp": "+4%", "fights": "22/56" },
+          { "name": "Bisharp", "rarity": "U", "wins": 16, "hp": "+4%", "fights": "19/56" },
+          { "name": "Bronzong", "rarity": "U", "wins": 14, "hp": "+3%", "fights": "25/56" },
+          { "name": "Empoleon", "rarity": "R", "wins": 13, "hp": "+4%", "fights": "20/56" }
+        ],
+        "legendaryNext": [ { "name": "Heatran", "wins": 19 }, { "name": "Jirachi", "wins": 9 }, { "name": "Genesect Chill", "wins": 9 } ],
+        "next": {
+          "R": [ { "name": "Scizor", "wins": 12 }, { "name": "Excadrill", "wins": 12 }, { "name": "Probopass", "wins": 11 } ],
+          "U": [ { "name": "Ferrothorn", "wins": 11 }, { "name": "Forretress", "wins": 5 }, { "name": "Durant", "wins": 4 } ],
+          "C": [ { "name": "Bronzor", "wins": 3 }, { "name": "Magnemite", "wins": 2 }, { "name": "Ferroseed", "wins": 1 }, { "name": "Aron", "wins": 1 } ],
+          "more": { "R": 12, "U": 4, "C": 1 }
+        }
+      },
+      {
+        "type": "water",
+        "legendary": { "name": "Palkia", "wins": 14, "hp": "+3%", "fights": "17/56" },
+        "others": [
+          { "name": "Milotic", "rarity": "R", "wins": 14, "hp": "+3%", "fights": "22/56" },
+          { "name": "Jellicent", "rarity": "U", "wins": 14, "hp": "+3%", "fights": "19/56" },
+          { "name": "Relicanth", "rarity": "U", "wins": 13, "hp": "+3%", "fights": "20/56" },
+          { "name": "Empoleon", "rarity": "R", "wins": 13, "hp": "+4%", "fights": "20/56" },
+          { "name": "Vaporeon", "rarity": "R", "wins": 13, "hp": "+3%", "fights": "20/56" }
+        ],
+        "legendaryNext": [ { "name": "Kyogre", "wins": 13 }, { "name": "Keldeo", "wins": 7 }, { "name": "Suicune", "wins": 7 } ],
+        "next": {
+          "R": [ { "name": "Swampert", "wins": 12 }, { "name": "Seismitoad", "wins": 12 }, { "name": "Poliwrath", "wins": 12 } ],
+          "U": [ { "name": "Slowbro", "wins": 11 }, { "name": "Quagsire", "wins": 10 }, { "name": "Gastrodon", "wins": 10 } ],
+          "C": [ { "name": "Frillish", "wins": 2 }, { "name": "Wooper", "wins": 2 }, { "name": "Wailmer", "wins": 1 }, { "name": "Tentacool", "wins": 1 } ],
+          "more": { "R": 43, "U": 22, "C": 25 }
+        }
+      }
+    ]
+  },
+  "uncertain": [
+    "The board has no legendary pick for Fairy (no Fairy legendary in the game's dex); the six printed cards are all stored under `others` and `legendary` is null.",
+    "The rarity letters on the six main picks are partly hidden behind the gem chips; the stored R/U/C is the printed chip where readable and the next-list grouping otherwise.",
+    "The Ghost section's first card is not legible; `Giratina Origin` is stored as the legendary pick from the card that carries its numbers, with base Giratina in `legendaryNext`. If the board's pick was base Giratina, the two swap.",
+    "The Dragon and Fairy next lists are cut by the OCR after a few names; the stored rows are the legible ones and `more` counts are null where the board did not print a count.",
+    "The board's win numbers are 'per 100 fights at *5' and are much smaller than the *0 boards; the order, not the absolute number, is what the board says to read."
+  ]
+}

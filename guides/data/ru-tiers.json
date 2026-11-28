@@ -1,0 +1,91 @@
+{
+  "id": "ru-tiers",
+  "title": "Rare & Uncommon Investment Tier List",
+  "subject": "Every fully evolved rare & uncommon species in the game (304), simulated at Lv 100, rank 5",
+  "credit": "@destryyy",
+  "board": {
+    "gameVersion": "v0.5.161",
+    "build": "d8622a1fb3",
+    "pulled": "2026-11-24",
+    "title": "Rare & Uncommon Investment Tier List — v0.5.161"
+  },
+  "ingested": "2026-11-28",
+  "sourceImage": "rare-uncommon-tiers-2.png",
+  "method": {
+    "summary": "Every fully evolved rare and uncommon species in the game (304) was simulated at Lv 100, rank 5 in the game's own battle engine. An Elite team can field only one Legendary, so 5 of the 6 Elite slots are non-legendaries: those are the Pokémon worth ranking up. Rare ones rank up with rare gems of their types, uncommon ones with cheaper uncommon gems; each rank gives ×1.15 stats. This rerun is on v0.5.161: draining moves no longer heal, status moves land 75% at most, and repeated Sleep/Freeze/Paralysis gets resisted. Simisage, Simisear and Simipour are now Rare, and the seasonal Sawsbuck forms are counted. How it is measured: the best unranked team for each of 45 Elite legendary fights and 10 Elite League fights, at the tier where it first wins under half the time; each candidate at *5 is put in its best slot, 16–32 fights each with the same random draws for all. Underground: put in the best trio for each of the 6 themes. Score = average of the three areas (100 = the best of all 304 there).",
+    "algorithm": {
+      "goal": "Rank the 304 fully evolved rare and uncommon species by how much a rank-5 copy adds across Elite fights, Elite Leagues and the Underground.",
+      "engine": "The game's own battle engine at build d8622a1fb3",
+      "steps": [
+        "Start from the best unranked team for each of 45 Elite legendary fights and 10 Elite League fights.",
+        "Raise each fight to the tier where the unranked team first wins under half the time.",
+        "Put each candidate at *5 in its best slot, next to the rest of the team as it would fight.",
+        "Run 16–32 fights per candidate with the same random draws for every candidate.",
+        "Put each candidate in the best trio for each of the 6 Underground themes.",
+        "Score each area against the best of all 304 in that area (100 = best), then average the three areas."
+      ],
+      "parameters": {
+        "candidates": "304 fully evolved rare & uncommon species",
+        "level": "100",
+        "rank": "5 (×1.15 per rank)",
+        "eliteFights": "45 legendary fights + 10 League fights",
+        "fightsPerCandidate": "16–32",
+        "underground": "best trio per theme, 6 themes",
+        "build": "d8622a1fb3"
+      },
+      "acceptance": {
+        "sameDraws": "Every candidate uses the same random draws, so the order is not seed luck.",
+        "scale": "100 = the best of all 304 in that area; the tier score is the average of the three."
+      }
+    },
+    "gameFacts": [
+      "An Elite team fields only one legendary, so 5 of 6 slots are non-legendaries.",
+      "Rare species rank up with rare gems of their types; uncommon species with cheaper uncommon gems.",
+      "Each rank gives ×1.15 stats.",
+      "Draining moves no longer heal (v0.5.141).",
+      "Status moves land 75% at most and repeated Sleep/Freeze/Paralysis gets resisted (v0.5.13).",
+      "Simisage, Simisear and Simipour are Rare in v0.5.161; seasonal Sawsbuck forms are counted."
+    ]
+  },
+  "data": {
+    "pseudoLegendary": [
+      { "name": "Metagross", "gemTypes": ["steel", "psychic"], "pts": 78, "bestArea": "Underground #2 of 304" },
+      { "name": "Garchomp", "gemTypes": ["dragon", "ground"], "pts": 70, "bestArea": "Underground #3 of 304" },
+      { "name": "Tyranitar", "gemTypes": ["rock", "dark"], "pts": 65, "bestArea": "Elite #2 of 304" },
+      { "name": "Hydreigon", "gemTypes": ["dark", "dragon"], "pts": 64, "bestArea": "Elite #12 of 304" },
+      { "name": "Salamence", "gemTypes": ["dragon", "flying"], "pts": 61, "bestArea": "Underground #7 of 304" },
+      { "name": "Dragonite", "gemTypes": ["dragon", "flying"], "pts": 61, "bestArea": "Underground #11 of 304" }
+    ],
+    "topRare": [
+      { "name": "Slaking", "gemTypes": ["normal"], "pts": 92, "bestArea": "Underground #1 of 304" },
+      { "name": "Gyarados", "gemTypes": ["water", "flying"], "pts": 78, "bestArea": "League #3 of 304" },
+      { "name": "Walrein", "gemTypes": ["ice", "water"], "pts": 74, "bestArea": "League #1 of 304" },
+      { "name": "Mamoswine", "gemTypes": ["ice", "ground"], "pts": 71, "bestArea": "League #2 of 304" },
+      { "name": "Rhyperior", "gemTypes": ["ground", "rock"], "pts": 68, "bestArea": "Elite #7 of 304" },
+      { "name": "Feraligatr", "gemTypes": ["water"], "pts": 67, "bestArea": "League #4 of 304" },
+      { "name": "Emboar", "gemTypes": ["fire", "fighting"], "pts": 66, "bestArea": "Elite #8 of 304" },
+      { "name": "Lapras", "gemTypes": ["water", "ice"], "pts": 66, "bestArea": "League #10 of 304" },
+      { "name": "Chandelure", "gemTypes": ["ghost", "fire"], "pts": 65, "bestArea": "Elite #1 of 304" },
+      { "name": "Glaceon", "gemTypes": ["ice"], "pts": 64, "bestArea": "League #12 of 304" }
+    ],
+    "topUncommon": [
+      { "name": "Golurk", "gemTypes": ["ground", "ghost"], "pts": 61, "bestArea": "Underground #15 of 304" },
+      { "name": "Dewgong", "gemTypes": ["water", "ice"], "pts": 60, "bestArea": "Elite #9 of 304" },
+      { "name": "Darmanitan", "gemTypes": ["fire"], "pts": 54, "bestArea": "Underground #27 of 304" },
+      { "name": "Froslass", "gemTypes": ["ice", "ghost"], "pts": 49, "bestArea": "Elite #57 of 304" },
+      { "name": "Granbull", "gemTypes": ["fairy"], "pts": 48, "bestArea": "League #53 of 304" },
+      { "name": "Hariyama", "gemTypes": ["fighting"], "pts": 48, "bestArea": "Underground #26 of 304" }
+    ],
+    "notes": [
+      "Simisage, Simisear and Simipour are now Rare.",
+      "Seasonal Sawsbuck forms are counted.",
+      "Pseudo-legendaries are not counted in the Top 10 Rare list (they are shown separately)."
+    ]
+  },
+  "uncertain": [
+    "The board's Top 10 Uncommon prints three of its first five names as sprites only; the OCR recovered Golurk, Dewgong, Darmanitan, Froslass, Granbull and Hariyama, so those six are stored and the rest omitted rather than invented.",
+    "Mamoswine's points read 'MA' and Glaceon's are cut off; 71 and 64 are best reads, not confirmed digits.",
+    "Darmanitan's 54 pts is printed in the second row group above the 52/51 of the first group; kept as read, so the stored top list is not strictly descending.",
+    "One best-area label reads 'Bite #57/#12 of 304' in the OCR; stored as 'Elite' where the column header makes that the likely word."
+  ]
+}

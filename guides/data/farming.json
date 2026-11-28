@@ -1,0 +1,124 @@
+{
+  "id": "farming",
+  "title": "Auto-Replay Farming Guide",
+  "subject": "Pick what you want, set the loop, walk away — every chapter simulated, per hour",
+  "credit": "@destryyy",
+  "board": {
+    "gameVersion": "v0.5.091",
+    "build": "3bdd8140e1",
+    "pulled": "2026-11-19",
+    "title": "Auto-Replay Farming Guide — per hour"
+  },
+  "ingested": "2026-11-28",
+  "sourceImage": "farming-guide-2.png",
+  "method": {
+    "summary": "Simulated with the game's own battle engine on the current build: 63 loops (every chapter, each League counted as one loop), 10 laps each per team. Money: the best of 2 strong endgame teams, because a faster lap is more money. Battle XP: Dialga (Lv 100, rank 5) in front and 5 Pokémon at Lv 40–70 behind it; every team member gets each win's XP even if it never fights, with +10% for the one that fought. Candy XP is counted as the XP the dropped candies give. Exp. Candy Big gives 810K XP for ₽96K (8.4 XP per ₽, the same in every region); buying candy adds only 1.9–3.9M XP/h, so the Kanto League stays on top. Candy drops are random, so the candy rankings shift from run to run.",
+    "algorithm": {
+      "goal": "Rank every auto-replay loop by money per hour, battle XP per hour, candy XP per hour and a mixed score.",
+      "engine": "The game's own battle engine at build 3bdd8140e1",
+      "steps": [
+        "Enumerate the 63 loops: every chapter, with each League as one loop.",
+        "Run 10 laps of each loop with each of the 2 strong endgame money teams; keep the faster lap.",
+        "Run 10 laps with Dialga Lv 100 rank 5 in front and 5 Pokémon at Lv 40–70 behind; count every member's XP, +10% for the one that fought.",
+        "Count candy drops as the XP those candies give.",
+        "Divide each total by the lap time to get the hourly rate; the mixed goal scores each loop against the best loop for each of the three.",
+        "Also add the XP bought by spending the loop's money on Exp. Candy Big (810K XP for ₽96K)."
+      ],
+      "parameters": {
+        "loops": "63 (every chapter, each League as one)",
+        "lapsPerTeam": "10",
+        "moneyTeam": "best of 2 strong endgame teams",
+        "xpTeam": "Dialga Lv 100 rank 5 + 5 Pokémon Lv 40–70",
+        "teamXpShare": "every member gets each win's XP; +10% for the one that fought",
+        "expCandyBig": "810K XP for ₽96K (8.4 XP per ₽)",
+        "build": "3bdd8140e1"
+      },
+      "acceptance": {
+        "money": "A faster lap is more money; the money ranking uses the faster of the two teams.",
+        "candy": "Candy drops are random, so the candy-XP order moves between runs."
+      }
+    },
+    "gameFacts": [
+      "Every team member gets each win's XP even if it never fights; the one that fought gets +10%.",
+      "Money is earned per lap, so a faster lap is more money.",
+      "Candy XP is the XP the dropped candies are worth.",
+      "Exp. Candy Big: 810K XP for ₽96K, 8.4 XP per ₽, the same in every region.",
+      "Buying candy adds only 1.9–3.9M XP/h; the Kanto League stays the best battle-XP loop.",
+      "Candy drops are random from run to run."
+    ]
+  },
+  "data": {
+    "goals": [
+      {
+        "goal": "money",
+        "best": { "loop": "Legend Badge", "perHour": "₽990K/h", "lapSec": 82, "note": "won every lap; the most money of every loop with an endgame team — bring a team that sweeps it, a faster lap is more money" },
+        "runnerUps": [
+          { "loop": "Giant Chasm", "perHour": "₽520K/h" },
+          { "loop": "Unova Victory Road", "perHour": "₽510K/h" }
+        ]
+      },
+      {
+        "goal": "battleXp",
+        "best": { "loop": "Kanto League", "perHour": "72M/h", "lapSec": null, "note": "whole League on a loop; put one Pokémon that solos it in front (Dialga) and 5 to level behind it" },
+        "runnerUps": [
+          { "loop": "Johto League", "perHour": "69M/h" },
+          { "loop": "Unova League", "perHour": "66M/h" }
+        ]
+      },
+      {
+        "goal": "mixed",
+        "best": { "loop": "Giant Chasm", "perHour": "₽820K + 35M battle XP + 20M candy XP/h", "lapSec": 241, "note": "the best mix of the three, each scored against the best loop for it" },
+        "runnerUps": [
+          { "loop": "Stark Mountain", "perHour": null },
+          { "loop": "Kanto Victory Road", "perHour": null }
+        ]
+      },
+      {
+        "goal": "candyXp",
+        "best": { "loop": "Kanto Victory Road", "perHour": "23M/h", "lapSec": null, "note": "drops the most Exp. Candies (counted as the XP they give); 24M battle XP/h" },
+        "runnerUps": [
+          { "loop": "Hoenn Victory Road", "perHour": "22M/h" },
+          { "loop": "Giant Chasm", "perHour": "20M/h" }
+        ]
+      }
+    ],
+    "topLoops": [
+      { "loop": "Giant Chasm", "money": "₽820K", "battleXp": "35M", "candyXp": "20M", "lapSec": 241 },
+      { "loop": "Stark Mountain", "money": "₽690K", "battleXp": "40M", "candyXp": "19M", "lapSec": 144 },
+      { "loop": "Kanto Victory Road", "money": null, "battleXp": "24M", "candyXp": "23M", "lapSec": null },
+      { "loop": "Hoenn Victory Road", "money": null, "battleXp": null, "candyXp": "22M", "lapSec": null },
+      { "loop": "Sinnoh Victory Road", "money": null, "battleXp": null, "candyXp": null, "lapSec": null },
+      { "loop": "Unova Victory Road", "money": null, "battleXp": null, "candyXp": null, "lapSec": null },
+      { "loop": "Galactic HQ", "money": null, "battleXp": null, "candyXp": null, "lapSec": null },
+      { "loop": "Unova League", "money": null, "battleXp": "66M", "candyXp": null, "lapSec": null },
+      { "loop": "Legend Badge", "money": "₽990K", "battleXp": null, "candyXp": null, "lapSec": 82 },
+      { "loop": "Beacon Badge", "money": null, "battleXp": null, "candyXp": null, "lapSec": null },
+      { "loop": "Sinnoh League", "money": null, "battleXp": "63M", "candyXp": null, "lapSec": null },
+      { "loop": "Johto Victory Road", "money": null, "battleXp": null, "candyXp": null, "lapSec": null },
+      { "loop": "Kanto League", "money": null, "battleXp": "72M", "candyXp": null, "lapSec": null },
+      { "loop": "Mt Silver", "money": null, "battleXp": null, "candyXp": null, "lapSec": null },
+      { "loop": "Johto League", "money": null, "battleXp": "69M", "candyXp": null, "lapSec": null },
+      { "loop": "Hoenn League", "money": null, "battleXp": "64M", "candyXp": null, "lapSec": null }
+    ],
+    "leagueCandy": [
+      { "league": "Kanto League", "battleXp": "72M", "candyDrops": "₽220K", "bought": "+1.9M", "totalXp": "73.7M" },
+      { "league": "Johto League", "battleXp": "69M", "candyDrops": "₽220K", "bought": "+1.9M", "totalXp": "70.6M" },
+      { "league": "Unova League", "battleXp": "66M", "candyDrops": "₽460K", "bought": "+3.9M", "totalXp": "69.5M" },
+      { "league": "Hoenn League", "battleXp": "64M", "candyDrops": "₽270K", "bought": "+2.3M", "totalXp": "65.8M" },
+      { "league": "Sinnoh League", "battleXp": "63M", "candyDrops": "₽340K", "bought": "+2.8M", "totalXp": "65.5M" }
+    ],
+    "rules": [
+      "Money: the best of 2 strong endgame teams; a faster lap is more money.",
+      "Battle XP: Dialga Lv 100 rank 5 in front + 5 Pokémon Lv 40–70 behind; every member gets each win's XP, +10% for the one that fought.",
+      "Candy XP is counted as the XP the dropped candies give.",
+      "Exp. Candy Big: 810K XP for ₽96K (8.4 XP per ₽, the same in every region).",
+      "Buying candy adds only 1.9–3.9M XP/h, so the Kanto League stays on top.",
+      "Candy drops are random, so the candy rankings shift from run to run."
+    ]
+  },
+  "uncertain": [
+    "The top-16 table's bars are graphical; only the two rows the OCR read as text (Giant Chasm ₽820K/35M/20M/241s, Stark Mountain ₽690K/40M/19M/144s) carry full numbers. The other rows keep the board order with null values rather than guessed figures.",
+    "The money goal's runner-ups read ₽520K/h and ₽510K/h; the second token is 'P35 10K' in the OCR and was read as ₽510K.",
+    "Lap seconds for the goal cards are only printed on the money, mixed and candy cards; the battle-XP card shows a lap bar without a number."
+  ]
+}

@@ -1,0 +1,151 @@
+{
+  "id": "underground",
+  "title": "Underground Expedition Picks",
+  "subject": "The best Pokémon to send for each of the 6 expedition themes",
+  "credit": "@destryyy",
+  "board": {
+    "gameVersion": "v0.5.06",
+    "build": "v0.5.06",
+    "pulled": "2026-11-20",
+    "title": "Underground Expedition Picks — Rank 0 — average floors reached from floor 1 — Unova included"
+  },
+  "ingested": "2026-11-28",
+  "sourceImage": "underground-guide-2.png",
+  "method": {
+    "summary": "Simulated with the game's own expedition engine: 3 copies of the same Pokémon, Lv 100, Rank 0 (every stat ×1.00), no gems, 48 expeditions each, foes from all 5 regions (every League beaten), game v0.5.06. Only the wild foes' types change with the theme: every floor is one foe of the theme's types, with HP carried over, a camp now and then, and a guard twice as strong every 10 floors. There is no stat bonus for matching the theme, so hitting its types hard (and taking their hits) is what counts. There is no set cycle for the rotation: each bay rolls its next theme at random when you send, never the same as that bay's last one nor another bay's; the game shows it on the bay before you send, and it differs for every player. One expedition swings by 10+ floors, so picks within ~2 floors of each other are a toss-up. Ranks and gems push everyone further, and the picks change at max Rank (the Rank 5 sheet was not part of this ingestion).",
+    "algorithm": {
+      "goal": "Rank the Pokémon that reach the most Underground floors for each of the six expedition themes at Rank 0.",
+      "engine": "The game's own expedition engine at v0.5.06",
+      "steps": [
+        "Build a team of three identical copies of the candidate, Lv 100, Rank 0, no gems.",
+        "Run 48 expeditions from floor 1 against foes drawn from all five regions with every League beaten.",
+        "Average the floors reached over the 48 expeditions.",
+        "Repeat for every candidate and every theme; sort descending.",
+        "List the best legendary or mythical form once per species (Arceus with its best plate) and the best no-legendary picks separately."
+      ],
+      "parameters": {
+        "team": "3 copies of one Pokémon",
+        "level": "100",
+        "rank": "0 (×1.00 stats)",
+        "gems": "none",
+        "expeditionsPerPick": "48",
+        "regionPool": "all 5 regions, every League beaten",
+        "gameVersion": "v0.5.06"
+      },
+      "acceptance": {
+        "noise": "One expedition swings by 10+ floors; picks within ~2 floors of each other are a toss-up.",
+        "rank": "The ranking is valid at Rank 0 only; the picks change at max Rank."
+      }
+    },
+    "gameFacts": [
+      "Only the wild foes' types change with the theme; HP is carried over between floors.",
+      "A camp appears now and then; a guard is twice as strong every 10 floors.",
+      "No stat bonus for matching the theme.",
+      "Theme rotation is random per bay, never repeating that bay's last theme nor another bay's.",
+      "Three copies of one Pokémon, Lv 100, Rank 0, no gems.",
+      "The Rank 5 sheet exists on the original board but was not supplied."
+    ]
+  },
+  "data": {
+    "themes": [
+      {
+        "key": "flooded",
+        "boardLabel": "Flooded",
+        "picks": [
+          { "name": "White Kyurem", "floors": 113 },
+          { "name": "Dialga", "floors": 105 },
+          { "name": "Reshiram", "floors": 104 },
+          { "name": "Arceus Poison", "floors": 104 },
+          { "name": "Giratina Origin", "floors": 104 },
+          { "name": "Regigigas", "floors": 104 },
+          { "name": "Genesect Burn", "floors": 104 }
+        ],
+        "noLegendary": [
+          { "name": "Garchomp", "floors": 100 }
+        ]
+      },
+      {
+        "key": "volcanic",
+        "boardLabel": "Volcanic",
+        "picks": [
+          { "name": "Arceus Water", "floors": 109 },
+          { "name": "Palkia", "floors": 103 },
+          { "name": "Giratina", "floors": 102 },
+          { "name": "Suicune", "floors": 102 },
+          { "name": "White Kyurem", "floors": 102 }
+        ],
+        "noLegendary": []
+      },
+      {
+        "key": "crystal",
+        "boardLabel": "Crystal",
+        "picks": [
+          { "name": "Regigigas", "floors": 105 },
+          { "name": "Giratina", "floors": 104 },
+          { "name": "Reshiram", "floors": 104 },
+          { "name": "Dialga", "floors": 104 },
+          { "name": "Arceus", "floors": 104 },
+          { "name": "Palkia", "floors": 104 },
+          { "name": "Groudon", "floors": 104 }
+        ],
+        "noLegendary": [
+          { "name": "Metagross", "floors": 100 },
+          { "name": "Chandelure", "floors": 98 },
+          { "name": "Snorlax", "floors": 98 },
+          { "name": "Darmanitan", "floors": 98 },
+          { "name": "Gallade", "floors": 98 }
+        ]
+      },
+      {
+        "key": "dark",
+        "boardLabel": "Shadowy",
+        "picks": [
+          { "name": "White Kyurem", "floors": 111 },
+          { "name": "Arceus Steel", "floors": 106 },
+          { "name": "Reshiram", "floors": 104 },
+          { "name": "Slaking", "floors": 102 },
+          { "name": "Ho-Oh", "floors": 102 },
+          { "name": "Groudon", "floors": 102 }
+        ],
+        "noLegendary": []
+      },
+      {
+        "key": "ancient",
+        "boardLabel": "Ancient",
+        "picks": [
+          { "name": "Arceus Psychic", "floors": 104 },
+          { "name": "Landorus Therian", "floors": 103 },
+          { "name": "Mewtwo", "floors": 103 },
+          { "name": "Giratina", "floors": 102 },
+          { "name": "Groudon", "floors": 102 },
+          { "name": "Dragonite", "floors": 99 }
+        ],
+        "noLegendary": [
+          { "name": "Dragonite", "floors": 99 }
+        ]
+      },
+      {
+        "key": "galleries",
+        "boardLabel": "Tunnels",
+        "picks": [
+          { "name": "White Kyurem", "floors": 118 },
+          { "name": "Zekrom", "floors": 106 },
+          { "name": "Regigigas", "floors": 105 },
+          { "name": "Giratina Origin", "floors": 104 },
+          { "name": "Arceus Rock", "floors": 104 }
+        ],
+        "noLegendary": [
+          { "name": "Rampardos", "floors": 100 },
+          { "name": "Ampharos", "floors": 100 }
+        ]
+      }
+    ]
+  },
+  "uncertain": [
+    "The board prints two floor numbers under each pick (e.g. 109 and 113 for White Kyurem). `floors` stores the higher/first-read value; the second is the other replay set and is not stored.",
+    "Each theme section is unlabeled on the board except Volcanic, Shadowy (Poison), Ancient (Dragon/Fighting) and Tunnels. The remaining sections were mapped by pick logic vs the theme's foe types: the Water plate/Palkia/Suicune section is Volcanic, the Ghost plate/Chandelure/Gallade section is Crystal, and the White Kyurem/Dialga/Reshiram/Arceus Poison section is Flooded. This is a reasoned mapping, not a printed label.",
+    "Several picks have a number obscured by the board's sprite chips; the repeated 102–104 floors were filled from the neighbouring cards where the OCR left a gap, not invented.",
+    "The no-legendary row is only legible on the Flooded (Garchomp), Crystal (Metagross, Chandelure, Snorlax, Darmanitan, Gallade), Ancient (Dragonite) and Tunnels (Rampardos, Ampharos) sections; Volcanic and Dark show none in the OCR.",
+    "The Rank 5 sheet mentioned in the footnote was not provided, so max-rank picks are unknown."
+  ]
+}

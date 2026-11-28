@@ -1,0 +1,188 @@
+{
+  "id": "overnight",
+  "title": "Overnight Farming",
+  "subject": "Which map pays most while you sleep",
+  "credit": "@destryyy",
+  "board": {
+    "gameVersion": "build aa84889c89",
+    "build": "aa84889c89",
+    "pulled": "2026-11-21",
+    "title": "Overnight Farming — every map per night, in story order"
+  },
+  "ingested": "2026-11-28",
+  "sourceImage": "image-2.png",
+  "method": {
+    "summary": "The game's own offline run (what it plays when you come back), 8 hours from 23:00 to 07:00, on every story chapter, averaged over 3 nights. Money night: White Kyurem, Tyranitar, Chandelure, Metagross, Gyarados, Garchomp, all Lv 100. Leveling night: White Kyurem, Tyranitar, Chandelure, Metagross at Lv 100 carry while Skuntank and Garchomp level (Lv 50, *1), Garchomp as companion. Simulated with the game's own code on build aa84889c89, with a save past the story (gifts and one-time finds done). A weaker team wins fewer fights a night and can lose to League trainers. Time: each action takes 1.5 s of your absence, for at most 8 hours. After every wild Pokémon it beats, the game spends 4.5 s more: it tries to catch a new species and turns one you own into candy. So a trainer-only map gets about 19,000 actions a night, a route with wild Pokémon 10,000 to 13,000. Gyms are skipped while away: at a chapter's gym the run starts that chapter again. In a League you have beaten, it walks on through the Elite Four and Champion routes and round again, so any of them gives the same night. Your companion gets ×1.3 EXP and, every few KOs (every 20 for a rare), a candy worth three levels of base EXP at its level, so the more wins the better; it reaches the level cap on every map here. Chapters marked as loops share the night (the run moves to the next one at each gym). Captures can't be turned off: a map with fewer wild Pokémon loses less time to them. Money: only trainers pay (30 × their level, ×0.9); wild Pokémon pay nothing. The best maps pack many high-level trainers into a short loop. EXP = wins × EXP per win: every win pays every team member (+10% for one that fought), at half rate while away. Fast maps win more often; League trainers pay far more per win. The ranking is for the leveler that isn't your companion. Level cap: while away, a Pokémon gains at most 12 levels, however much EXP comes in, so the EXP map only matters for high levels and high ranks.",
+    "algorithm": {
+      "goal": "Rank every story map by money per night and by EXP per night for a leveler that is not the companion.",
+      "engine": "The game's own offline run at build aa84889c89",
+      "steps": [
+        "Start from a save past the story (gifts and one-time finds done).",
+        "Run the offline simulation for 8 hours, 23:00 to 07:00, with each action costing 1.5 s and each wild KO costing 4.5 s more.",
+        "Money night: White Kyurem, Tyranitar, Chandelure, Metagross, Gyarados, Garchomp, all Lv 100.",
+        "Leveling night: the same four at Lv 100 carry while Skuntank and Garchomp level (Lv 50, *1), Garchomp as companion.",
+        "Average over 3 nights.",
+        "Count money from trainers only: 30 × level × 0.9; wild Pokémon pay nothing.",
+        "Count EXP as wins × EXP per win, paid to every member at half rate while away, +10% for the one that fought; the companion gets ×1.3 and candy every few KOs.",
+        "Apply the 12-level cap and rank the leveler that is not the companion."
+      ],
+      "parameters": {
+        "window": "8h, 23:00–07:00",
+        "nightsAveraged": "3",
+        "actionTime": "1.5 s",
+        "wildKoExtra": "4.5 s",
+        "actionsPerNight": "~19,000 trainer-only; 10,000–13,000 on wild routes",
+        "levelCapPerNight": "12 levels",
+        "build": "aa84889c89"
+      },
+      "acceptance": {
+        "money": "Only trainers pay, 30 × level × 0.9; wild Pokémon pay nothing.",
+        "exp": "Every win pays every team member, half rate while away, +10% for the one that fought.",
+        "cap": "A Pokémon gains at most 12 levels in one night, so the EXP map only matters at high level and rank."
+      }
+    },
+    "gameFacts": [
+      "Each action takes 1.5 s of absence, for at most 8 hours.",
+      "After each wild KO the game spends 4.5 s more to try a capture and turn an owned duplicate into candy.",
+      "Gyms are skipped while away: at a gym the run restarts the chapter.",
+      "A beaten League loops Elite Four + Champion rounds; any of them gives the same night.",
+      "Loops share the night, moving to the next loop at each gym.",
+      "Captures cannot be turned off.",
+      "Money = 30 × trainer level × 0.9; wild Pokémon pay nothing.",
+      "EXP = wins × EXP/win; every member is paid, half rate while away, +10% if it fought.",
+      "Companion: ×1.3 EXP and a candy every 20 KOs for a rare, worth three levels of base EXP at its level.",
+      "Level cap: 12 levels per night.",
+      "Ranking is for the leveler that is not the companion."
+    ]
+  },
+  "data": {
+    "moneyTop": [
+      { "rank": 1, "map": "Legend Badge", "region": "Unova", "money": "4.85M", "note": "4,406 wins a night" },
+      { "rank": 2, "map": "Galactic HQ", "region": "Sinnoh", "money": "4.43M", "note": "3,814 wins a night" },
+      { "rank": 3, "map": "Victory Road", "region": "Unova", "money": "3.46M", "note": "4,027 wins a night" },
+      { "rank": 4, "map": "Dragonspiral Tower", "region": "Unova", "money": "3.37M", "note": "4,072 wins a night" },
+      { "rank": 5, "map": "Freeze Badge", "region": "Unova", "money": "3.23M", "note": "4,319 wins a night" },
+      { "rank": 6, "map": "Quake Badge", "region": "Unova", "money": "3.23M", "note": "4,608 wins a night" },
+      { "rank": 7, "map": "Unova League", "region": "Unova", "money": "2.98M", "note": "2,582 wins a night" },
+      { "rank": 8, "map": "Bolt Badge", "region": "Unova", "money": "2.82M", "note": "4,339 wins a night" },
+      { "rank": 9, "map": "Victory Road", "region": "Sinnoh", "money": "2.82M", "note": "4,215 wins a night" },
+      { "rank": 10, "map": "Jet Badge", "region": "Unova", "money": "2.69M", "note": "4,107 wins a night" }
+    ],
+    "xpTop": [
+      { "rank": 1, "map": "Kanto League", "region": "Kanto", "xp": "38.58M", "note": "2,289 wins × 16.9k EXP", "companion": "51.11M" },
+      { "rank": 2, "map": "Johto League", "region": "Johto", "xp": "37.65M", "note": "2,364 wins × 15.9k EXP", "companion": "50.08M" },
+      { "rank": 3, "map": "Unova League", "region": "Unova", "xp": "35.23M", "note": "2,363 wins × 14.9k EXP", "companion": "46.72M" },
+      { "rank": 4, "map": "Sinnoh League", "region": "Sinnoh", "xp": "34.69M", "note": "2,404 wins × 14.4k EXP", "companion": "46.19M" },
+      { "rank": 5, "map": "Hoenn League", "region": "Hoenn", "xp": "32.60M", "note": "2,290 wins × 14.2k EXP", "companion": "43.19M" },
+      { "rank": 6, "map": "Stark Mountain", "region": "Sinnoh", "xp": "11.47M", "note": "2,409 wins × 4.8k EXP - 26 defeats", "companion": "16.34M" },
+      { "rank": 7, "map": "Giant Chasm", "region": "Unova", "xp": "11.43M", "note": "2,330 wins × 4.9k EXP - 40 defeats", "companion": "16.35M" },
+      { "rank": 8, "map": "Mt. Silver", "region": "Johto", "xp": "8.91M", "note": "2,504 wins × 3.6k EXP - 42 defeats", "companion": "13.22M" },
+      { "rank": 9, "map": "Victory Road", "region": "Kanto", "xp": "8.84M", "note": "3,307 wins × 2.7k EXP", "companion": "13.72M" },
+      { "rank": 10, "map": "Galactic HQ", "region": "Sinnoh", "xp": "8.04M", "note": "3,811 wins × 2.1k EXP", "companion": "13.29M" }
+    ],
+    "xpNeed": [
+      { "from": 5, "byRank": { "0": "11k", "1": "17k", "3": "38k", "5": "85k" }, "verdict": "any good map" },
+      { "from": 20, "byRank": { "0": "128k", "1": "193k", "3": "434k", "5": "976k" }, "verdict": "any good map" },
+      { "from": 40, "byRank": { "0": "1.01M", "1": "1.51M", "3": "3.40M", "5": "7.64M" }, "verdict": "any good map" },
+      { "from": 60, "byRank": { "0": "4.85M", "1": "7.27M", "3": "16.36M", "5": "36.80M" }, "verdict": "any good map / the League / the League" },
+      { "from": 80, "byRank": { "0": "18.57M", "1": "27.85M", "3": "62.67M", "5": "141.01M" }, "verdict": "the League / the League / not in one night / not in one night" },
+      { "from": 88, "byRank": { "0": "30.52M", "1": "45.78M", "3": "103.01M", "5": "231.78M" }, "verdict": "the League / not in one night / not in one night / not in one night" }
+    ],
+    "regions": [
+      {
+        "region": "Kanto",
+        "maps": [
+          { "map": "Boulder Badge", "money": "402k", "xp": "50k" },
+          { "map": "Cascade Badge", "money": "810k", "xp": "338k" },
+          { "map": "Thunder Badge", "money": "850k", "xp": "714k" },
+          { "map": "Rainbow Badge", "money": "999k", "xp": "1.16M" },
+          { "map": "Soul Badge", "money": "1.08M", "xp": "2.05M" },
+          { "map": "Marsh Badge", "money": "1.99M", "xp": "4.01M" },
+          { "map": "Volcano Badge", "money": "2.11M", "xp": "5.10M" },
+          { "map": "Earth Badge", "money": "1.97M", "xp": "5.96M" },
+          { "map": "Victory Road", "money": "2.50M", "xp": "8.84M" },
+          { "map": "Kanto League", "money": "1.53M", "xp": "38.58M" }
+        ]
+      },
+      {
+        "region": "Johto",
+        "maps": [
+          { "map": "Zephyr Badge", "money": "441k", "xp": "36k" },
+          { "map": "Hive Badge", "money": "591k", "xp": "259k" },
+          { "map": "Plain Badge", "money": "879k", "xp": "702k" },
+          { "map": "Fog Badge", "money": "1.25M", "xp": "1.38M" },
+          { "map": "Storm Badge", "money": "1.35M", "xp": "2.33M" },
+          { "map": "Mineral Badge", "money": "1.61M", "xp": "3.67M" },
+          { "map": "Lake of Rage", "money": "1.94M", "xp": "4.59M" },
+          { "map": "Glacier Badge", "money": "1.94M", "xp": "4.62M" },
+          { "map": "Radio Tower", "money": "1.76M", "xp": "5.86M" },
+          { "map": "Rising Badge", "money": "1.96M", "xp": "6.71M" },
+          { "map": "Victory Road", "money": "1.81M", "xp": "7.37M" },
+          { "map": "Johto League", "money": "1.46M", "xp": "37.65M" },
+          { "map": "Mt. Silver", "money": "1.04M", "xp": "8.91M" }
+        ]
+      },
+      {
+        "region": "Hoenn",
+        "maps": [
+          { "map": "Stone Badge", "money": "520k", "xp": "40k" },
+          { "map": "Knuckle Badge", "money": "651k", "xp": "204k" },
+          { "map": "Dynamo Badge", "money": "981k", "xp": "529k" },
+          { "map": "Heat Badge", "money": "1.04M", "xp": "809k" },
+          { "map": "Mt. Chimney", "money": "1.17M", "xp": "1.46M" },
+          { "map": "Balance Badge", "money": "1.17M", "xp": "1.53M" },
+          { "map": "Feather Badge", "money": "1.76M", "xp": "2.80M" },
+          { "map": "Mt. Pyre", "money": "1.29M", "xp": "2.96M" },
+          { "map": "Mind Badge", "money": "1.81M", "xp": "4.31M" },
+          { "map": "The Crisis", "money": "1.72M", "xp": "4.85M" },
+          { "map": "Rain Badge", "money": "2.02M", "xp": "5.58M" },
+          { "map": "Victory Road", "money": "2.06M", "xp": "6.79M" },
+          { "map": "Hoenn League", "money": "1.76M", "xp": "32.60M" }
+        ]
+      },
+      {
+        "region": "Sinnoh",
+        "maps": [
+          { "map": "Coal Badge", "money": "533k", "xp": "38k" },
+          { "map": "Forest Badge", "money": "981k", "xp": "280k" },
+          { "map": "Relic Badge", "money": "919k", "xp": "488k" },
+          { "map": "Cobble Badge", "money": "1.40M", "xp": "946k" },
+          { "map": "Fen Badge", "money": "1.31M", "xp": "1.36M" },
+          { "map": "Mine Badge", "money": "2.02M", "xp": "2.37M" },
+          { "map": "The Lakes", "money": "1.98M", "xp": "2.97M" },
+          { "map": "Icicle Badge", "money": "2.23M", "xp": "3.84M" },
+          { "map": "Galactic HQ", "money": "4.43M", "xp": "8.04M" },
+          { "map": "Distortion World", "money": "1.74M", "xp": "4.91M" },
+          { "map": "Beacon Badge", "money": "2.82M", "xp": "5.90M" },
+          { "map": "Victory Road", "money": "2.13M", "xp": "6.69M" },
+          { "map": "Sinnoh League", "money": "2.27M", "xp": "34.69M" },
+          { "map": "Stark Mountain", "money": "1.96M", "xp": "11.47M" }
+        ]
+      },
+      {
+        "region": "Unova",
+        "maps": [
+          { "map": "Trio Badge", "money": "870k", "xp": "54k" },
+          { "map": "Basic Badge", "money": "1.57M", "xp": "313k" },
+          { "map": "Insect Badge", "money": "2.14M", "xp": "721k" },
+          { "map": "Relic Castle", "money": "1.59M", "xp": "873k" },
+          { "map": "Bolt Badge", "money": "2.82M", "xp": "1.83M" },
+          { "map": "Quake Badge", "money": "3.23M", "xp": "2.78M" },
+          { "map": "Jet Badge", "money": "2.69M", "xp": "2.99M" },
+          { "map": "Freeze Badge", "money": "3.23M", "xp": "4.23M" },
+          { "map": "Dragonspiral Tower", "money": "3.37M", "xp": "5.52M" },
+          { "map": "Legend Badge", "money": "4.85M", "xp": "7.21M" },
+          { "map": "Victory Road", "money": "3.46M", "xp": "7.56M" },
+          { "map": "Unova League", "money": "2.98M", "xp": "35.23M" },
+          { "map": "Giant Chasm", "money": "2.67M", "xp": "11.43M" }
+        ]
+      }
+    ]
+  },
+  "uncertain": [
+    "The OCR of the per-region tables interleaves Johto and Hoenn in two columns; the rows were re-aligned by map order and the money/EXP top lists, which match (Johto League 37.65M / 1.46M, Hoenn League 32.60M / 1.76M).",
+    "Sinnoh's first money cell was blank before 533k; 533k is stored for Coal Badge, and the alternative (Coal missing, 533k for Forest Badge) is not used because 14 maps need 14 values.",
+    "The xpNeed matrix's verdicts are printed as colour blocks plus short labels; the stored `verdict` concatenates the four rank verdicts in *0/*1/*3/*5 order for the Lv 60–88 rows where they differ.",
+    "The board gives no 'from Lv 100' row; the matrix stops at Lv 88 because the 12-level cap reaches 100 from there."
+  ]
+}
