@@ -162,13 +162,26 @@
     return new Function('__scope', 'with (__scope) { return (' + lit + '); }')(scope);
   }
 
+  /** Dotted-int compare for versions: <0 older, 0 equal, >0 newer; a missing part counts as 0. */
+  function cmpVersion(a, b) {
+    const pa = String(a).split('.'), pb = String(b).split('.');
+    for (let i = 0; i < Math.max(pa.length, pb.length); i++) {
+      const d = (parseInt(pa[i], 10) || 0) - (parseInt(pb[i], 10) || 0);
+      if (d) return d;
+    }
+    return 0;
+  }
+
   /** Notice when the repo has a newer version: the install itself stays in Tampermonkey's hands. */
   async function checkUpdate() {
     const installed = (typeof GM_info !== 'undefined' && GM_info?.script?.version) || VERSION;
     try {
       const code = await httpGet(UPDATE_URL + '?cb=' + Date.now());
       const repo = (code.match(/@version\s+(\S+)/) || [])[1];
-      if (!repo || repo === installed) { log('debug', 'update: up to date', installed); return; }
+      if (!repo) { log('debug', 'update: no @version in the repo file'); return; }
+      const cmp = cmpVersion(repo, installed);
+      if (cmp === 0) { log('debug', 'update: up to date', installed); return; }
+      if (cmp < 0) { log('debug', 'update: repo is older than the installed script', { installed, repo }); return; }
       log('info', 'update: a newer version is on GitHub', { installed, repo });
       state.update = { installed, repo };
       refreshUi();
@@ -27612,6 +27625,9 @@
       if (!data || !eng) { check('data', false, 'bundle not loaded'); return { ok: false, ms: Date.now() - started, results }; }
       const save = readSave();
       if (!save) { check('save', false, 'no save'); return { ok: false, ms: Date.now() - started, results }; }
+      check('update comparator orders older / equal / newer',
+        cmpVersion('1.13.1', '1.14.0') < 0 && cmpVersion('1.14.0', '1.14.0') === 0 && cmpVersion('1.15', '1.14.0') > 0,
+        ['1.13.1 < 1.14.0', '1.14.0 = 1.14.0', '1.15 > 1.14.0']);
       const cap = data.cfg.MAX_LEVEL;
       const isLegend = c => !!(c.species.legendary || c.species.mythical);
       const onePerSpecies = t => new Set(t.map(c => c.species.id)).size === t.length;
@@ -28356,7 +28372,7 @@
   window.__pcopt = {
     state, ensureData, runOptimizer, parsePokemonDbChart, buildLearnAll, makeEngine,
     chapterEnemies, chapterInfo, readSave, scoreCandidates, scoreFor,
-    applyTeam, bundleUrl, httpGet, canJoinTeam, showMovesPanel, pokeApiSpecies, compareWithPokeApi,
+    applyTeam, bundleUrl, httpGet, canJoinTeam, showMovesPanel, pokeApiSpecies, compareWithPokeApi, cmpVersion,
     parseLegends, legendBoss, simulateLegend, pickLegendTeam, evaluateLegendTeam, runLegendOptimizer,
     legendFightOnce, legendOdds, legendParts, legendTeamScore, legendCandidates, refineLegendTeam, logs,
     eliteChronology, carryFor, eliteTierChips, openEliteModal, openEliteZone,
