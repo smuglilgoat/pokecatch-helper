@@ -246,6 +246,8 @@
     const dex = table('POKEDEX', true, read('a.POKEDEX='));
     const moves = table('MOVES', true, read('a.MOVES='));
     const chart = table('TYPE_CHART', true, read('a.TYPE_CHART='));
+    // the game's own type presentation: {fire:{fr,color},...}; only the guide chips need it
+    const typeColors = table('TYPES', false, read('a.TYPES=')) || {};
     const evo = table('EVOLUTIONS', true, read('a.EVOLUTIONS='));
     const enc = table('ENCOUNTERS', true, read('a.ENCOUNTERS='));
     for (const lit of literalsAfter(src, 'Object.assign(a.ENCOUNTERS,')) Object.assign(enc, evalLit(lit));
@@ -337,6 +339,7 @@
       version: url,
       species,
       moves,
+      typeColors,
       chart,
       evo,
       enc,
@@ -5376,8 +5379,26 @@
       .pcopt-gmoves{display:flex;flex-wrap:wrap;gap:4px}
       .pcopt-movechip{display:inline-flex;align-items:center;gap:4px;font-size:11px;padding:1px 6px;border-radius:5px;
         background:color-mix(in srgb,var(--line) 60%,transparent)}
-      .pcopt-movechip i{font-style:normal;font-size:9px;padding:0 3px;border-radius:3px;background:var(--panel);color:var(--muted)}
+      .pcopt-movechip.ty{background:color-mix(in srgb,var(--tc) 20%,transparent);
+        border-left:2px solid var(--tc);color:color-mix(in srgb,var(--tc) 40%,var(--text))}
+      .pcopt-movechip.st{background:color-mix(in srgb,#b58cff 18%,transparent);border-left:2px solid #b58cff}
+      .pcopt-movechip i{font-style:normal;font-size:9px;padding:0 3px;border-radius:3px;
+        background:color-mix(in srgb,var(--sc,var(--muted)) 24%,var(--panel));
+        color:color-mix(in srgb,var(--sc,var(--muted)) 75%,var(--text))}
       .pcopt-movechip b{font-weight:600;color:var(--muted)}
+      .pcopt-typechip{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:700;padding:1px 7px 1px 4px;
+        border-radius:999px;background:color-mix(in srgb,var(--tc) 26%,transparent);
+        border:1px solid color-mix(in srgb,var(--tc) 60%,transparent);color:color-mix(in srgb,var(--tc) 55%,var(--text))}
+      .pcopt-typechip img{width:15px;height:15px;object-fit:contain}
+      .pcopt-tchips{display:inline-flex;flex-wrap:wrap;gap:3px;justify-content:flex-end}
+      .pcopt-rank{font-size:10px;font-weight:700;min-width:20px;text-align:center;border-radius:5px;padding:1px 4px;
+        background:var(--panel);color:var(--muted);font-variant-numeric:tabular-nums}
+      .pcopt-rank.r1{background:color-mix(in srgb,var(--yellow) 24%,transparent);color:var(--yellow)}
+      .pcopt-rank.r2{background:color-mix(in srgb,#c9d2dc 22%,transparent);color:#dfe6ee}
+      .pcopt-rank.r3{background:color-mix(in srgb,#c08a4a 26%,transparent);color:#e0b07a}
+      .pcopt-icon{width:18px;height:18px;object-fit:contain;vertical-align:-4px;margin-right:3px;image-rendering:pixelated}
+      .pcopt-bchip{display:inline-block;width:16px;height:16px;flex:none;background-size:128px 16px;
+        background-repeat:no-repeat;image-rendering:pixelated;vertical-align:-3px;margin-right:4px}
       .pcopt-ban{font-size:11px;color:var(--red)}
       .pcopt-galt{font-size:12px;color:var(--muted);padding:2px 0}
       .pcopt-gregion{display:flex;flex-wrap:wrap;gap:4px;margin:6px 0}
@@ -27828,8 +27849,56 @@
   }
   const guideSpr = (name, h = 30) => {
     const id = guideNameId(name);
-    return id == null ? '' : `<span class="pcopt-hspr">${sprOf(id, h)}</span>`;
+    return id == null ? '' : `<span class="pcopt-hspr" style="width:${h}px;height:${h}px">${sprOf(id, h)}</span>`;
   };
+  // board move name -> bundle move; the slug is the MOVES key ("Dark Pulse" -> dark-pulse)
+  const guideMoveSlug = name => String(name || '').toLowerCase().replace(/[^a-z0-9]+/g, '-');
+  const guideMoveInfo = name => state.data?.moves?.[guideMoveSlug(name)] || null;
+  const typeColorOf = t => state.data?.typeColors?.[t]?.color || '#8a8f9c';
+  const typeChip = t => `<span class="pcopt-typechip" style="--tc:${typeColorOf(t)}"><img src="assets/items/gem-${esc(t)}.png" alt="">${esc(capText(t))}</span>`;
+  const STATUS_COLOR = { BRN: '#ff7a3a', PAR: '#f7d02c', PSN: '#c77ddb', SLP: '#8fa8ff', FRZ: '#7fd4ff', CNF: '#d98cf0' };
+  /** One board move: type-tinted when damaging, violet when its own move is a status move. */
+  const moveChip = mv => {
+    const info = guideMoveInfo(mv.name);
+    const status = info ? info.cat === 'status' : !!mv.tag;
+    const cls = status ? ' st' : info?.type ? ' ty' : '';
+    const tint = !status && info?.type ? ` style="--tc:${typeColorOf(info.type)}"` : '';
+    const tag = mv.tag ? `<i${STATUS_COLOR[mv.tag] ? ` style="--sc:${STATUS_COLOR[mv.tag]}"` : ''}>${esc(mv.tag)}</i>` : '';
+    return `<span class="pcopt-movechip${cls}"${tint}>${esc(mv.name)}${tag}${mv.share != null ? `<b>${esc(mv.share)}%</b>` : ''}</span>`;
+  };
+  const rankBadge = n => `<span class="pcopt-rank${n <= 3 ? ' r' + n : ''}">#${n}</span>`;
+  const tierTint = v => {
+    const n = Math.max(0, Math.min(100, +v || 0));
+    return `background:hsl(${Math.round(n * 1.2)} 55% 24%);color:#fff`;
+  };
+  // the game's own berry art lives under assets/ui/; only oran, pecha, sitrus and leppa ship
+  const berryArt = name => {
+    const k = String(name || '').toLowerCase().replace(/\s+/g, '-');
+    return `assets/ui/berry-${/^(oran|pecha|sitrus|leppa)$/.test(k) ? k : k + '-berry'}.png`;
+  };
+  const berryImg = name => `<img class="pcopt-icon" src="${berryArt(name)}" alt="">`;
+  // English badge name -> [sprite sheet, 1-based icon in it]; the game draws them from 16px strips
+  const BADGE_SPRITE = {
+    boulder: ['frlg', 1], cascade: ['frlg', 2], thunder: ['frlg', 3], rainbow: ['frlg', 4],
+    soul: ['frlg', 5], marsh: ['frlg', 6], volcano: ['frlg', 7], earth: ['frlg', 8],
+    zephyr: ['gsc', 1], hive: ['gsc', 2], plain: ['gsc', 3], fog: ['gsc', 4],
+    mineral: ['gsc', 5], storm: ['gsc', 6], glacier: ['gsc', 7], rising: ['gsc', 8],
+    stone: ['rse', 1], knuckle: ['rse', 2], dynamo: ['rse', 3], heat: ['rse', 4],
+    balance: ['rse', 5], feather: ['rse', 6], mind: ['rse', 7], rain: ['rse', 8],
+    coal: ['dppt', 1], forest: ['dppt', 2], cobble: ['dppt', 3], fen: ['dppt', 4],
+    relic: ['dppt', 5], mine: ['dppt', 6], icicle: ['dppt', 7], beacon: ['dppt', 8],
+    trio: ['bw', 1], basic: ['bw', 2], insect: ['bw', 3], bolt: ['bw', 4],
+    quake: ['bw', 5], jet: ['bw', 6], freeze: ['bw', 7], legend: ['bw', 8]
+  };
+  /** An "X Badge" loop name becomes the game's 16px badge icon; anything else stays text. */
+  const badgeChip = name => {
+    const m = /^(.+) badge$/i.exec(String(name || '').trim());
+    const hit = m && BADGE_SPRITE[m[1].toLowerCase()];
+    if (!hit) return '';
+    const [sheet, n] = hit;
+    return `<span class="pcopt-bchip" title="${esc(name)}" style="background-image:url(assets/badges/${sheet === 'frlg' ? 'frlg-' + n : sheet}.png);background-position:${-16 * (n - 1)}px 0"></span>`;
+  };
+  const loopName = name => `${badgeChip(name)}${esc(name ?? '—')}`;
   const guideBoardLine = g => `${esc(g.board.gameVersion)} · build ${esc(g.board.build)} · pulled ${esc(g.board.pulled)} · community board by ${esc(g.credit)}`;
   const guideMatch = (obj, q) => !q || JSON.stringify(obj).toLowerCase().includes(q);
   const guideFold = g => `
@@ -27848,8 +27917,7 @@
   const guideMembers = (members, withLegend) => (members || []).map(m => {
     if (!m.name) return '';
     const gold = withLegend && (m.legendary || m.rarity === 'L');
-    const moves = (m.moves || []).map(mv =>
-      `<span class="pcopt-movechip">${esc(mv.name)}${mv.tag ? `<i>${esc(mv.tag)}</i>` : ''}${mv.share != null ? `<b>${esc(mv.share)}%</b>` : ''}</span>`).join('');
+    const moves = (m.moves || []).map(moveChip).join('');
     const bans = (m.bans || []).length ? `<span class="pcopt-ban">BAN ${m.bans.map(esc).join(', ')}</span>` : '';
     const allBut = m.banAllButNote ? `<span class="pcopt-ban">${esc(m.banAllButNote)}</span>` : '';
     return `<div class="pcopt-gmem">${guideSpr(m.name)}<b class="${gold ? 'pcopt-gold' : ''}">${esc(m.name)}</b><span class="pcopt-gmoves">${moves}</span>${bans}${allBut}</div>`;
@@ -27866,7 +27934,10 @@
     const headline = t && typeof t === 'object'
       ? `${t.mode || ''}${t.time ? ' · ' + t.time : ''}${t.winsPerHour != null ? ' · ' + t.winsPerHour + ' wins/h' : ''}${t.bansBonus ? ' · bans ' + t.bansBonus : ''}`
       : (f.tiers ? 'Elite I–V' : '');
-    const tiers = f.tiers ? `<span class="pcopt-gtiers">${['1', '2', '3', '4', '5'].map(k => `<span>${f.tiers[k] == null ? '–' : esc(f.tiers[k])}</span>`).join('')}</span>` : '';
+    const tiers = f.tiers ? `<span class="pcopt-gtiers">${['1', '2', '3', '4', '5'].map(k => {
+      const v = f.tiers[k];
+      return `<span${v == null ? '' : ` style="${tierTint(v)}"`}>${v == null ? '–' : esc(v)}</span>`;
+    }).join('')}</span>` : '';
     const zid = guideNameId(f.boss);
     const canFight = zid != null && legendZones().some(z => z.id === zid);
     const body = open ? `<div class="pcopt-gbody">
@@ -27910,64 +27981,75 @@
         const key = g.id + ':' + t.type;
         const open = !!state.helperOpen[key];
         const leg = t.legendary;
-        const row = (x, gold, rarity) => `<div class="pcopt-gmem">${guideSpr(x.name)}<b class="${gold || rarity === 'L' ? 'pcopt-gold' : ''}">${esc(x.name)}</b>
+        const row = (x, gold, rarity, rank) => `<div class="pcopt-gmem">${rankBadge(rank)}${guideSpr(x.name)}<b class="${gold || rarity === 'L' ? 'pcopt-gold' : ''}">${esc(x.name)}</b>
           ${rarity && rarity !== 'L' ? `<span class="pcopt-gbadge">${esc(rarity)}</span>` : ''}
           <span class="pcopt-movechip">+${esc(x.wins)} wins</span>${x.hp ? `<span class="pcopt-movechip">${esc(x.hp)} HP</span>` : ''}${x.fights ? `<span class="pcopt-muted">${esc(x.fights)}</span>` : ''}</div>`;
         const next = ['R', 'U', 'C'].map(r => (t.next?.[r] || []).length
           ? `<div class="pcopt-hnote"><b>next ${r}:</b> ${t.next[r].map(x => `${esc(x.name)} +${esc(x.wins)}`).join(' · ')}${t.next.more?.[r] ? ` · ${esc(t.next.more[r])} more` : ''}</div>` : '').join('');
         return `<article class="pcopt-gcard"><button class="pcopt-gcard-h" data-hcard="${esc(key)}">
-          <span class="grow"><b style="text-transform:capitalize">${esc(t.type)}</b><small>${leg ? esc(leg.name) + ' +' + esc(leg.wins) + ' wins' : 'no legendary pick'} · ${(t.others || []).length} others</small></span></button>
-          ${open ? `<div class="pcopt-gbody">${leg ? row(leg, true) : '<div class="pcopt-hnote">No legendary of this type in the game.</div>'}
-            ${(t.others || []).map(x => row(x, false, x.rarity)).join('')}
+          <span class="grow">${typeChip(t.type)}<small>${leg ? esc(leg.name) + ' +' + esc(leg.wins) + ' wins' : 'no legendary pick'} · ${(t.others || []).length} others</small></span></button>
+          ${open ? `<div class="pcopt-gbody">${leg ? row(leg, true, null, 1) : '<div class="pcopt-hnote">No legendary of this type in the game.</div>'}
+            ${(t.others || []).map((x, i) => row(x, false, x.rarity, i + 2)).join('')}
             ${(t.legendaryNext || []).length ? `<div class="pcopt-hnote"><b>next legendary:</b> ${t.legendaryNext.map(x => `${esc(x.name)} +${esc(x.wins)}`).join(' · ')}</div>` : ''}
             ${next}</div>` : ''}</article>`;
       }).join('') || '<div class="pcopt-mut">no type matches</div>';
     }
     if (g.id === 'gem-tiers') {
-      const sinks = (g.data.bestSinks || []).filter(x => guideMatch(x, q));
       // three board bars per member: px out of the 76px track, coloured as the board draws them
       const gbar = (cls, label, px) => `<i class="pcopt-gbar ${cls}" title="${esc(label)} ${esc(px ?? 0)}/76 px"><b style="width:${Math.round((+px || 0) / 76 * 100)}%"></b></i>`;
       const gbars = x => x.areas ? `<span class="pcopt-gbars">${gbar('lg', 'Elite Leagues', x.areas.eliteLeagues?.px)}${gbar('el', 'Elite fights', x.areas.eliteFights?.px)}${gbar('ug', 'Underground', x.areas.underground?.px)}</span>` : '';
       return `<div class="pcopt-hnote">Bars: LG Elite Leagues · EL Elite fights · UG Underground, each scaled to the best of its area (76px is the full board track; ±1px rounding).</div>
-        <div class="pcopt-gcard"><div class="pcopt-gcard-h static"><span class="grow"><b>Best gem sinks</b></span></div><div class="pcopt-gbody">
-        ${sinks.map((x, i) => `<div class="pcopt-gmem">${guideSpr(x.name)}<b>${i + 1}. ${esc(x.name)}</b>${(x.gemTypes || []).map(t => `<span class="pcopt-movechip">${esc(t)}</span>`).join('')}</div>`).join('')}</div></div>
-        ${(g.data.tiers || []).map(t => `<div class="pcopt-gcard"><div class="pcopt-gcard-h static"><span class="grow"><b>${esc(t.label)}</b></span></div><div class="pcopt-gbody">
-        ${t.members.filter(x => guideMatch(x, q)).map(x => `<div class="pcopt-gmem">${guideSpr(x.name)}<b>${esc(x.name)}</b>${(x.gemTypes || []).map(gt => `<span class="pcopt-movechip">${esc(gt)}</span>`).join('')}${gbars(x)}</div>`).join('')}</div></div>`).join('')}`;
+        ${(g.data.tiers || []).map(t => `<div class="pcopt-gcard"><div class="pcopt-gcard-h static"><span class="grow"><b>${esc(t.label)} — ${esc(t.sublabel)}</b></span></div><div class="pcopt-gbody">
+        ${t.members.filter(x => guideMatch(x, q)).map(x => `<div class="pcopt-gmem">${guideSpr(x.name)}<b>${esc(x.name)}</b>${(x.gemTypes || []).map(typeChip).join('')}${gbars(x)}</div>`).join('')}</div></div>`).join('')}`;
     }
     const groups = [['Pseudo-legendaries', g.data.pseudoLegendary], ['Top 10 Rare', g.data.topRare], ['Top 10 Uncommon', g.data.topUncommon]];
     return groups.map(([label, list]) => `<div class="pcopt-gcard"><div class="pcopt-gcard-h static"><span class="grow"><b>${esc(label)}</b><small>${list.length} entries · ${esc(g.data.notes?.[0] || '')}</small></span></div><div class="pcopt-gbody">
-      ${(list || []).filter(x => guideMatch(x, q)).map((x, i) => `<div class="pcopt-gmem">${guideSpr(x.name)}<b>${i + 1}. ${esc(x.name)}</b>
-        ${(x.gemTypes || []).map(t => `<span class="pcopt-movechip">${esc(t)}</span>`).join('')}
-        <span class="pcopt-gbadge">${esc(x.pts)} pts</span><span class="pcopt-muted">${esc(x.bestArea)}</span></div>`).join('')}</div></div>`).join('')
+      ${(list || []).filter(x => guideMatch(x, q)).map(x => {
+        const rank = (list || []).indexOf(x) + 1;
+        return `<div class="pcopt-gmem">${rankBadge(rank)}${guideSpr(x.name)}<b>${esc(x.name)}</b>
+        ${(x.gemTypes || []).map(typeChip).join('')}
+        <span class="pcopt-gbadge">${esc(x.pts)} pts</span><span class="pcopt-muted">${esc(x.bestArea)}</span></div>`;
+      }).join('')}</div></div>`).join('')
       + `<div class="pcopt-hnote">${(g.data.notes || []).map(esc).join(' · ')}</div>`;
   }
 
   function renderUnderground(g) {
     const q = (state.helperSearch || '').toLowerCase();
     const live = state.data?.cfg?.UNDERGROUND?.THEMES || state.data?.cfg?.UNDERGROUND?.themes || [];
+    const theme = key => (Array.isArray(live) ? live : []).find(x => x.key === key);
     const nameOf = key => {
-      const t = (Array.isArray(live) ? live : []).find(x => x.key === key);
+      const t = theme(key);
       return t ? englishText(t.name) : (g.data.themes.find(x => x.key === key)?.boardLabel || key);
+    };
+    // the six expedition themes as the game presents them (emoji + colour are a minified local in the bundle)
+    const UG_THEME_ART = {
+      flooded: ['🌊', '#3b8fe0'], volcanic: ['🌋', '#ff7a3a'], crystal: ['💎', '#7fd4ff'],
+      dark: ['🌑', '#8a6ad8'], ancient: ['🏛️', '#c9a24a'], galleries: ['⛏️', '#c08a4a']
     };
     return (g.data.themes || []).filter(t => guideMatch(t, q)).map(t => {
       const key = g.id + ':' + t.key;
       const open = !!state.helperOpen[key];
+      const [icon, color] = UG_THEME_ART[t.key] || ['', 'var(--muted)'];
+      const types = theme(t.key)?.types || [];
+      const pick = p => `<span class="pcopt-movechip">${guideSpr(p.name, 18)}${esc(p.name)} · ${esc(p.floors)} floors</span>`;
       return `<article class="pcopt-gcard"><button class="pcopt-gcard-h" data-hcard="${esc(key)}">
-        <span class="grow"><b>${esc(nameOf(t.key))}</b><small>${esc(t.key)} · best: ${esc(t.picks[0]?.name || '—')} (${esc(t.picks[0]?.floors ?? '—')} floors)</small></span></button>
+        <span class="grow"><span class="ug-theme" style="--tc:${color}">${icon}<span class="ug-th-n"> ${esc(nameOf(t.key))}</span></span>
+          <small>${esc(t.key)} · best: ${esc(t.picks[0]?.name || '—')} (${esc(t.picks[0]?.floors ?? '—')} floors)</small></span>
+        <span class="pcopt-tchips">${types.map(typeChip).join('')}</span></button>
         ${open ? `<div class="pcopt-gbody">
-          ${t.picks.map(p => `<span class="pcopt-movechip">${esc(p.name)} · ${esc(p.floors)} floors</span>`).join(' ')}
-          ${t.noLegendary?.length ? `<div class="pcopt-hnote"><b>No legendaries:</b> ${t.noLegendary.map(p => `${esc(p.name)} ${esc(p.floors)}`).join(' · ')}</div>` : ''}</div>` : ''}</article>`;
+          ${t.picks.map(pick).join(' ')}
+          ${t.noLegendary?.length ? `<div class="pcopt-hnote"><b>No legendaries:</b> ${t.noLegendary.map(p => `<span class="pcopt-movechip">${guideSpr(p.name, 18)}${esc(p.name)} · ${esc(p.floors)}</span>`).join(' ')}</div>` : ''}</div>` : ''}</article>`;
     }).join('') || '<div class="pcopt-mut">no theme matches</div>';
   }
 
   function renderFarming(g) {
     const q = (state.helperSearch || '').toLowerCase();
     const goals = (g.data.goals || []).filter(x => guideMatch(x, q));
-    return goals.map(x => `<div class="pcopt-gcard"><div class="pcopt-gcard-h static"><span class="grow"><b>${esc(x.goal)}</b><small>${esc(x.best.loop)} · ${esc(x.best.perHour)}${x.best.lapSec ? ' · ' + esc(x.best.lapSec) + 's lap' : ''}</small></span></div>
+    return goals.map(x => `<div class="pcopt-gcard"><div class="pcopt-gcard-h static"><span class="grow"><b>${esc(x.goal)}</b><small>${loopName(x.best.loop)} · ${esc(x.best.perHour)}${x.best.lapSec ? ' · ' + esc(x.best.lapSec) + 's lap' : ''}</small></span></div>
       <div class="pcopt-gbody"><div class="pcopt-hnote">${esc(x.best.note)}</div>
-      ${(x.runnerUps || []).length ? `<div class="pcopt-hnote">Runner-ups: ${x.runnerUps.map(r => `${esc(r.loop)}${r.perHour ? ' ' + esc(r.perHour) : ''}`).join(' · ')}</div>` : ''}</div></div>`).join('')
+      ${(x.runnerUps || []).length ? `<div class="pcopt-hnote">Runner-ups: ${x.runnerUps.map(r => `${loopName(r.loop)}${r.perHour ? ' ' + esc(r.perHour) : ''}`).join(' · ')}</div>` : ''}</div></div>`).join('')
       + `<table class="pcopt-gtable"><tr><th>Top 16 loop</th><th class="n">Money/h</th><th class="n">Battle XP/h</th><th class="n">Candy XP/h</th><th class="n">Lap</th></tr>
-      ${(g.data.topLoops || []).map(x => `<tr><td>${esc(x.loop)}</td><td class="n">${esc(x.money ?? '—')}</td><td class="n">${esc(x.battleXp ?? '—')}</td><td class="n">${esc(x.candyXp ?? '—')}</td><td class="n">${x.lapSec ? esc(x.lapSec) + 's' : '—'}</td></tr>`).join('')}</table>
+      ${(g.data.topLoops || []).map(x => `<tr><td>${loopName(x.loop)}</td><td class="n">${esc(x.money ?? '—')}</td><td class="n">${esc(x.battleXp ?? '—')}</td><td class="n">${esc(x.candyXp ?? '—')}</td><td class="n">${x.lapSec ? esc(x.lapSec) + 's' : '—'}</td></tr>`).join('')}</table>
       <table class="pcopt-gtable"><tr><th>League</th><th class="n">Battle XP</th><th class="n">Candy drops</th><th class="n">Bought</th><th class="n">Total XP</th></tr>
       ${(g.data.leagueCandy || []).map(x => `<tr><td>${esc(x.league)}</td><td class="n">${esc(x.battleXp)}</td><td class="n">${esc(x.candyDrops)}</td><td class="n">${esc(x.bought)}</td><td class="n">${esc(x.totalXp)}</td></tr>`).join('')}</table>
       <div class="pcopt-hnote">${(g.data.rules || []).map(esc).join(' · ')}</div>`;
@@ -27975,24 +28057,24 @@
 
   function renderBerry(g) {
     const q = (state.helperSearch || '').toLowerCase();
-    const cards = (g.data.berries || []).filter(b => guideMatch(b, q)).map(b => `<div class="pcopt-gcard"><div class="pcopt-gcard-h static"><span class="grow"><b>${esc(b.name)}</b><small>${esc(b.use || '')} · ${esc(b.best.loop)} ${esc(b.best.rate)}</small></span></div>
+    const cards = (g.data.berries || []).filter(b => guideMatch(b, q)).map(b => `<div class="pcopt-gcard"><div class="pcopt-gcard-h static"><span class="grow"><b>${berryImg(b.name)}${esc(b.name)}</b><small>${esc(b.use || '')} · ${loopName(b.best.loop)} ${esc(b.best.rate)}</small></span></div>
       <div class="pcopt-gbody"><div class="pcopt-hnote">${esc(b.best.why || '')}</div>
-      ${(b.runnerUps || []).length ? `<div class="pcopt-hnote">Runner-ups: ${b.runnerUps.map(r => `${esc(r.loop)} ${esc(r.rate)}`).join(' · ')}</div>` : ''}
+      ${(b.runnerUps || []).length ? `<div class="pcopt-hnote">Runner-ups: ${b.runnerUps.map(r => `${loopName(r.loop)} ${esc(r.rate)}`).join(' · ')}</div>` : ''}
       ${b.buy ? `<div class="pcopt-hnote">Buy: ${esc(b.buy)}</div>` : ''}</div></div>`).join('');
     const source = (title, s) => !s ? '' : `<table class="pcopt-gtable"><tr><th>${esc(title)}</th><th>${esc(s.note || '')}</th></tr>
-      ${(s.table || []).map(x => `<tr><td>${esc(x.name)}</td><td>${esc(x.chance ?? x.price ?? '')}</td></tr>`).join('')}</table>`;
+      ${(s.table || []).map(x => `<tr><td>${berryImg(x.name)}${esc(x.name)}</td><td>${esc(x.chance ?? x.price ?? '')}</td></tr>`).join('')}</table>`;
     return cards
       + source('Route', g.data.sources?.route) + source('Town event', g.data.sources?.townEvent)
       + source('Battle Tower shop', g.data.sources?.shop) + source('Pachinko', g.data.sources?.pachinko)
       + source('Underground', g.data.sources?.underground)
       + `<table class="pcopt-gtable"><tr><th>Top 14 loop</th><th class="n">Good/h</th><th class="n">Starf/h</th><th class="n">Oran…/h</th></tr>
-      ${(g.data.topLoops || []).map(x => `<tr><td>${esc(x.loop)}</td><td class="n">${esc(x.good ?? '—')}</td><td class="n">${esc(x.starf ?? '—')}</td><td class="n">${esc(x.oranEtc ?? '—')}</td></tr>`).join('')}</table>
+      ${(g.data.topLoops || []).map(x => `<tr><td>${loopName(x.loop)}</td><td class="n">${esc(x.good ?? '—')}</td><td class="n">${esc(x.starf ?? '—')}</td><td class="n">${esc(x.oranEtc ?? '—')}</td></tr>`).join('')}</table>
       <div class="pcopt-hnote">${(g.data.rules || []).map(esc).join(' · ')}</div>`;
   }
 
   function renderOvernight(g) {
     const table = (title, rows, cells) => `<table class="pcopt-gtable"><tr>${cells.map(c => `<th>${esc(c)}</th>`).join('')}</tr>
-      ${rows.map(r => `<tr>${cells.map(c => `<td>${esc(r[c] ?? '—')}</td>`).join('')}</tr>`).join('')}</table>`;
+      ${rows.map(r => `<tr>${cells.map(c => c === 'map' ? `<td>${loopName(r[c])}</td>` : `<td>${esc(r[c] ?? '—')}</td>`).join('')}</tr>`).join('')}</table>`;
     return `<div class="pcopt-gcard"><div class="pcopt-gcard-h static"><span class="grow"><b>Most money per night</b></span></div><div class="pcopt-gbody">
       ${table('money', g.data.moneyTop, ['rank', 'map', 'region', 'money', 'note'])}</div></div>
       <div class="pcopt-gcard"><div class="pcopt-gcard-h static"><span class="grow"><b>Most EXP for a leveler (not the companion)</b></span></div><div class="pcopt-gbody">
@@ -28023,7 +28105,7 @@
     const g = GUIDES[id];
     if (!g) return [];
     return g.data.fights || g.data.types || g.data.themes || g.data.berries || g.data.topLoops
-      || g.data.moneyTop || g.data.bestSinks || g.data.pseudoLegendary || g.data.goals || [];
+      || g.data.moneyTop || g.data.tiers || g.data.bestSinks || g.data.pseudoLegendary || g.data.goals || [];
   }
   function helperCount(id, q) {
     if (!q) return 0;
@@ -28044,6 +28126,8 @@
     });
     el.querySelectorAll('[data-hfight]').forEach(b => b.onclick = () =>
       openEliteZone(+b.dataset.hfight).catch(e => logError('helper: fight', e)));
+    // a missing item/berry/species sprite must never leave a broken-image row
+    el.querySelectorAll('img').forEach(img => img.onerror = () => { img.style.display = 'none'; });
   }
 
   /** Add the Helper nav button (between map and team) and its screen, once. */
@@ -28147,7 +28231,7 @@
         for (let waited = 0; !url && waited < 30000; waited += 250) { await sleep(250); url = bundleUrl(); }
       }
       if (!url) { state.errors = ['game bundle not loaded yet']; log('warn', 'data: the game bundle is not on the page yet'); return; }
-      const cacheKey = 'bundle:v19:' + url;
+      const cacheKey = 'bundle:v20:' + url;
       let data = store.get(cacheKey, null);
       if (data && !dataLooksValid(data)) {
         log('warn', 'data: the cached tables are invalid, parsing the bundle again');
@@ -29274,6 +29358,20 @@
       for (const id of guideIds) walkGuide(GUIDES[id].data, id);
       check('community guide species names resolve', !englishReady || !badNames.length,
         englishReady ? badNames.slice(0, 8) : 'skipped: no English pack');
+      // the move chips take their type from the bundle: every board move name must resolve
+      const moveNames = new Set();
+      const walkMoves = node => {
+        if (!node || typeof node !== 'object') return;
+        if (Array.isArray(node)) return node.forEach(walkMoves);
+        for (const [k, v] of Object.entries(node)) {
+          if (k === 'moves') (v || []).forEach(mv => mv?.name && moveNames.add(mv.name));
+          else walkMoves(v);
+        }
+      };
+      for (const id of guideIds) walkMoves(GUIDES[id].data);
+      const badMoves = [...moveNames].filter(n => !guideMoveInfo(n));
+      check('guide move names resolve to types', !state.data || !badMoves.length,
+        state.data ? badMoves.slice(0, 8) : 'skipped: no game data');
       const liveThemes = state.data?.cfg?.UNDERGROUND?.THEMES || [];
       const badThemes = GUIDES.underground.data.themes.filter(t => !liveThemes.some(x => x.key === t.key)).map(t => t.key);
       check('underground guide themes exist in the bundle', !badThemes.length, badThemes);
