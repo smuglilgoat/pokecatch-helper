@@ -2,3 +2,7 @@
 pokecatch-*.json
 # local data dumps
 node_modules/
+
+# third-party board images: kept locally for transcription, the README is tracked
+boards/*.png
+__pycache__/
