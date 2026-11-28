@@ -324,9 +324,15 @@
         if (!m) throw new Error('declaration of ' + n + ' not found');
         return body.indexOf('{', m.index);
       };
-      // the numbered scenes are a literal; named ones are generated from their key (s["hoenn-x"]={src:`…hoenn-x-710x400.webp`})
+      const placesAt = decl(names[2]);
+      // the catalog is built by its own statements (named scenes are added in loops), so run them: srcs like
+      // johto-lac-colere-v2 come from the catalog entry, never from its key
+      const catAt = body.search(new RegExp('const\\s+' + names[1] + '\\s*=\\s*\\{'));
+      const placesDecl = body.search(new RegExp('const\\s+' + names[2] + '\\s*=\\s*\\{'));
+      const full = evalSandbox('(function(){' + body.slice(catAt, placesDecl) + '\nreturn ' + names[1] + ';})()');
       const catalog = {};
-      for (const [id, v] of Object.entries(evalLit(literalAt(body, decl(names[1]))))) catalog[id] = v.src;
+      for (const [k, v] of Object.entries(full || {})) if (v && v.src) catalog[k] = v.src;
+      if (!catalog[1] || !catalog[50] || Object.keys(catalog).length < 100) throw new Error('catalog implausible');
       const bgAt = body.search(/\{prairie:\d+,forest:\d+/);
       const bg = bgAt < 0 ? {} : evalLit(literalAt(body, bgAt));
       // the Unova name -> scene table sits just before the bg map; the game resolves its nodes from it, not from places
@@ -340,7 +346,7 @@
           if (t && t['Route 1'] && Object.values(t).some(v => /^unys-/.test(v))) unova = t;
         } catch { /* a different table: Unova keeps the places fallback */ }
       }
-      return { catalog, places: evalLit(literalAt(body, decl(names[2]))), bg, unova };
+      return { catalog, places: evalLit(literalAt(body, placesAt)), bg, unova };
     }) || null;
     // the badge order the game itself draws: the chapters name badges in French, the boards in English
     const badges = table('BADGE_IMG', false, () => {
@@ -27999,7 +28005,7 @@
   const sceneStepSrc = (step, reg) => {
     const scenes = state.data?.scenes;
     if (!scenes || !step) return null;
-    const art = k => k == null ? null : (scenes.catalog[k] || (/^\d+$/.test(String(k)) ? null : `assets/bg/scenes/${k}-710x400.webp`));
+    const art = k => k == null ? null : scenes.catalog[k] || null;
     if (step.type === 'heal' || step.kind === 'heal' || step.bg === 'pokecenter') return art(50);
     if (step.scene != null) { const p = art(step.scene); if (p) return p; }
     if (reg === 'unova' && scenes.unova?.[step.name || step.zone] != null) {
@@ -28405,7 +28411,7 @@
         for (let waited = 0; !url && waited < 30000; waited += 250) { await sleep(250); url = bundleUrl(); }
       }
       if (!url) { state.errors = ['game bundle not loaded yet']; log('warn', 'data: the game bundle is not on the page yet'); return; }
-      const cacheKey = 'bundle:v21:' + url;
+      const cacheKey = 'bundle:v22:' + url;
       let data = store.get(cacheKey, null);
       if (data && !dataLooksValid(data)) {
         log('warn', 'data: the cached tables are invalid, parsing the bundle again');
