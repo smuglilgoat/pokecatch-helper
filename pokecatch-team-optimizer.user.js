@@ -5367,6 +5367,12 @@
       .pcopt-gbody{padding:2px 10px 9px;border-top:1px solid var(--line)}
       .pcopt-gmem{display:flex;align-items:center;gap:7px;flex-wrap:wrap;padding:4px 0;border-bottom:1px dashed var(--line)}
       .pcopt-gmem:last-child{border-bottom:0}
+      .pcopt-gbars{display:grid;gap:2px;flex:1 1 140px;min-width:110px;max-width:260px;margin-left:auto}
+      .pcopt-gbar{display:block;height:4px;border-radius:2px;background:var(--line);overflow:hidden}
+      .pcopt-gbar b{display:block;height:100%;border-radius:2px}
+      .pcopt-gbar.lg b{background:#FFCB3D}
+      .pcopt-gbar.el b{background:#C9A8FF}
+      .pcopt-gbar.ug b{background:#5BE0A0}
       .pcopt-gold{color:var(--yellow);font-weight:700}
       .pcopt-gmoves{display:flex;flex-wrap:wrap;gap:4px}
       .pcopt-movechip{display:inline-flex;align-items:center;gap:4px;font-size:11px;padding:1px 6px;border-radius:5px;
@@ -26932,11 +26938,14 @@
     }
     if (g.id === 'gem-tiers') {
       const sinks = (g.data.bestSinks || []).filter(x => guideMatch(x, q));
-      return `<div class="pcopt-hnote">Best gem sinks, in board order (the bars are pixel art; order is the data).</div>
+      // three board bars per member: px out of the 76px track, coloured as the board draws them
+      const gbar = (cls, label, px) => `<i class="pcopt-gbar ${cls}" title="${esc(label)} ${esc(px ?? 0)}/76 px"><b style="width:${Math.round((+px || 0) / 76 * 100)}%"></b></i>`;
+      const gbars = x => x.areas ? `<span class="pcopt-gbars">${gbar('lg', 'Elite Leagues', x.areas.eliteLeagues?.px)}${gbar('el', 'Elite fights', x.areas.eliteFights?.px)}${gbar('ug', 'Underground', x.areas.underground?.px)}</span>` : '';
+      return `<div class="pcopt-hnote">Bars: LG Elite Leagues · EL Elite fights · UG Underground, each scaled to the best of its area (76px is the full board track; ±1px rounding).</div>
         <div class="pcopt-gcard"><div class="pcopt-gcard-h static"><span class="grow"><b>Best gem sinks</b></span></div><div class="pcopt-gbody">
         ${sinks.map((x, i) => `<div class="pcopt-gmem">${guideSpr(x.name)}<b>${i + 1}. ${esc(x.name)}</b>${(x.gemTypes || []).map(t => `<span class="pcopt-movechip">${esc(t)}</span>`).join('')}</div>`).join('')}</div></div>
         ${(g.data.tiers || []).map(t => `<div class="pcopt-gcard"><div class="pcopt-gcard-h static"><span class="grow"><b>${esc(t.label)}</b></span></div><div class="pcopt-gbody">
-        ${t.members.filter(x => guideMatch(x, q)).map(x => `<div class="pcopt-gmem">${guideSpr(x.name)}<b>${esc(x.name)}</b>${(x.gemTypes || []).map(gt => `<span class="pcopt-movechip">${esc(gt)}</span>`).join('')}</div>`).join('')}</div></div>`).join('')}`;
+        ${t.members.filter(x => guideMatch(x, q)).map(x => `<div class="pcopt-gmem">${guideSpr(x.name)}<b>${esc(x.name)}</b>${(x.gemTypes || []).map(gt => `<span class="pcopt-movechip">${esc(gt)}</span>`).join('')}${gbars(x)}</div>`).join('')}</div></div>`).join('')}`;
     }
     const groups = [['Pseudo-legendaries', g.data.pseudoLegendary], ['Top 10 Rare', g.data.topRare], ['Top 10 Uncommon', g.data.topUncommon]];
     return groups.map(([label, list]) => `<div class="pcopt-gcard"><div class="pcopt-gcard-h static"><span class="grow"><b>${esc(label)}</b><small>${list.length} entries · ${esc(g.data.notes?.[0] || '')}</small></span></div><div class="pcopt-gbody">
