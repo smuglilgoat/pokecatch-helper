@@ -59,58 +59,418 @@
       {
         "region": "Kanto",
         "boss": "Mewtwo",
-        "title": { "time": "0:52", "winsPerHour": 69, "mode": "LESSER LEGENDARIES ALLOWED", "bansBonus": null },
+        "title": {
+          "time": null,
+          "winsPerHour": 69,
+          "mode": null,
+          "bansBonus": null
+        },
         "team": {
           "members": [
-            { "name": "Darkrai", "legendary": true, "moves": [ { "name": "Dark Pulse", "tag": null, "share": 74 }, { "name": "Foul Play", "tag": null, "share": 13 }, { "name": "Hypnosis", "tag": "SLP", "share": 12 } ], "bans": [] },
-            { "name": "Entei", "legendary": true, "moves": [ { "name": "Sacred Fire", "tag": "BRN", "share": 99 } ], "bans": [] },
-            { "name": "Genesect Douse", "legendary": true, "moves": [ { "name": "Bug Buzz", "tag": null, "share": 80 }, { "name": "Leech Life", "tag": null, "share": 19 } ], "bans": [] },
-            { "name": "Escavalier", "legendary": false, "moves": [ { "name": "Megahorn", "tag": null, "share": 98 } ], "bans": [] },
-            { "name": "Honchkrow", "legendary": false, "moves": [ { "name": "Foul Play", "tag": null, "share": 98 } ], "bans": [] },
-            { "name": "Golurk", "legendary": false, "moves": [ { "name": "Poltergeist", "tag": null, "share": 99 } ], "bans": [] }
+            {
+              "name": "Darkrai",
+              "legendary": true,
+              "moves": [
+                {
+                  "name": "Dark Pulse",
+                  "tag": null,
+                  "share": 74
+                },
+                {
+                  "name": "Foul Play",
+                  "tag": null,
+                  "share": 13
+                },
+                {
+                  "name": "Hypnosis",
+                  "tag": "SLP",
+                  "share": 12
+                }
+              ],
+              "bans": []
+            },
+            {
+              "name": "Entei",
+              "legendary": true,
+              "moves": [
+                {
+                  "name": "Sacred Fire",
+                  "tag": "BRN",
+                  "share": 99
+                }
+              ],
+              "bans": []
+            },
+            {
+              "name": "Genesect Douse",
+              "legendary": true,
+              "moves": [
+                {
+                  "name": "Bug Buzz",
+                  "tag": null,
+                  "share": 80
+                },
+                {
+                  "name": "Leech Life",
+                  "tag": null,
+                  "share": 19
+                }
+              ],
+              "bans": []
+            },
+            {
+              "name": "Escavalier",
+              "legendary": false,
+              "moves": [
+                {
+                  "name": "Megahorn",
+                  "tag": null,
+                  "share": 98
+                }
+              ],
+              "bans": []
+            },
+            {
+              "name": "Honchkrow",
+              "legendary": false,
+              "moves": [
+                {
+                  "name": "Foul Play",
+                  "tag": null,
+                  "share": 98
+                }
+              ],
+              "bans": []
+            },
+            {
+              "name": "Golurk",
+              "legendary": false,
+              "moves": [
+                {
+                  "name": "Poltergeist",
+                  "tag": null,
+                  "share": 99
+                }
+              ],
+              "bans": []
+            }
           ],
           "alternates": [
-            { "memberIndex": 0, "name": "Scizor", "rate": 68, "withBan": false },
-            { "memberIndex": 0, "name": "Hydreigon", "rate": 68, "withBan": false },
-            { "memberIndex": 1, "name": "Skuntank", "rate": 66, "withBan": false },
-            { "memberIndex": 1, "name": "Drapion", "rate": 65, "withBan": false },
-            { "memberIndex": 2, "name": "Exeggutor", "rate": 65, "withBan": false },
-            { "memberIndex": 2, "name": "Scizor", "rate": 64, "withBan": false },
-            { "memberIndex": 3, "name": "Skuntank", "rate": 64, "withBan": false },
-            { "memberIndex": 3, "name": "Hydreigon", "rate": 64, "withBan": false },
-            { "memberIndex": 4, "name": "Hydreigon", "rate": 67, "withBan": false },
-            { "memberIndex": 4, "name": "Skuntank", "rate": 67, "withBan": false },
-            { "memberIndex": 5, "name": "Hydreigon", "rate": 64, "withBan": false },
-            { "memberIndex": 5, "name": "Spiritomb", "rate": 65, "withBan": true }
+            {
+              "memberIndex": 0,
+              "name": "Scizor",
+              "rate": 68,
+              "withBan": false
+            },
+            {
+              "memberIndex": 0,
+              "name": "Hydreigon",
+              "rate": 68,
+              "withBan": false
+            },
+            {
+              "memberIndex": 1,
+              "name": "Skuntank",
+              "rate": 66,
+              "withBan": false
+            },
+            {
+              "memberIndex": 1,
+              "name": "Drapion",
+              "rate": 65,
+              "withBan": false
+            },
+            {
+              "memberIndex": 2,
+              "name": "Exeggutor",
+              "rate": 65,
+              "withBan": false
+            },
+            {
+              "memberIndex": 2,
+              "name": "Scizor",
+              "rate": 64,
+              "withBan": false
+            },
+            {
+              "memberIndex": 3,
+              "name": "Skuntank",
+              "rate": 64,
+              "withBan": false
+            },
+            {
+              "memberIndex": 3,
+              "name": "Hydreigon",
+              "rate": 64,
+              "withBan": false
+            },
+            {
+              "memberIndex": 4,
+              "name": "Hydreigon",
+              "rate": 67,
+              "withBan": false
+            },
+            {
+              "memberIndex": 4,
+              "name": "Skuntank",
+              "rate": 67,
+              "withBan": false
+            },
+            {
+              "memberIndex": 5,
+              "name": "Hydreigon",
+              "rate": 64,
+              "withBan": false
+            },
+            {
+              "memberIndex": 5,
+              "name": "Spiritomb",
+              "rate": 65,
+              "withBan": false
+            }
           ],
-          "alternateBans": [ { "name": "Spiritomb", "bans": ["Confuse Ray"] } ]
+          "alternateBans": [
+            {
+              "name": "Spiritomb",
+              "bans": [
+                "Confuse Ray"
+              ]
+            }
+          ]
         },
         "noLegendary": {
           "title": "WITHOUT ANY LEGENDARY - 100 WINS - 0:56 - 65/H",
           "members": [
-            { "name": "Exeggutor", "moves": [ { "name": "Leaf Storm", "tag": null, "share": 87 }, { "name": "Sleep Powder", "tag": "SLP", "share": 10 } ], "bans": [] },
-            { "name": "Honchkrow", "moves": [ { "name": "Foul Play", "tag": null, "share": 99 } ], "bans": [] },
-            { "name": "Krookodile", "moves": [ { "name": "Foul Play", "tag": null, "share": 98 } ], "bans": [] },
-            { "name": "Tyranitar", "moves": [ { "name": "Foul Play", "tag": null, "share": 99 } ], "bans": [] },
-            { "name": "Skuntank", "moves": [ { "name": "Foul Play", "tag": null, "share": 84 }, { "name": "Toxic", "tag": "PSN", "share": 16 } ], "bans": [] },
-            { "name": "Escavalier", "moves": [ { "name": "Megahorn", "tag": null, "share": 98 } ], "bans": [] }
+            {
+              "name": "Exeggutor",
+              "moves": [
+                {
+                  "name": "Leaf Storm",
+                  "tag": null,
+                  "share": 87
+                },
+                {
+                  "name": "Sleep Powder",
+                  "tag": "SLP",
+                  "share": 10
+                }
+              ],
+              "bans": []
+            },
+            {
+              "name": "Honchkrow",
+              "moves": [
+                {
+                  "name": "Foul Play",
+                  "tag": null,
+                  "share": 99
+                }
+              ],
+              "bans": []
+            },
+            {
+              "name": "Krookodile",
+              "moves": [
+                {
+                  "name": "Foul Play",
+                  "tag": null,
+                  "share": 98
+                }
+              ],
+              "bans": []
+            },
+            {
+              "name": "Tyranitar",
+              "moves": [
+                {
+                  "name": "Foul Play",
+                  "tag": null,
+                  "share": 99
+                }
+              ],
+              "bans": []
+            },
+            {
+              "name": "Skuntank",
+              "moves": [
+                {
+                  "name": "Foul Play",
+                  "tag": null,
+                  "share": 84
+                },
+                {
+                  "name": "Toxic",
+                  "tag": "PSN",
+                  "share": 16
+                }
+              ],
+              "bans": []
+            },
+            {
+              "name": "Escavalier",
+              "moves": [
+                {
+                  "name": "Megahorn",
+                  "tag": null,
+                  "share": 98
+                }
+              ],
+              "bans": []
+            }
           ],
-          "alternates": [],
+          "alternates": [
+            {
+              "memberIndex": 0,
+              "name": "Scizor",
+              "rate": 64,
+              "withBan": false
+            },
+            {
+              "memberIndex": 0,
+              "name": "Hydreigon",
+              "rate": 63,
+              "withBan": false
+            },
+            {
+              "memberIndex": 0,
+              "name": "Scizor",
+              "rate": 63,
+              "withBan": false
+            },
+            {
+              "memberIndex": 0,
+              "name": "Hydreigon",
+              "rate": 62,
+              "withBan": false
+            },
+            {
+              "memberIndex": 1,
+              "name": "Scizor",
+              "rate": 63,
+              "withBan": false
+            },
+            {
+              "memberIndex": 1,
+              "name": "Hydreigon",
+              "rate": 62,
+              "withBan": false
+            },
+            {
+              "memberIndex": 2,
+              "name": "Scizor",
+              "rate": 65,
+              "withBan": false
+            },
+            {
+              "memberIndex": 2,
+              "name": "Hydreigon",
+              "rate": 64,
+              "withBan": false
+            },
+            {
+              "memberIndex": 3,
+              "name": "Scizor",
+              "rate": 61,
+              "withBan": false
+            },
+            {
+              "memberIndex": 3,
+              "name": "Hydreigon",
+              "rate": 61,
+              "withBan": false
+            }
+          ],
           "alternateBans": []
         }
       },
       {
         "region": "Johto",
         "boss": "Ho-Oh",
-        "title": { "time": "0:51", "winsPerHour": 71, "mode": "LESSER LEGENDARIES ALLOWED", "bansBonus": null },
+        "title": {
+          "time": null,
+          "winsPerHour": 71,
+          "mode": null,
+          "bansBonus": null
+        },
         "team": {
           "members": [
-            { "name": "Terrakion", "legendary": true, "moves": [ { "name": "Stone Edge", "tag": null, "share": 100 } ], "bans": [] },
-            { "name": "Archeops", "legendary": false, "moves": [ { "name": "Stone Edge", "tag": null, "share": 99 } ], "bans": [] },
-            { "name": "Rhydon", "legendary": false, "moves": [ { "name": "Stone Edge", "tag": null, "share": 99 } ], "bans": [] },
-            { "name": "Solrock", "legendary": false, "moves": [ { "name": "Stone Edge", "tag": null, "share": 81 }, { "name": "Hypnosis", "tag": "SLP", "share": 18 } ], "bans": [] },
-            { "name": "Rhyperior", "legendary": false, "moves": [ { "name": "Stone Edge", "tag": null, "share": 99 } ], "bans": [] },
-            { "name": "Rampardos", "legendary": false, "moves": [ { "name": "Head Smash", "tag": null, "share": 98 } ], "bans": [] }
+            {
+              "name": "Terrakion",
+              "legendary": true,
+              "moves": [
+                {
+                  "name": "Stone Edge",
+                  "tag": null,
+                  "share": 100
+                }
+              ],
+              "bans": []
+            },
+            {
+              "name": "Archeops",
+              "legendary": false,
+              "moves": [
+                {
+                  "name": "Stone Edge",
+                  "tag": null,
+                  "share": 99
+                }
+              ],
+              "bans": []
+            },
+            {
+              "name": "Rhydon",
+              "legendary": false,
+              "moves": [
+                {
+                  "name": "Stone Edge",
+                  "tag": null,
+                  "share": 99
+                }
+              ],
+              "bans": []
+            },
+            {
+              "name": "Solrock",
+              "legendary": false,
+              "moves": [
+                {
+                  "name": "Stone Edge",
+                  "tag": null,
+                  "share": 81
+                },
+                {
+                  "name": "Hypnosis",
+                  "tag": "SLP",
+                  "share": 18
+                }
+              ],
+              "bans": []
+            },
+            {
+              "name": "Rhyperior",
+              "legendary": false,
+              "moves": [
+                {
+                  "name": "Stone Edge",
+                  "tag": null,
+                  "share": 99
+                }
+              ],
+              "bans": []
+            },
+            {
+              "name": "Rampardos",
+              "legendary": false,
+              "moves": [
+                {
+                  "name": "Head Smash",
+                  "tag": null,
+                  "share": 98
+                }
+              ],
+              "bans": []
+            }
           ],
           "alternates": [],
           "alternateBans": []
@@ -118,12 +478,77 @@
         "noLegendary": {
           "title": "WITHOUT ANY LEGENDARY - 100 WINS - 0:52 - 70/H",
           "members": [
-            { "name": "Archeops", "moves": [ { "name": "Stone Edge", "tag": null, "share": 99 } ], "bans": [] },
-            { "name": "Rhyperior", "moves": [ { "name": "Stone Edge", "tag": null, "share": 99 } ], "bans": [] },
-            { "name": "Sudowoodo", "moves": [ { "name": "Head Smash", "tag": null, "share": 99 } ], "bans": [] },
-            { "name": "Solrock", "moves": [ { "name": "Stone Edge", "tag": null, "share": 80 }, { "name": "Hypnosis", "tag": "SLP", "share": 20 } ], "bans": [] },
-            { "name": "Relicanth", "moves": [ { "name": "Head Smash", "tag": null, "share": 100 } ], "bans": [] },
-            { "name": "Rampardos", "moves": [ { "name": "Head Smash", "tag": null, "share": 99 } ], "bans": [] }
+            {
+              "name": "Archeops",
+              "moves": [
+                {
+                  "name": "Stone Edge",
+                  "tag": null,
+                  "share": 99
+                }
+              ],
+              "bans": []
+            },
+            {
+              "name": "Rhyperior",
+              "moves": [
+                {
+                  "name": "Stone Edge",
+                  "tag": null,
+                  "share": 99
+                }
+              ],
+              "bans": []
+            },
+            {
+              "name": "Sudowoodo",
+              "moves": [
+                {
+                  "name": "Head Smash",
+                  "tag": null,
+                  "share": 99
+                }
+              ],
+              "bans": []
+            },
+            {
+              "name": "Solrock",
+              "moves": [
+                {
+                  "name": "Stone Edge",
+                  "tag": null,
+                  "share": 80
+                },
+                {
+                  "name": "Hypnosis",
+                  "tag": "SLP",
+                  "share": 20
+                }
+              ],
+              "bans": []
+            },
+            {
+              "name": "Relicanth",
+              "moves": [
+                {
+                  "name": "Head Smash",
+                  "tag": null,
+                  "share": 100
+                }
+              ],
+              "bans": []
+            },
+            {
+              "name": "Rampardos",
+              "moves": [
+                {
+                  "name": "Head Smash",
+                  "tag": null,
+                  "share": 99
+                }
+              ],
+              "bans": []
+            }
           ],
           "alternates": [],
           "alternateBans": []
@@ -132,15 +557,89 @@
       {
         "region": "Johto",
         "boss": "Lugia",
-        "title": { "time": "0:57", "winsPerHour": 63, "mode": "LESSER LEGENDARIES ALLOWED", "bansBonus": "+3%" },
+        "title": {
+          "time": null,
+          "winsPerHour": 63,
+          "mode": null,
+          "bansBonus": null
+        },
         "team": {
           "members": [
-            { "name": "Thundurus Therian", "legendary": true, "moves": [ { "name": "Thunder", "tag": "PAR", "share": 100 } ], "bans": [] },
-            { "name": "Entei", "legendary": true, "moves": [ { "name": "Sacred Fire", "tag": "BRN", "share": 100 } ], "bans": [] },
-            { "name": "Gigalith", "legendary": false, "moves": [ { "name": "Stone Edge", "tag": null, "share": 99 } ], "bans": [] },
-            { "name": "Tyranitar", "legendary": false, "moves": [ { "name": "Stone Edge", "tag": null, "share": 98 } ], "bans": [] },
-            { "name": "Rampardos", "legendary": false, "moves": [ { "name": "Head Smash", "tag": null, "share": 100 } ], "bans": [] },
-            { "name": "Magnezone", "legendary": false, "moves": [ { "name": "Zap Cannon", "tag": "PAR", "share": 98 } ], "bans": ["Supersonic", "Thunder Wave"] }
+            {
+              "name": "Thundurus Therian",
+              "legendary": true,
+              "moves": [
+                {
+                  "name": "Thunder",
+                  "tag": "PAR",
+                  "share": 100
+                }
+              ],
+              "bans": []
+            },
+            {
+              "name": "Entei",
+              "legendary": true,
+              "moves": [
+                {
+                  "name": "Sacred Fire",
+                  "tag": "BRN",
+                  "share": 100
+                }
+              ],
+              "bans": []
+            },
+            {
+              "name": "Gigalith",
+              "legendary": false,
+              "moves": [
+                {
+                  "name": "Stone Edge",
+                  "tag": null,
+                  "share": 99
+                }
+              ],
+              "bans": []
+            },
+            {
+              "name": "Tyranitar",
+              "legendary": false,
+              "moves": [
+                {
+                  "name": "Stone Edge",
+                  "tag": null,
+                  "share": 98
+                }
+              ],
+              "bans": []
+            },
+            {
+              "name": "Rampardos",
+              "legendary": false,
+              "moves": [
+                {
+                  "name": "Head Smash",
+                  "tag": null,
+                  "share": 100
+                }
+              ],
+              "bans": []
+            },
+            {
+              "name": "Magnezone",
+              "legendary": false,
+              "moves": [
+                {
+                  "name": "Zap Cannon",
+                  "tag": "PAR",
+                  "share": 98
+                }
+              ],
+              "bans": [
+                "Supersonic",
+                "Thunder Wave"
+              ]
+            }
           ],
           "alternates": [],
           "alternateBans": []
@@ -148,12 +647,81 @@
         "noLegendary": {
           "title": "NO LEGENDARY - 100 WINS - 0:58 - 62/H - BANS +7%",
           "members": [
-            { "name": "Magnezone", "moves": [ { "name": "Zap Cannon", "tag": "PAR", "share": 99 } ], "bans": ["Supersonic", "Thunder Wave"] },
-            { "name": "Tyranitar", "moves": [ { "name": "Stone Edge", "tag": null, "share": 98 } ], "bans": [] },
-            { "name": "Nidoking", "moves": [ { "name": "Struggle", "tag": null, "share": 69 }, { "name": "Toxic", "tag": "PSN", "share": 31 } ], "bans": [], "banAllButNote": "BAN 10 attacks, all but its 8 Ground attacks" },
-            { "name": "Rampardos", "moves": [ { "name": "Head Smash", "tag": null, "share": 100 } ], "bans": [] },
-            { "name": "Relicanth", "moves": [ { "name": "Head Smash", "tag": null, "share": 99 } ], "bans": [] },
-            { "name": "Gigalith", "moves": [ { "name": "Stone Edge", "tag": null, "share": 98 } ], "bans": [] }
+            {
+              "name": "Magnezone",
+              "moves": [
+                {
+                  "name": "Zap Cannon",
+                  "tag": "PAR",
+                  "share": 99
+                }
+              ],
+              "bans": [
+                "Supersonic",
+                "Thunder Wave"
+              ]
+            },
+            {
+              "name": "Tyranitar",
+              "moves": [
+                {
+                  "name": "Stone Edge",
+                  "tag": null,
+                  "share": 98
+                }
+              ],
+              "bans": []
+            },
+            {
+              "name": "Nidoking",
+              "moves": [
+                {
+                  "name": "Struggle",
+                  "tag": null,
+                  "share": 69
+                },
+                {
+                  "name": "Toxic",
+                  "tag": "PSN",
+                  "share": 31
+                }
+              ],
+              "bans": [],
+              "banAllButNote": "BAN 10 attacks, all but its 8 Ground attacks"
+            },
+            {
+              "name": "Rampardos",
+              "moves": [
+                {
+                  "name": "Head Smash",
+                  "tag": null,
+                  "share": 100
+                }
+              ],
+              "bans": []
+            },
+            {
+              "name": "Relicanth",
+              "moves": [
+                {
+                  "name": "Head Smash",
+                  "tag": null,
+                  "share": 99
+                }
+              ],
+              "bans": []
+            },
+            {
+              "name": "Gigalith",
+              "moves": [
+                {
+                  "name": "Stone Edge",
+                  "tag": null,
+                  "share": 98
+                }
+              ],
+              "bans": []
+            }
           ],
           "alternates": [],
           "alternateBans": []
@@ -162,28 +730,191 @@
       {
         "region": "Hoenn",
         "boss": "Groudon",
-        "title": { "time": "0:48", "winsPerHour": 74, "mode": "LESSER LEGENDARIES ALLOWED", "bansBonus": "+11%" },
+        "title": {
+          "time": null,
+          "winsPerHour": 74,
+          "mode": null,
+          "bansBonus": null
+        },
         "team": {
           "members": [
-            { "name": "Shaymin Sky", "legendary": true, "moves": [ { "name": "Leaf Storm", "tag": null, "share": 98 } ], "bans": ["Sweet Kiss"] },
-            { "name": "Keldeo", "legendary": true, "moves": [ { "name": "Hydro Pump", "tag": null, "share": 100 } ], "bans": [] },
-            { "name": "Celebi", "legendary": true, "moves": [ { "name": "Leaf Storm", "tag": null, "share": 98 } ], "bans": [] },
-            { "name": "Glaceon", "legendary": false, "moves": [ { "name": "Blizzard", "tag": "FRZ", "share": 100 } ], "bans": [] },
-            { "name": "Tangrowth", "legendary": false, "moves": [ { "name": "Leaf Storm", "tag": null, "share": 89 }, { "name": "Poison Powder", "tag": "PSN", "share": 10 } ], "bans": ["Sleep Powder"] },
-            { "name": "Exeggutor", "legendary": false, "moves": [ { "name": "Leaf Storm", "tag": null, "share": 85 }, { "name": "Poison Powder", "tag": "PSN", "share": 13 } ], "bans": ["Hypnosis", "Sleep Powder"] }
+            {
+              "name": "Shaymin Sky",
+              "legendary": true,
+              "moves": [
+                {
+                  "name": "Leaf Storm",
+                  "tag": null,
+                  "share": 98
+                }
+              ],
+              "bans": [
+                "Sweet Kiss"
+              ]
+            },
+            {
+              "name": "Keldeo",
+              "legendary": true,
+              "moves": [
+                {
+                  "name": "Hydro Pump",
+                  "tag": null,
+                  "share": 100
+                }
+              ],
+              "bans": []
+            },
+            {
+              "name": "Celebi",
+              "legendary": true,
+              "moves": [
+                {
+                  "name": "Leaf Storm",
+                  "tag": null,
+                  "share": 98
+                }
+              ],
+              "bans": []
+            },
+            {
+              "name": "Glaceon",
+              "legendary": false,
+              "moves": [
+                {
+                  "name": "Blizzard",
+                  "tag": "FRZ",
+                  "share": 100
+                }
+              ],
+              "bans": []
+            },
+            {
+              "name": "Tangrowth",
+              "legendary": false,
+              "moves": [
+                {
+                  "name": "Leaf Storm",
+                  "tag": null,
+                  "share": 89
+                },
+                {
+                  "name": "Poison Powder",
+                  "tag": "PSN",
+                  "share": 10
+                }
+              ],
+              "bans": [
+                "Sleep Powder"
+              ]
+            },
+            {
+              "name": "Exeggutor",
+              "legendary": false,
+              "moves": [
+                {
+                  "name": "Leaf Storm",
+                  "tag": null,
+                  "share": 85
+                },
+                {
+                  "name": "Poison Powder",
+                  "tag": "PSN",
+                  "share": 13
+                }
+              ],
+              "bans": [
+                "Hypnosis",
+                "Sleep Powder"
+              ]
+            }
           ],
           "alternates": [],
           "alternateBans": []
         },
         "noLegendary": {
-          "title": "NO LEGENDARY - 98 WINS - 0:51 - 69/H - BANS +2%",
+          "title": "NO LEGENDARY - 98 WINS - 0:51- 69/H - BANS +2%",
           "members": [
-            { "name": "Tangrowth", "moves": [ { "name": "Leaf Storm", "tag": null, "share": 94 } ], "bans": ["Sleep Powder"] },
-            { "name": "Glaceon", "moves": [ { "name": "Blizzard", "tag": "FRZ", "share": 100 } ], "bans": [] },
-            { "name": "Bellossom", "moves": [ { "name": "Leaf Storm", "tag": null, "share": 95 } ], "bans": [] },
-            { "name": "Exeggutor", "moves": [ { "name": "Leaf Storm", "tag": null, "share": 89 }, { "name": "Poison Powder", "tag": "PSN", "share": 9 } ], "bans": ["Hypnosis", "Sleep Powder"] },
-            { "name": "Vileplume", "moves": [ { "name": "Leaf Storm", "tag": null, "share": 95 } ], "bans": [] },
-            { "name": "Meganium", "moves": [ { "name": "Leaf Storm", "tag": null, "share": 88 }, { "name": "Poison Powder", "tag": "PSN", "share": 11 } ], "bans": [] }
+            {
+              "name": "Tangrowth",
+              "moves": [
+                {
+                  "name": "Leaf Storm",
+                  "tag": null,
+                  "share": 94
+                }
+              ],
+              "bans": [
+                "Sleep Powder"
+              ]
+            },
+            {
+              "name": "Glaceon",
+              "moves": [
+                {
+                  "name": "Blizzard",
+                  "tag": "FRZ",
+                  "share": 100
+                }
+              ],
+              "bans": []
+            },
+            {
+              "name": "Bellossom",
+              "moves": [
+                {
+                  "name": "Leaf Storm",
+                  "tag": null,
+                  "share": 95
+                }
+              ],
+              "bans": []
+            },
+            {
+              "name": "Exeggutor",
+              "moves": [
+                {
+                  "name": "Leaf Storm",
+                  "tag": null,
+                  "share": 89
+                },
+                {
+                  "name": "Poison Powder",
+                  "tag": "PSN",
+                  "share": 9
+                }
+              ],
+              "bans": [
+                "Hypnosis",
+                "Sleep Powder"
+              ]
+            },
+            {
+              "name": "Vileplume",
+              "moves": [
+                {
+                  "name": "Leaf Storm",
+                  "tag": null,
+                  "share": 95
+                }
+              ],
+              "bans": []
+            },
+            {
+              "name": "Meganium",
+              "moves": [
+                {
+                  "name": "Leaf Storm",
+                  "tag": null,
+                  "share": 88
+                },
+                {
+                  "name": "Poison Powder",
+                  "tag": "PSN",
+                  "share": 11
+                }
+              ],
+              "bans": []
+            }
           ],
           "alternates": [],
           "alternateBans": []
@@ -192,118 +923,1186 @@
       {
         "region": "Hoenn",
         "boss": "Kyogre",
-        "title": { "time": "0:51", "winsPerHour": 70, "mode": "LESSER LEGENDARIES ALLOWED", "bansBonus": "+14%" },
+        "title": {
+          "time": null,
+          "winsPerHour": 70,
+          "mode": null,
+          "bansBonus": null
+        },
         "team": {
           "members": [
-            { "name": "Celebi", "legendary": true, "moves": [ { "name": "Solar Blade", "tag": null, "share": 100 } ], "bans": [] },
-            { "name": "Carnivine", "legendary": false, "moves": [ { "name": "Power Whip", "tag": null, "share": 100 } ], "bans": [] },
-            { "name": "Leafeon", "legendary": false, "moves": [ { "name": "Solar Blade", "tag": null, "share": 99 } ], "bans": [] },
-            { "name": "Victreebel", "legendary": false, "moves": [ { "name": "Power Whip", "tag": null, "share": 82 }, { "name": "Poison Powder", "tag": "PSN", "share": 16 } ], "bans": ["Stun Spore"] },
-            { "name": "Exeggutor", "legendary": false, "moves": [ { "name": "Wood Hammer", "tag": null, "share": 86 }, { "name": "Sleep Powder", "tag": "SLP", "share": 12 } ], "bans": [] },
-            { "name": "Ferrothorn", "legendary": false, "moves": [ { "name": "Power Whip", "tag": null, "share": 99 } ], "bans": [] }
+            {
+              "name": "Celebi",
+              "legendary": true,
+              "moves": [
+                {
+                  "name": "Solar Blade",
+                  "tag": null,
+                  "share": 100
+                }
+              ],
+              "bans": []
+            },
+            {
+              "name": "Carnivine",
+              "legendary": false,
+              "moves": [
+                {
+                  "name": "Power Whip",
+                  "tag": null,
+                  "share": 100
+                }
+              ],
+              "bans": []
+            },
+            {
+              "name": "Leafeon",
+              "legendary": false,
+              "moves": [
+                {
+                  "name": "Solar Blade",
+                  "tag": null,
+                  "share": 99
+                }
+              ],
+              "bans": []
+            },
+            {
+              "name": "Victreebel",
+              "legendary": false,
+              "moves": [
+                {
+                  "name": "Power Whip",
+                  "tag": null,
+                  "share": 82
+                },
+                {
+                  "name": "Poison Powder",
+                  "tag": "PSN",
+                  "share": 16
+                }
+              ],
+              "bans": [
+                "Stun Spore"
+              ]
+            },
+            {
+              "name": "Exeggutor",
+              "legendary": false,
+              "moves": [
+                {
+                  "name": "Wood Hammer",
+                  "tag": null,
+                  "share": 86
+                },
+                {
+                  "name": "Sleep Powder",
+                  "tag": "SLP",
+                  "share": 12
+                }
+              ],
+              "bans": []
+            },
+            {
+              "name": "Ferrothorn",
+              "legendary": false,
+              "moves": [
+                {
+                  "name": "Power Whip",
+                  "tag": null,
+                  "share": 99
+                }
+              ],
+              "bans": []
+            }
           ],
-          "alternates": [],
+          "alternates": [
+            {
+              "memberIndex": 0,
+              "name": "Roserade",
+              "rate": 69,
+              "withBan": false
+            },
+            {
+              "memberIndex": 0,
+              "name": "Abomasnow",
+              "rate": 68,
+              "withBan": false
+            },
+            {
+              "memberIndex": 1,
+              "name": "Abomasnow",
+              "rate": 68,
+              "withBan": false
+            },
+            {
+              "memberIndex": 1,
+              "name": "Roserade",
+              "rate": 70,
+              "withBan": false
+            },
+            {
+              "memberIndex": 2,
+              "name": "Meganium",
+              "rate": 68,
+              "withBan": false
+            },
+            {
+              "memberIndex": 2,
+              "name": "Roserade",
+              "rate": 68,
+              "withBan": false
+            },
+            {
+              "memberIndex": 3,
+              "name": "Meganium",
+              "rate": 68,
+              "withBan": false
+            },
+            {
+              "memberIndex": 3,
+              "name": "Venusaur",
+              "rate": 68,
+              "withBan": false
+            },
+            {
+              "memberIndex": 4,
+              "name": "Venusaur",
+              "rate": 69,
+              "withBan": false
+            },
+            {
+              "memberIndex": 4,
+              "name": "Meganium",
+              "rate": 68,
+              "withBan": false
+            },
+            {
+              "memberIndex": 5,
+              "name": "Venusaur",
+              "rate": 69,
+              "withBan": false
+            },
+            {
+              "memberIndex": 5,
+              "name": "Abomasnow",
+              "rate": 68,
+              "withBan": false
+            }
+          ],
           "alternateBans": []
         },
         "noLegendary": {
           "title": "NO LEGENDARY - 99 WINS - 0:52 - 69/H - BANS +7%",
           "members": [
-            { "name": "Shiftry", "moves": [ { "name": "Solar Blade", "tag": null, "share": 99 } ], "bans": [] },
-            { "name": "Leafeon", "moves": [ { "name": "Solar Blade", "tag": null, "share": 99 } ], "bans": [] },
-            { "name": "Victreebel", "moves": [ { "name": "Power Whip", "tag": null, "share": 91 }, { "name": "Poison Powder", "tag": "PSN", "share": 8 } ], "bans": ["Stun Spore"] },
-            { "name": "Exeggutor", "moves": [ { "name": "Wood Hammer", "tag": null, "share": 90 }, { "name": "Sleep Powder", "tag": "SLP", "share": 8 } ], "bans": [] },
-            { "name": "Ferrothorn", "moves": [ { "name": "Power Whip", "tag": null, "share": 99 } ], "bans": [] },
-            { "name": "Meganium", "moves": [ { "name": "Solar Blade", "tag": null, "share": 85 }, { "name": "Poison Powder", "tag": "PSN", "share": 14 } ], "bans": [] }
+            {
+              "name": "Shiftry",
+              "moves": [
+                {
+                  "name": "Solar Blade",
+                  "tag": null,
+                  "share": 99
+                }
+              ],
+              "bans": []
+            },
+            {
+              "name": "Leafeon",
+              "moves": [
+                {
+                  "name": "Solar Blade",
+                  "tag": null,
+                  "share": 99
+                }
+              ],
+              "bans": []
+            },
+            {
+              "name": "Victreebel",
+              "moves": [
+                {
+                  "name": "Power Whip",
+                  "tag": null,
+                  "share": 91
+                },
+                {
+                  "name": "Poison Powder",
+                  "tag": "PSN",
+                  "share": 8
+                }
+              ],
+              "bans": [
+                "Stun Spore"
+              ]
+            },
+            {
+              "name": "Exeggutor",
+              "moves": [
+                {
+                  "name": "Wood Hammer",
+                  "tag": null,
+                  "share": 90
+                },
+                {
+                  "name": "Sleep Powder",
+                  "tag": "SLP",
+                  "share": 8
+                }
+              ],
+              "bans": []
+            },
+            {
+              "name": "Ferrothorn",
+              "moves": [
+                {
+                  "name": "Power Whip",
+                  "tag": null,
+                  "share": 99
+                }
+              ],
+              "bans": []
+            },
+            {
+              "name": "Meganium",
+              "moves": [
+                {
+                  "name": "Solar Blade",
+                  "tag": null,
+                  "share": 85
+                },
+                {
+                  "name": "Poison Powder",
+                  "tag": "PSN",
+                  "share": 14
+                }
+              ],
+              "bans": []
+            }
           ],
-          "alternates": [],
+          "alternates": [
+            {
+              "memberIndex": 0,
+              "name": "Carnivine",
+              "rate": 69,
+              "withBan": false
+            },
+            {
+              "memberIndex": 0,
+              "name": "Abomasnow",
+              "rate": 69,
+              "withBan": false
+            },
+            {
+              "memberIndex": 1,
+              "name": "Carnivine",
+              "rate": 68,
+              "withBan": false
+            },
+            {
+              "memberIndex": 1,
+              "name": "Abomasnow",
+              "rate": 67,
+              "withBan": false
+            },
+            {
+              "memberIndex": 2,
+              "name": "Carnivine",
+              "rate": 67,
+              "withBan": false
+            },
+            {
+              "memberIndex": 2,
+              "name": "Venusaur",
+              "rate": 67,
+              "withBan": false
+            },
+            {
+              "memberIndex": 3,
+              "name": "Roserade",
+              "rate": 68,
+              "withBan": false
+            },
+            {
+              "memberIndex": 3,
+              "name": "Venusaur",
+              "rate": 68,
+              "withBan": false
+            },
+            {
+              "memberIndex": 4,
+              "name": "Roserade",
+              "rate": 68,
+              "withBan": false
+            },
+            {
+              "memberIndex": 4,
+              "name": "Venusaur",
+              "rate": 69,
+              "withBan": false
+            },
+            {
+              "memberIndex": 4,
+              "name": "Venusaur",
+              "rate": 69,
+              "withBan": false
+            },
+            {
+              "memberIndex": 4,
+              "name": "Muk",
+              "rate": 66,
+              "withBan": false
+            }
+          ],
           "alternateBans": []
         }
       },
       {
         "region": "Hoenn",
         "boss": "Rayquaza",
-        "title": { "time": "0:55", "winsPerHour": 66, "mode": "LESSER LEGENDARIES ALLOWED", "bansBonus": "+2%" },
+        "title": {
+          "time": "0:55",
+          "winsPerHour": 66,
+          "mode": "LESSER LEGENDARIES ALLOWED",
+          "bansBonus": "+2%"
+        },
         "team": {
           "members": [
-            { "name": "Regice", "legendary": true, "moves": [ { "name": "Blizzard", "tag": "FRZ", "share": 98 } ], "bans": [] },
-            { "name": "Glaceon", "legendary": false, "moves": [ { "name": "Blizzard", "tag": "FRZ", "share": 98 } ], "bans": [] },
-            { "name": "Weavile", "legendary": false, "moves": [ { "name": "Triple Axel", "tag": null, "share": 99 } ], "bans": [] },
-            { "name": "Jynx", "legendary": false, "moves": [ { "name": "Blizzard", "tag": "FRZ", "share": 100 } ], "bans": ["Lovely Kiss", "Sing", "Sweet Kiss"] },
-            { "name": "Mamoswine", "legendary": false, "moves": [ { "name": "Icicle Spear", "tag": null, "share": 99 } ], "bans": [] },
-            { "name": "Vanilluxe", "legendary": false, "moves": [ { "name": "Blizzard", "tag": "FRZ", "share": 99 } ], "bans": [] }
+            {
+              "name": "Regice",
+              "legendary": true,
+              "moves": [
+                {
+                  "name": "Blizzard",
+                  "tag": "FRZ",
+                  "share": 98
+                }
+              ],
+              "bans": []
+            },
+            {
+              "name": "Glaceon",
+              "legendary": false,
+              "moves": [
+                {
+                  "name": "Blizzard",
+                  "tag": "FRZ",
+                  "share": 98
+                }
+              ],
+              "bans": []
+            },
+            {
+              "name": "Weavile",
+              "legendary": false,
+              "moves": [
+                {
+                  "name": "Triple Axel",
+                  "tag": null,
+                  "share": 99
+                }
+              ],
+              "bans": []
+            },
+            {
+              "name": "Jynx",
+              "legendary": false,
+              "moves": [
+                {
+                  "name": "Blizzard",
+                  "tag": "FRZ",
+                  "share": 100
+                }
+              ],
+              "bans": [
+                "Lovely Kiss",
+                "Sing",
+                "Sweet Kiss"
+              ]
+            },
+            {
+              "name": "Mamoswine",
+              "legendary": false,
+              "moves": [
+                {
+                  "name": "Icicle Spear",
+                  "tag": null,
+                  "share": 99
+                }
+              ],
+              "bans": []
+            },
+            {
+              "name": "Vanilluxe",
+              "legendary": false,
+              "moves": [
+                {
+                  "name": "Blizzard",
+                  "tag": "FRZ",
+                  "share": 99
+                }
+              ],
+              "bans": []
+            }
           ],
-          "alternates": [],
+          "alternates": [
+            {
+              "memberIndex": 0,
+              "name": "Walrein",
+              "rate": 65,
+              "withBan": false
+            },
+            {
+              "memberIndex": 0,
+              "name": "Rotom (Frost)",
+              "rate": 67,
+              "withBan": true
+            },
+            {
+              "memberIndex": 1,
+              "name": "Rotom (Frost)",
+              "rate": 62,
+              "withBan": true
+            },
+            {
+              "memberIndex": 1,
+              "name": "Walrein",
+              "rate": 60,
+              "withBan": false
+            },
+            {
+              "memberIndex": 2,
+              "name": "Rotom (Frost)",
+              "rate": 64,
+              "withBan": true
+            },
+            {
+              "memberIndex": 2,
+              "name": "Walrein",
+              "rate": 62,
+              "withBan": false
+            },
+            {
+              "memberIndex": 3,
+              "name": "Walrein",
+              "rate": 65,
+              "withBan": false
+            },
+            {
+              "memberIndex": 3,
+              "name": "Rotom (Frost)",
+              "rate": 66,
+              "withBan": true
+            },
+            {
+              "memberIndex": 4,
+              "name": "Walrein",
+              "rate": 66,
+              "withBan": false
+            },
+            {
+              "memberIndex": 4,
+              "name": "Rotom (Frost)",
+              "rate": 67,
+              "withBan": true
+            },
+            {
+              "memberIndex": 5,
+              "name": "Walrein",
+              "rate": 64,
+              "withBan": false
+            },
+            {
+              "memberIndex": 5,
+              "name": "Rotom (Frost)",
+              "rate": 66,
+              "withBan": true
+            }
+          ],
           "alternateBans": []
         },
         "noLegendary": {
           "title": "NO LEGENDARY - 99 WINS - 0:55 - 65/H - BANS +2%",
           "members": [
-            { "name": "Glaceon", "moves": [ { "name": "Blizzard", "tag": "FRZ", "share": 98 } ], "bans": [] },
-            { "name": "Jynx", "moves": [ { "name": "Blizzard", "tag": "FRZ", "share": 100 } ], "bans": ["Lovely Kiss", "Sing", "Sweet Kiss"] },
-            { "name": "Weavile", "moves": [ { "name": "Triple Axel", "tag": null, "share": 100 } ], "bans": [] },
-            { "name": "Walrein", "moves": [ { "name": "Blizzard", "tag": "FRZ", "share": 99 } ], "bans": [] },
-            { "name": "Mamoswine", "moves": [ { "name": "Icicle Spear", "tag": null, "share": 99 } ], "bans": [] },
-            { "name": "Vanilluxe", "moves": [ { "name": "Blizzard", "tag": "FRZ", "share": 98 } ], "bans": [] }
+            {
+              "name": "Glaceon",
+              "moves": [
+                {
+                  "name": "Blizzard",
+                  "tag": "FRZ",
+                  "share": 98
+                }
+              ],
+              "bans": []
+            },
+            {
+              "name": "Jynx",
+              "moves": [
+                {
+                  "name": "Blizzard",
+                  "tag": "FRZ",
+                  "share": 100
+                }
+              ],
+              "bans": [
+                "Lovely Kiss",
+                "Sing",
+                "Sweet Kiss"
+              ]
+            },
+            {
+              "name": "Weavile",
+              "moves": [
+                {
+                  "name": "Triple Axel",
+                  "tag": null,
+                  "share": 100
+                }
+              ],
+              "bans": []
+            },
+            {
+              "name": "Walrein",
+              "moves": [
+                {
+                  "name": "Blizzard",
+                  "tag": "FRZ",
+                  "share": 99
+                }
+              ],
+              "bans": []
+            },
+            {
+              "name": "Mamoswine",
+              "moves": [
+                {
+                  "name": "Icicle Spear",
+                  "tag": null,
+                  "share": 99
+                }
+              ],
+              "bans": []
+            },
+            {
+              "name": "Vanilluxe",
+              "moves": [
+                {
+                  "name": "Blizzard",
+                  "tag": "FRZ",
+                  "share": 98
+                }
+              ],
+              "bans": []
+            }
           ],
-          "alternates": [],
+          "alternates": [
+            {
+              "memberIndex": 0,
+              "name": "Rotom (Frost)",
+              "rate": 62,
+              "withBan": false
+            },
+            {
+              "memberIndex": 0,
+              "name": "Beartic",
+              "rate": 59,
+              "withBan": false
+            },
+            {
+              "memberIndex": 1,
+              "name": "Rotom (Frost)",
+              "rate": 66,
+              "withBan": false
+            },
+            {
+              "memberIndex": 1,
+              "name": "Beartic",
+              "rate": 65,
+              "withBan": false
+            },
+            {
+              "memberIndex": 2,
+              "name": "Rotom (Frost)",
+              "rate": 63,
+              "withBan": false
+            },
+            {
+              "memberIndex": 2,
+              "name": "Lapras",
+              "rate": 61,
+              "withBan": true
+            },
+            {
+              "memberIndex": 3,
+              "name": "Rotom (Frost)",
+              "rate": 64,
+              "withBan": false
+            },
+            {
+              "memberIndex": 3,
+              "name": "Beartic",
+              "rate": 64,
+              "withBan": false
+            },
+            {
+              "memberIndex": 4,
+              "name": "Rotom (Frost)",
+              "rate": 66,
+              "withBan": false
+            },
+            {
+              "memberIndex": 4,
+              "name": "Beartic",
+              "rate": 65,
+              "withBan": false
+            },
+            {
+              "memberIndex": 5,
+              "name": "Lapras",
+              "rate": 63,
+              "withBan": true
+            },
+            {
+              "memberIndex": 5,
+              "name": "Rotom (Frost)",
+              "rate": 63,
+              "withBan": false
+            }
+          ],
           "alternateBans": []
         }
       },
       {
         "region": "Sinnoh",
         "boss": "Dialga",
-        "title": { "time": "0:49", "winsPerHour": 73, "mode": "LESSER LEGENDARIES ALLOWED", "bansBonus": "+6%" },
+        "title": {
+          "time": "0:49",
+          "winsPerHour": 73,
+          "mode": "LESSER LEGENDARIES ALLOWED",
+          "bansBonus": "+6%"
+        },
         "team": {
           "members": [
-            { "name": "Keldeo", "legendary": true, "moves": [ { "name": "Secret Sword", "tag": null, "share": 98 } ], "bans": [] },
-            { "name": "Terrakion", "legendary": true, "moves": [ { "name": "Sacred Sword", "tag": null, "share": 99 } ], "bans": [] },
-            { "name": "Landorus Therian", "legendary": true, "moves": [ { "name": "Earthquake", "tag": null, "share": 99 } ], "bans": [] },
-            { "name": "Conkeldurr", "legendary": false, "moves": [ { "name": "Superpower", "tag": null, "share": 98 } ], "bans": [] },
-            { "name": "Lucario", "legendary": false, "moves": [ { "name": "Focus Blast", "tag": null, "share": 98 } ], "bans": [] },
-            { "name": "Chandelure", "legendary": false, "moves": [ { "name": "Inferno", "tag": "BRN", "share": 100 } ], "bans": ["Confuse Ray", "Overheat", "Will-O-Wisp"] }
+            {
+              "name": "Keldeo",
+              "legendary": true,
+              "moves": [
+                {
+                  "name": "Secret Sword",
+                  "tag": null,
+                  "share": 98
+                }
+              ],
+              "bans": []
+            },
+            {
+              "name": "Terrakion",
+              "legendary": true,
+              "moves": [
+                {
+                  "name": "Sacred Sword",
+                  "tag": null,
+                  "share": 99
+                }
+              ],
+              "bans": []
+            },
+            {
+              "name": "Landorus Therian",
+              "legendary": true,
+              "moves": [
+                {
+                  "name": "Earthquake",
+                  "tag": null,
+                  "share": 99
+                }
+              ],
+              "bans": []
+            },
+            {
+              "name": "Conkeldurr",
+              "legendary": false,
+              "moves": [
+                {
+                  "name": "Superpower",
+                  "tag": null,
+                  "share": 98
+                }
+              ],
+              "bans": []
+            },
+            {
+              "name": "Lucario",
+              "legendary": false,
+              "moves": [
+                {
+                  "name": "Focus Blast",
+                  "tag": null,
+                  "share": 98
+                }
+              ],
+              "bans": []
+            },
+            {
+              "name": "Chandelure",
+              "legendary": false,
+              "moves": [
+                {
+                  "name": "Inferno",
+                  "tag": "BRN",
+                  "share": 100
+                }
+              ],
+              "bans": [
+                "Confuse Ray",
+                "Overheat",
+                "Will-O-Wisp"
+              ]
+            }
           ],
-          "alternates": [],
-          "alternateBans": [ { "name": "Haunter", "bans": ["8 attacks, all but its 5 Poison attacks"] } ]
+          "alternates": [
+            {
+              "memberIndex": 0,
+              "name": "Machamp",
+              "rate": 71,
+              "withBan": false
+            },
+            {
+              "memberIndex": 0,
+              "name": "Heracross",
+              "rate": 71,
+              "withBan": false
+            },
+            {
+              "memberIndex": 1,
+              "name": "Machamp",
+              "rate": 73,
+              "withBan": false
+            },
+            {
+              "memberIndex": 1,
+              "name": "Hariyama",
+              "rate": 72,
+              "withBan": false
+            },
+            {
+              "memberIndex": 2,
+              "name": "Heracross",
+              "rate": 73,
+              "withBan": false
+            },
+            {
+              "memberIndex": 2,
+              "name": "Machamp",
+              "rate": 73,
+              "withBan": false
+            },
+            {
+              "memberIndex": 3,
+              "name": "Machamp",
+              "rate": 73,
+              "withBan": false
+            },
+            {
+              "memberIndex": 3,
+              "name": "Heracross",
+              "rate": 73,
+              "withBan": false
+            },
+            {
+              "memberIndex": 4,
+              "name": "Machamp",
+              "rate": 73,
+              "withBan": false
+            },
+            {
+              "memberIndex": 4,
+              "name": "Heracross",
+              "rate": 73,
+              "withBan": false
+            },
+            {
+              "memberIndex": 5,
+              "name": "Gallade",
+              "rate": 69,
+              "withBan": false
+            },
+            {
+              "memberIndex": 5,
+              "name": "Haunter",
+              "rate": 69,
+              "withBan": true
+            }
+          ],
+          "alternateBans": [
+            {
+              "name": "Haunter",
+              "bans": [
+                "8 attacks, all but its 5 Poison attacks"
+              ]
+            }
+          ]
         },
         "noLegendary": {
           "title": "NO LEGENDARY - 100 WINS - 0:52 - 69/H - BANS +5%",
           "members": [
-            { "name": "Machamp", "moves": [ { "name": "Superpower", "tag": null, "share": 99 } ], "bans": [] },
-            { "name": "Lucario", "moves": [ { "name": "Focus Blast", "tag": null, "share": 93 }, { "name": "Close Combat", "tag": null, "share": 6 } ], "bans": [] },
-            { "name": "Conkeldurr", "moves": [ { "name": "Superpower", "tag": null, "share": 99 } ], "bans": [] },
-            { "name": "Chandelure", "moves": [ { "name": "Inferno", "tag": "BRN", "share": 100 } ], "bans": ["Confuse Ray", "Overheat", "Will-O-Wisp"] },
-            { "name": "Heracross", "moves": [ { "name": "Close Combat", "tag": null, "share": 99 } ], "bans": [] },
-            { "name": "Gallade", "moves": [ { "name": "Close Combat", "tag": null, "share": 93 }, { "name": "Hypnosis", "tag": "SLP", "share": 6 } ], "bans": [] }
+            {
+              "name": "Machamp",
+              "moves": [
+                {
+                  "name": "Superpower",
+                  "tag": null,
+                  "share": 99
+                }
+              ],
+              "bans": []
+            },
+            {
+              "name": "Lucario",
+              "moves": [
+                {
+                  "name": "Focus Blast",
+                  "tag": null,
+                  "share": 93
+                },
+                {
+                  "name": "Close Combat",
+                  "tag": null,
+                  "share": 6
+                }
+              ],
+              "bans": []
+            },
+            {
+              "name": "Conkeldurr",
+              "moves": [
+                {
+                  "name": "Superpower",
+                  "tag": null,
+                  "share": 99
+                }
+              ],
+              "bans": []
+            },
+            {
+              "name": "Chandelure",
+              "moves": [
+                {
+                  "name": "Inferno",
+                  "tag": "BRN",
+                  "share": 100
+                }
+              ],
+              "bans": [
+                "Confuse Ray",
+                "Overheat",
+                "Will-O-Wisp"
+              ]
+            },
+            {
+              "name": "Heracross",
+              "moves": [
+                {
+                  "name": "Close Combat",
+                  "tag": null,
+                  "share": 99
+                }
+              ],
+              "bans": []
+            },
+            {
+              "name": "Gallade",
+              "moves": [
+                {
+                  "name": "Close Combat",
+                  "tag": null,
+                  "share": 93
+                },
+                {
+                  "name": "Hypnosis",
+                  "tag": "SLP",
+                  "share": 6
+                }
+              ],
+              "bans": []
+            }
           ],
-          "alternates": [],
-          "alternateBans": [ { "name": "Lampent", "bans": ["Overheat"] } ]
+          "alternates": [
+            {
+              "memberIndex": 0,
+              "name": "Emboar",
+              "rate": 69,
+              "withBan": false
+            },
+            {
+              "memberIndex": 0,
+              "name": "Hariyama",
+              "rate": 69,
+              "withBan": false
+            },
+            {
+              "memberIndex": 1,
+              "name": "Emboar",
+              "rate": 68,
+              "withBan": false
+            },
+            {
+              "memberIndex": 1,
+              "name": "Excadrill",
+              "rate": 67,
+              "withBan": false
+            },
+            {
+              "memberIndex": 2,
+              "name": "Emboar",
+              "rate": 68,
+              "withBan": false
+            },
+            {
+              "memberIndex": 2,
+              "name": "Hariyama",
+              "rate": 68,
+              "withBan": false
+            },
+            {
+              "memberIndex": 3,
+              "name": "Hariyama",
+              "rate": 62,
+              "withBan": false
+            },
+            {
+              "memberIndex": 3,
+              "name": "Lampent",
+              "rate": 63,
+              "withBan": true
+            },
+            {
+              "memberIndex": 4,
+              "name": "Emboar",
+              "rate": 69,
+              "withBan": false
+            },
+            {
+              "memberIndex": 4,
+              "name": "Hariyama",
+              "rate": 69,
+              "withBan": false
+            },
+            {
+              "memberIndex": 5,
+              "name": "Emboar",
+              "rate": 69,
+              "withBan": false
+            },
+            {
+              "memberIndex": 5,
+              "name": "Hariyama",
+              "rate": 69,
+              "withBan": false
+            }
+          ],
+          "alternateBans": [
+            {
+              "name": "Lampent",
+              "bans": [
+                "Overheat"
+              ]
+            }
+          ]
         }
       },
       {
         "region": "Sinnoh",
         "boss": "Palkia",
-        "title": { "time": "0:57", "winsPerHour": 63, "mode": "LESSER LEGENDARIES ALLOWED (night only)", "bansBonus": "+3%" },
+        "title": {
+          "time": "0:57",
+          "winsPerHour": 63,
+          "mode": null,
+          "bansBonus": null
+        },
         "team": {
           "members": [
-            { "name": "Latias", "legendary": true, "moves": [ { "name": "Draco Meteor", "tag": null, "share": 99 } ], "bans": [] },
-            { "name": "Garchomp", "legendary": false, "moves": [ { "name": "Outrage", "tag": null, "share": 100 } ], "bans": [] },
-            { "name": "Dragonite", "legendary": false, "moves": [ { "name": "Outrage", "tag": null, "share": 100 } ], "bans": ["Thunder Wave"] },
-            { "name": "Slaking", "legendary": false, "moves": [ { "name": "Play Rough", "tag": null, "share": 98 } ], "bans": [] },
-            { "name": "Whimsicott", "legendary": false, "moves": [ { "name": "Moonblast", "tag": null, "share": 80 }, { "name": "Poison Powder", "tag": "PSN", "share": 19 } ], "bans": [] },
-            { "name": "Hydreigon", "legendary": false, "moves": [ { "name": "Draco Meteor", "tag": null, "share": 100 } ], "bans": [] }
+            {
+              "name": "Latias",
+              "legendary": true,
+              "moves": [
+                {
+                  "name": "Draco Meteor",
+                  "tag": null,
+                  "share": 99
+                }
+              ],
+              "bans": []
+            },
+            {
+              "name": "Garchomp",
+              "legendary": false,
+              "moves": [
+                {
+                  "name": "Outrage",
+                  "tag": null,
+                  "share": 100
+                }
+              ],
+              "bans": []
+            },
+            {
+              "name": "Dragonite",
+              "legendary": false,
+              "moves": [
+                {
+                  "name": "Outrage",
+                  "tag": null,
+                  "share": 100
+                }
+              ],
+              "bans": [
+                "Thunder Wave"
+              ]
+            },
+            {
+              "name": "Slaking",
+              "legendary": false,
+              "moves": [
+                {
+                  "name": "Play Rough",
+                  "tag": null,
+                  "share": 98
+                }
+              ],
+              "bans": []
+            },
+            {
+              "name": "Whimsicott",
+              "legendary": false,
+              "moves": [
+                {
+                  "name": "Moonblast",
+                  "tag": null,
+                  "share": 80
+                },
+                {
+                  "name": "Poison Powder",
+                  "tag": "PSN",
+                  "share": 19
+                }
+              ],
+              "bans": []
+            },
+            {
+              "name": "Whimsicott",
+              "legendary": false,
+              "moves": [
+                {
+                  "name": "Moonblast",
+                  "tag": null,
+                  "share": 80
+                },
+                {
+                  "name": "Poison Powder",
+                  "tag": "PSN",
+                  "share": 19
+                }
+              ],
+              "bans": []
+            }
           ],
           "alternates": [],
-          "alternateBans": [ { "name": "Gardevoir", "bans": ["Hypnosis"] }, { "name": "Clefable", "bans": ["Sweet Kiss"] } ]
+          "alternateBans": [
+            {
+              "name": "Gardevoir",
+              "bans": [
+                "Hypnosis"
+              ]
+            },
+            {
+              "name": "Clefable",
+              "bans": [
+                "Sweet Kiss"
+              ]
+            }
+          ]
         },
         "noLegendary": {
           "title": "NO LEGENDARY - 100 WINS - 1:01 - 59/H - BANS +4%",
           "members": [
-            { "name": "Garchomp", "moves": [ { "name": "Outrage", "tag": null, "share": 99 } ], "bans": [] },
-            { "name": "Dragonite", "moves": [ { "name": "Outrage", "tag": null, "share": 98 } ], "bans": ["Thunder Wave"] },
-            { "name": "Gardevoir", "moves": [ { "name": "Moonblast", "tag": null, "share": 86 }, { "name": "Hypnosis", "tag": "SLP", "share": 13 } ], "bans": [] },
-            { "name": "Slaking", "moves": [ { "name": "Play Rough", "tag": null, "share": 99 } ], "bans": [] },
-            { "name": "Granbull", "moves": [ { "name": "Play Rough", "tag": null, "share": 99 } ], "bans": [] },
-            { "name": "Whimsicott", "moves": [ { "name": "Moonblast", "tag": null, "share": 83 }, { "name": "Poison Powder", "tag": "PSN", "share": 17 } ], "bans": [] }
+            {
+              "name": "Garchomp",
+              "moves": [
+                {
+                  "name": "Outrage",
+                  "tag": null,
+                  "share": 99
+                }
+              ],
+              "bans": []
+            },
+            {
+              "name": "Dragonite",
+              "moves": [
+                {
+                  "name": "Outrage",
+                  "tag": null,
+                  "share": 98
+                }
+              ],
+              "bans": [
+                "Thunder Wave"
+              ]
+            },
+            {
+              "name": "Gardevoir",
+              "moves": [
+                {
+                  "name": "Moonblast",
+                  "tag": null,
+                  "share": 86
+                },
+                {
+                  "name": "Hypnosis",
+                  "tag": "SLP",
+                  "share": 13
+                }
+              ],
+              "bans": []
+            },
+            {
+              "name": "Slaking",
+              "moves": [
+                {
+                  "name": "Play Rough",
+                  "tag": null,
+                  "share": 99
+                }
+              ],
+              "bans": []
+            },
+            {
+              "name": "Granbull",
+              "moves": [
+                {
+                  "name": "Play Rough",
+                  "tag": null,
+                  "share": 99
+                }
+              ],
+              "bans": []
+            },
+            {
+              "name": "Whimsicott",
+              "moves": [
+                {
+                  "name": "Moonblast",
+                  "tag": null,
+                  "share": 83
+                },
+                {
+                  "name": "Poison Powder",
+                  "tag": "PSN",
+                  "share": 17
+                }
+              ],
+              "bans": []
+            }
           ],
           "alternates": [],
           "alternateBans": []
@@ -312,48 +2111,357 @@
       {
         "region": "Sinnoh",
         "boss": "Giratina",
-        "title": { "time": "0:45", "winsPerHour": 80, "mode": "LESSER LEGENDARIES ALLOWED", "bansBonus": null },
+        "title": {
+          "time": null,
+          "winsPerHour": 80,
+          "mode": null,
+          "bansBonus": null
+        },
         "team": {
           "members": [
-            { "name": "Regice", "legendary": true, "moves": [ { "name": "Blizzard", "tag": "FRZ", "share": 99 } ], "bans": [] },
-            { "name": "Vanilluxe", "legendary": false, "moves": [ { "name": "Blizzard", "tag": "FRZ", "share": 100 } ], "bans": [] },
-            { "name": "Walrein", "legendary": false, "moves": [ { "name": "Blizzard", "tag": "FRZ", "share": 99 } ], "bans": [] },
-            { "name": "Tyranitar", "legendary": false, "moves": [ { "name": "Foul Play", "tag": null, "share": 98 } ], "bans": [] },
-            { "name": "Hydreigon", "legendary": false, "moves": [ { "name": "Draco Meteor", "tag": null, "share": 98 } ], "bans": [] },
-            { "name": "Glaceon", "legendary": false, "moves": [ { "name": "Blizzard", "tag": "FRZ", "share": 98 } ], "bans": [] }
+            {
+              "name": "Regice",
+              "legendary": true,
+              "moves": [
+                {
+                  "name": "Blizzard",
+                  "tag": "FRZ",
+                  "share": 99
+                }
+              ],
+              "bans": []
+            },
+            {
+              "name": "Vanilluxe",
+              "legendary": false,
+              "moves": [
+                {
+                  "name": "Blizzard",
+                  "tag": "FRZ",
+                  "share": 100
+                }
+              ],
+              "bans": []
+            },
+            {
+              "name": "Walrein",
+              "legendary": false,
+              "moves": [
+                {
+                  "name": "Blizzard",
+                  "tag": "FRZ",
+                  "share": 99
+                }
+              ],
+              "bans": []
+            },
+            {
+              "name": "Tyranitar",
+              "legendary": false,
+              "moves": [
+                {
+                  "name": "Foul Play",
+                  "tag": null,
+                  "share": 98
+                }
+              ],
+              "bans": []
+            },
+            {
+              "name": "Hydreigon",
+              "legendary": false,
+              "moves": [
+                {
+                  "name": "Draco Meteor",
+                  "tag": null,
+                  "share": 98
+                }
+              ],
+              "bans": []
+            },
+            {
+              "name": "Glaceon",
+              "legendary": false,
+              "moves": [
+                {
+                  "name": "Blizzard",
+                  "tag": "FRZ",
+                  "share": 98
+                }
+              ],
+              "bans": []
+            }
           ],
           "alternates": [],
-          "alternateBans": [ { "name": "Exeggutor", "bans": ["Hypnosis", "Sleep Powder"] } ]
+          "alternateBans": [
+            {
+              "name": "Exeggutor",
+              "bans": [
+                "Hypnosis",
+                "Sleep Powder"
+              ]
+            }
+          ]
         },
         "noLegendary": {
           "title": "WITHOUT ANY LEGENDARY - 99 WINS - 0:45 - 79/H",
           "members": [
-            { "name": "Vanilluxe", "moves": [ { "name": "Blizzard", "tag": "FRZ", "share": 100 } ], "bans": [] },
-            { "name": "Walrein", "moves": [ { "name": "Blizzard", "tag": "FRZ", "share": 100 } ], "bans": [] },
-            { "name": "Skuntank", "moves": [ { "name": "Foul Play", "tag": null, "share": 85 }, { "name": "Toxic", "tag": "PSN", "share": 14 } ], "bans": [] },
-            { "name": "Tyranitar", "moves": [ { "name": "Foul Play", "tag": null, "share": 98 } ], "bans": [] },
-            { "name": "Hydreigon", "moves": [ { "name": "Draco Meteor", "tag": null, "share": 99 } ], "bans": [] },
-            { "name": "Glaceon", "moves": [ { "name": "Blizzard", "tag": "FRZ", "share": 99 } ], "bans": [] }
+            {
+              "name": "Vanilluxe",
+              "moves": [
+                {
+                  "name": "Blizzard",
+                  "tag": "FRZ",
+                  "share": 100
+                }
+              ],
+              "bans": []
+            },
+            {
+              "name": "Walrein",
+              "moves": [
+                {
+                  "name": "Blizzard",
+                  "tag": "FRZ",
+                  "share": 100
+                }
+              ],
+              "bans": []
+            },
+            {
+              "name": "Skuntank",
+              "moves": [
+                {
+                  "name": "Foul Play",
+                  "tag": null,
+                  "share": 85
+                },
+                {
+                  "name": "Toxic",
+                  "tag": "PSN",
+                  "share": 14
+                }
+              ],
+              "bans": []
+            },
+            {
+              "name": "Tyranitar",
+              "moves": [
+                {
+                  "name": "Foul Play",
+                  "tag": null,
+                  "share": 98
+                }
+              ],
+              "bans": []
+            },
+            {
+              "name": "Hydreigon",
+              "moves": [
+                {
+                  "name": "Draco Meteor",
+                  "tag": null,
+                  "share": 99
+                }
+              ],
+              "bans": []
+            },
+            {
+              "name": "Glaceon",
+              "moves": [
+                {
+                  "name": "Blizzard",
+                  "tag": "FRZ",
+                  "share": 99
+                }
+              ],
+              "bans": []
+            }
           ],
           "alternates": [],
-          "alternateBans": [ { "name": "Exeggutor", "bans": ["Hypnosis", "Sleep Powder"] } ]
+          "alternateBans": [
+            {
+              "name": "Exeggutor",
+              "bans": [
+                "Hypnosis",
+                "Sleep Powder"
+              ]
+            }
+          ]
         }
       },
       {
         "region": "Sinnoh",
         "boss": "Giratina Origin",
-        "title": { "time": "0:48", "winsPerHour": 75, "mode": "LESSER LEGENDARIES ALLOWED", "bansBonus": null },
+        "title": {
+          "time": "0:48",
+          "winsPerHour": 75,
+          "mode": "LESSER LEGENDARIES ALLOWED",
+          "bansBonus": null
+        },
         "team": {
           "members": [
-            { "name": "Tyranitar", "legendary": false, "moves": [ { "name": "Foul Play", "tag": null, "share": 99 } ], "bans": [] },
-            { "name": "Hydreigon", "legendary": false, "moves": [ { "name": "Draco Meteor", "tag": null, "share": 99 } ], "bans": [] },
-            { "name": "Glaceon", "legendary": false, "moves": [ { "name": "Blizzard", "tag": "FRZ", "share": 99 } ], "bans": [] },
-            { "name": "Vanilluxe", "legendary": false, "moves": [ { "name": "Blizzard", "tag": "FRZ", "share": 98 } ], "bans": [] },
-            { "name": "Walrein", "legendary": false, "moves": [ { "name": "Blizzard", "tag": "FRZ", "share": 99 } ], "bans": [] },
-            { "name": "Ditto", "legendary": false, "moves": [ { "name": "Draco Meteor", "tag": null, "share": 98 } ], "bans": [] }
+            {
+              "name": "Tyranitar",
+              "legendary": false,
+              "moves": [
+                {
+                  "name": "Foul Play",
+                  "tag": null,
+                  "share": 99
+                }
+              ],
+              "bans": []
+            },
+            {
+              "name": "Hydreigon",
+              "legendary": false,
+              "moves": [
+                {
+                  "name": "Draco Meteor",
+                  "tag": null,
+                  "share": 99
+                }
+              ],
+              "bans": []
+            },
+            {
+              "name": "Glaceon",
+              "legendary": false,
+              "moves": [
+                {
+                  "name": "Blizzard",
+                  "tag": "FRZ",
+                  "share": 99
+                }
+              ],
+              "bans": []
+            },
+            {
+              "name": "Vanilluxe",
+              "legendary": false,
+              "moves": [
+                {
+                  "name": "Blizzard",
+                  "tag": "FRZ",
+                  "share": 98
+                }
+              ],
+              "bans": []
+            },
+            {
+              "name": "Walrein",
+              "legendary": false,
+              "moves": [
+                {
+                  "name": "Blizzard",
+                  "tag": "FRZ",
+                  "share": 99
+                }
+              ],
+              "bans": []
+            },
+            {
+              "name": "Ditto",
+              "legendary": false,
+              "moves": [
+                {
+                  "name": "Draco Meteor",
+                  "tag": null,
+                  "share": 98
+                }
+              ],
+              "bans": []
+            }
           ],
-          "alternates": [],
-          "alternateBans": [ { "name": "Quagsire", "bans": ["9 attacks, all but Slam"] }, { "name": "Nidoking", "bans": ["13 attacks, all but its 5 Normal and Fighting attacks"] } ]
+          "alternates": [
+            {
+              "memberIndex": 0,
+              "name": "Skuntank",
+              "rate": 74,
+              "withBan": false
+            },
+            {
+              "memberIndex": 0,
+              "name": "Slaking",
+              "rate": 72,
+              "withBan": false
+            },
+            {
+              "memberIndex": 1,
+              "name": "Quagsire",
+              "rate": 70,
+              "withBan": true
+            },
+            {
+              "memberIndex": 1,
+              "name": "Nidoking",
+              "rate": 70,
+              "withBan": true
+            },
+            {
+              "memberIndex": 2,
+              "name": "Skuntank",
+              "rate": 71,
+              "withBan": false
+            },
+            {
+              "memberIndex": 2,
+              "name": "Nidoking",
+              "rate": 71,
+              "withBan": true
+            },
+            {
+              "memberIndex": 3,
+              "name": "Skuntank",
+              "rate": 74,
+              "withBan": false
+            },
+            {
+              "memberIndex": 3,
+              "name": "Beartic",
+              "rate": 73,
+              "withBan": false
+            },
+            {
+              "memberIndex": 4,
+              "name": "Skuntank",
+              "rate": 75,
+              "withBan": false
+            },
+            {
+              "memberIndex": 4,
+              "name": "Nidoking",
+              "rate": 74,
+              "withBan": true
+            },
+            {
+              "memberIndex": 5,
+              "name": "Skuntank",
+              "rate": 71,
+              "withBan": false
+            },
+            {
+              "memberIndex": 5,
+              "name": "Granbull",
+              "rate": 70,
+              "withBan": false
+            }
+          ],
+          "alternateBans": [
+            {
+              "name": "Quagsire",
+              "bans": [
+                "9 attacks, all but Slam"
+              ]
+            },
+            {
+              "name": "Nidoking",
+              "bans": [
+                "13 attacks, all but its 5 Normal and Fighting attacks"
+              ]
+            }
+          ]
         },
         "noLegendary": {
           "title": "Without any legendary: the same team.",
@@ -365,28 +2473,186 @@
       {
         "region": "Sinnoh",
         "boss": "Regigigas",
-        "title": { "time": "0:59", "winsPerHour": 61, "mode": "LESSER LEGENDARIES ALLOWED", "bansBonus": "+6%" },
+        "title": {
+          "time": null,
+          "winsPerHour": 61,
+          "mode": null,
+          "bansBonus": null
+        },
         "team": {
           "members": [
-            { "name": "Terrakion", "legendary": true, "moves": [ { "name": "Sacred Sword", "tag": null, "share": 99 } ], "bans": [] },
-            { "name": "Keldeo", "legendary": true, "moves": [ { "name": "Secret Sword", "tag": null, "share": 99 } ], "bans": [] },
-            { "name": "Conkeldurr", "legendary": false, "moves": [ { "name": "Superpower", "tag": null, "share": 99 } ], "bans": [] },
-            { "name": "Machamp", "legendary": false, "moves": [ { "name": "Superpower", "tag": null, "share": 100 } ], "bans": [] },
-            { "name": "Breloom", "legendary": false, "moves": [ { "name": "Close Combat", "tag": null, "share": 96 } ], "bans": [] },
-            { "name": "Chandelure", "legendary": false, "moves": [ { "name": "Inferno", "tag": "BRN", "share": 88 }, { "name": "Will-O-Wisp", "tag": "BRN", "share": 11 } ], "bans": ["Overheat"] }
+            {
+              "name": "Terrakion",
+              "legendary": true,
+              "moves": [
+                {
+                  "name": "Sacred Sword",
+                  "tag": null,
+                  "share": 99
+                }
+              ],
+              "bans": []
+            },
+            {
+              "name": "Keldeo",
+              "legendary": true,
+              "moves": [
+                {
+                  "name": "Secret Sword",
+                  "tag": null,
+                  "share": 99
+                }
+              ],
+              "bans": []
+            },
+            {
+              "name": "Conkeldurr",
+              "legendary": false,
+              "moves": [
+                {
+                  "name": "Superpower",
+                  "tag": null,
+                  "share": 99
+                }
+              ],
+              "bans": []
+            },
+            {
+              "name": "Machamp",
+              "legendary": false,
+              "moves": [
+                {
+                  "name": "Superpower",
+                  "tag": null,
+                  "share": 100
+                }
+              ],
+              "bans": []
+            },
+            {
+              "name": "Breloom",
+              "legendary": false,
+              "moves": [
+                {
+                  "name": "Close Combat",
+                  "tag": null,
+                  "share": 96
+                }
+              ],
+              "bans": []
+            },
+            {
+              "name": "Chandelure",
+              "legendary": false,
+              "moves": [
+                {
+                  "name": "Inferno",
+                  "tag": "BRN",
+                  "share": 88
+                },
+                {
+                  "name": "Will-O-Wisp",
+                  "tag": "BRN",
+                  "share": 11
+                }
+              ],
+              "bans": [
+                "Overheat"
+              ]
+            }
           ],
           "alternates": [],
-          "alternateBans": [ { "name": "Gengar", "bans": ["Sludge Wave"] }, { "name": "Lampent", "bans": ["Overheat"] } ]
+          "alternateBans": [
+            {
+              "name": "Gengar",
+              "bans": [
+                "Sludge Wave"
+              ]
+            },
+            {
+              "name": "Lampent",
+              "bans": [
+                "Overheat"
+              ]
+            }
+          ]
         },
         "noLegendary": {
           "title": "NO LEGENDARY - 100 WINS - 1:01 - 59/H - BANS +6%",
           "members": [
-            { "name": "Conkeldurr", "moves": [ { "name": "Superpower", "tag": null, "share": 100 } ], "bans": [] },
-            { "name": "Machamp", "moves": [ { "name": "Superpower", "tag": null, "share": 99 } ], "bans": [] },
-            { "name": "Emboar", "moves": [ { "name": "Close Combat", "tag": null, "share": 99 } ], "bans": [] },
-            { "name": "Heracross", "moves": [ { "name": "Close Combat", "tag": null, "share": 100 } ], "bans": [] },
-            { "name": "Breloom", "moves": [ { "name": "Close Combat", "tag": null, "share": 96 } ], "bans": [] },
-            { "name": "Chandelure", "moves": [ { "name": "Inferno", "tag": "BRN", "share": 90 }, { "name": "Will-O-Wisp", "tag": "BRN", "share": 9 } ], "bans": ["Overheat"] }
+            {
+              "name": "Conkeldurr",
+              "moves": [
+                {
+                  "name": "Superpower",
+                  "tag": null,
+                  "share": 100
+                }
+              ],
+              "bans": []
+            },
+            {
+              "name": "Machamp",
+              "moves": [
+                {
+                  "name": "Superpower",
+                  "tag": null,
+                  "share": 99
+                }
+              ],
+              "bans": []
+            },
+            {
+              "name": "Emboar",
+              "moves": [
+                {
+                  "name": "Close Combat",
+                  "tag": null,
+                  "share": 99
+                }
+              ],
+              "bans": []
+            },
+            {
+              "name": "Heracross",
+              "moves": [
+                {
+                  "name": "Close Combat",
+                  "tag": null,
+                  "share": 100
+                }
+              ],
+              "bans": []
+            },
+            {
+              "name": "Breloom",
+              "moves": [
+                {
+                  "name": "Close Combat",
+                  "tag": null,
+                  "share": 96
+                }
+              ],
+              "bans": []
+            },
+            {
+              "name": "Chandelure",
+              "moves": [
+                {
+                  "name": "Inferno",
+                  "tag": "BRN",
+                  "share": 90
+                },
+                {
+                  "name": "Will-O-Wisp",
+                  "tag": "BRN",
+                  "share": 9
+                }
+              ],
+              "bans": [
+                "Overheat"
+              ]
+            }
           ],
           "alternates": [],
           "alternateBans": []
@@ -395,45 +2661,456 @@
       {
         "region": "World",
         "boss": "Arceus",
-        "title": { "time": "0:46", "winsPerHour": 72, "mode": "LESSER LEGENDARIES ALLOWED", "bansBonus": "+43%" },
+        "title": {
+          "time": "0:46",
+          "winsPerHour": 72,
+          "mode": "LESSER LEGENDARIES ALLOWED",
+          "bansBonus": "+43%"
+        },
         "team": {
           "members": [
-            { "name": "Meloetta Pirouette", "legendary": true, "moves": [ { "name": "Close Combat", "tag": null, "share": 93 }, { "name": "Sing", "tag": "SLP", "share": 7 } ], "bans": [] },
-            { "name": "Keldeo", "legendary": true, "moves": [ { "name": "Secret Sword", "tag": null, "share": 99 } ], "bans": [] },
-            { "name": "Terrakion", "legendary": true, "moves": [ { "name": "Sacred Sword", "tag": null, "share": 98 } ], "bans": [] },
-            { "name": "Amoonguss", "legendary": false, "moves": [ { "name": "Struggle", "tag": null, "share": 58 }, { "name": "Spore", "tag": "SLP", "share": 22 }, { "name": "Toxic", "tag": "PSN", "share": 20 } ], "bans": [], "banAllButNote": "BAN 11 attacks, all but Astonish" },
-            { "name": "Machamp", "legendary": false, "moves": [ { "name": "Superpower", "tag": null, "share": 99 } ], "bans": [] },
-            { "name": "Gallade", "legendary": false, "moves": [ { "name": "Close Combat", "tag": null, "share": 89 }, { "name": "Hypnosis", "tag": "SLP", "share": 9 } ], "bans": [] }
+            {
+              "name": "Meloetta Pirouette",
+              "legendary": true,
+              "moves": [
+                {
+                  "name": "Close Combat",
+                  "tag": null,
+                  "share": 93
+                },
+                {
+                  "name": "Sing",
+                  "tag": "SLP",
+                  "share": 7
+                }
+              ],
+              "bans": []
+            },
+            {
+              "name": "Keldeo",
+              "legendary": true,
+              "moves": [
+                {
+                  "name": "Secret Sword",
+                  "tag": null,
+                  "share": 99
+                }
+              ],
+              "bans": []
+            },
+            {
+              "name": "Terrakion",
+              "legendary": true,
+              "moves": [
+                {
+                  "name": "Sacred Sword",
+                  "tag": null,
+                  "share": 98
+                }
+              ],
+              "bans": []
+            },
+            {
+              "name": "Amoonguss",
+              "legendary": false,
+              "moves": [
+                {
+                  "name": "Struggle",
+                  "tag": null,
+                  "share": 58
+                },
+                {
+                  "name": "Spore",
+                  "tag": "SLP",
+                  "share": 22
+                },
+                {
+                  "name": "Toxic",
+                  "tag": "PSN",
+                  "share": 20
+                }
+              ],
+              "bans": [],
+              "banAllButNote": "BAN 11 attacks, all but Astonish"
+            },
+            {
+              "name": "Machamp",
+              "legendary": false,
+              "moves": [
+                {
+                  "name": "Superpower",
+                  "tag": null,
+                  "share": 99
+                }
+              ],
+              "bans": []
+            },
+            {
+              "name": "Gallade",
+              "legendary": false,
+              "moves": [
+                {
+                  "name": "Close Combat",
+                  "tag": null,
+                  "share": 89
+                },
+                {
+                  "name": "Hypnosis",
+                  "tag": "SLP",
+                  "share": 9
+                }
+              ],
+              "bans": []
+            }
           ],
-          "alternates": [],
-          "alternateBans": [ { "name": "Gengar", "bans": ["8 attacks, all but its 5 Ghost attacks"] }, { "name": "Poliwrath", "bans": ["Superpower"] } ]
+          "alternates": [
+            {
+              "memberIndex": 0,
+              "name": "Heracross",
+              "rate": 65,
+              "withBan": false
+            },
+            {
+              "memberIndex": 0,
+              "name": "Snorlax",
+              "rate": 63,
+              "withBan": false
+            },
+            {
+              "memberIndex": 1,
+              "name": "Heracross",
+              "rate": 71,
+              "withBan": false
+            },
+            {
+              "memberIndex": 1,
+              "name": "Slaking",
+              "rate": 61,
+              "withBan": false
+            },
+            {
+              "memberIndex": 2,
+              "name": "Heracross",
+              "rate": 61,
+              "withBan": false
+            },
+            {
+              "memberIndex": 2,
+              "name": "Snorlax",
+              "rate": 56,
+              "withBan": false
+            },
+            {
+              "memberIndex": 3,
+              "name": "Gengar",
+              "rate": 52,
+              "withBan": true
+            },
+            {
+              "memberIndex": 3,
+              "name": "Poliwrath",
+              "rate": 53,
+              "withBan": true
+            },
+            {
+              "memberIndex": 4,
+              "name": "Scrafty",
+              "rate": 66,
+              "withBan": false
+            },
+            {
+              "memberIndex": 4,
+              "name": "Heracross",
+              "rate": 71,
+              "withBan": false
+            },
+            {
+              "memberIndex": 5,
+              "name": "Heracross",
+              "rate": 69,
+              "withBan": false
+            },
+            {
+              "memberIndex": 5,
+              "name": "Escavalier",
+              "rate": 61,
+              "withBan": false
+            }
+          ],
+          "alternateBans": [
+            {
+              "name": "Gengar",
+              "bans": [
+                "8 attacks, all but its 5 Ghost attacks"
+              ]
+            },
+            {
+              "name": "Poliwrath",
+              "bans": [
+                "Superpower"
+              ]
+            }
+          ]
         },
         "noLegendary": {
           "title": "NO LEGENDARY - 85 WINS - 1:05 - 47/H - BANS +157%",
           "members": [
-            { "name": "Dusknoir", "moves": [ { "name": "Struggle", "tag": null, "share": 73 }, { "name": "Will-O-Wisp", "tag": "BRN", "share": 27 } ], "bans": [], "banAllButNote": "BAN 2 attacks, all but its 8 Ghost attacks" },
-            { "name": "Golurk", "moves": [ { "name": "Hammer Arm", "tag": null, "share": 100 } ], "bans": [] },
-            { "name": "Jynx", "moves": [ { "name": "Struggle", "tag": null, "share": 47 }, { "name": "Sweet Kiss", "tag": "CNF", "share": 32 }, { "name": "Lovely Kiss", "tag": "SLP", "share": 21 } ], "bans": [], "banAllButNote": "BAN 14 attacks, all but Lick" },
-            { "name": "Snorlax", "moves": [ { "name": "Superpower", "tag": null, "share": 100 } ], "bans": [] },
-            { "name": "Gallade", "moves": [ { "name": "Close Combat", "tag": null, "share": 96 } ], "bans": [] },
-            { "name": "Machamp", "moves": [ { "name": "Superpower", "tag": null, "share": 100 } ], "bans": [] }
+            {
+              "name": "Dusknoir",
+              "moves": [
+                {
+                  "name": "Struggle",
+                  "tag": null,
+                  "share": 73
+                },
+                {
+                  "name": "Will-O-Wisp",
+                  "tag": "BRN",
+                  "share": 27
+                }
+              ],
+              "bans": [],
+              "banAllButNote": "BAN 2 attacks, all but its 8 Ghost attacks"
+            },
+            {
+              "name": "Golurk",
+              "moves": [
+                {
+                  "name": "Hammer Arm",
+                  "tag": null,
+                  "share": 100
+                }
+              ],
+              "bans": []
+            },
+            {
+              "name": "Jynx",
+              "moves": [
+                {
+                  "name": "Struggle",
+                  "tag": null,
+                  "share": 47
+                },
+                {
+                  "name": "Sweet Kiss",
+                  "tag": "CNF",
+                  "share": 32
+                },
+                {
+                  "name": "Lovely Kiss",
+                  "tag": "SLP",
+                  "share": 21
+                }
+              ],
+              "bans": [],
+              "banAllButNote": "BAN 14 attacks, all but Lick"
+            },
+            {
+              "name": "Snorlax",
+              "moves": [
+                {
+                  "name": "Superpower",
+                  "tag": null,
+                  "share": 100
+                }
+              ],
+              "bans": []
+            },
+            {
+              "name": "Gallade",
+              "moves": [
+                {
+                  "name": "Close Combat",
+                  "tag": null,
+                  "share": 96
+                }
+              ],
+              "bans": []
+            },
+            {
+              "name": "Machamp",
+              "moves": [
+                {
+                  "name": "Superpower",
+                  "tag": null,
+                  "share": 100
+                }
+              ],
+              "bans": []
+            }
           ],
-          "alternates": [],
-          "alternateBans": [ { "name": "Cofagrigus", "bans": ["1 attack, all but its 5 Ghost attacks"] } ]
+          "alternates": [
+            {
+              "memberIndex": 0,
+              "name": "Cofagrigus",
+              "rate": 40,
+              "withBan": true
+            },
+            {
+              "memberIndex": 0,
+              "name": "Heracross",
+              "rate": 41,
+              "withBan": false
+            },
+            {
+              "memberIndex": 1,
+              "name": "Escavalier",
+              "rate": 45,
+              "withBan": false
+            },
+            {
+              "memberIndex": 1,
+              "name": "Jellicent",
+              "rate": 43,
+              "withBan": false
+            },
+            {
+              "memberIndex": 2,
+              "name": "Jellicent",
+              "rate": 42,
+              "withBan": false
+            },
+            {
+              "memberIndex": 2,
+              "name": "Poliwrath",
+              "rate": 39,
+              "withBan": false
+            },
+            {
+              "memberIndex": 3,
+              "name": "Heracross",
+              "rate": 46,
+              "withBan": false
+            },
+            {
+              "memberIndex": 3,
+              "name": "Jellicent",
+              "rate": 45,
+              "withBan": false
+            },
+            {
+              "memberIndex": 4,
+              "name": "Heracross",
+              "rate": 41,
+              "withBan": false
+            },
+            {
+              "memberIndex": 4,
+              "name": "Escavalier",
+              "rate": 39,
+              "withBan": false
+            },
+            {
+              "memberIndex": 5,
+              "name": "Escavalier",
+              "rate": 43,
+              "withBan": false
+            },
+            {
+              "memberIndex": 5,
+              "name": "Jellicent",
+              "rate": 46,
+              "withBan": false
+            }
+          ],
+          "alternateBans": [
+            {
+              "name": "Cofagrigus",
+              "bans": [
+                "1 attack, all but its 5 Ghost attacks"
+              ]
+            }
+          ]
         }
       },
       {
         "region": "Unova",
         "boss": "Reshiram",
-        "title": { "time": "0:48", "winsPerHour": 74, "mode": "LESSER LEGENDARIES ALLOWED (day only)", "bansBonus": null },
+        "title": {
+          "time": "0:48",
+          "winsPerHour": 74,
+          "mode": null,
+          "bansBonus": null
+        },
         "team": {
           "members": [
-            { "name": "Terrakion", "legendary": true, "moves": [ { "name": "Stone Edge", "tag": null, "share": 99 } ], "bans": [] },
-            { "name": "Landorus Therian", "legendary": true, "moves": [ { "name": "Earthquake", "tag": null, "share": 100 } ], "bans": [] },
-            { "name": "Rhyperior", "legendary": false, "moves": [ { "name": "Earthquake", "tag": null, "share": 99 } ], "bans": [] },
-            { "name": "Rampardos", "legendary": false, "moves": [ { "name": "Head Smash", "tag": null, "share": 99 } ], "bans": [] },
-            { "name": "Garbodor", "legendary": false, "moves": [ { "name": "Gunk Shot", "tag": "PSN", "share": 86 }, { "name": "Toxic", "tag": "PSN", "share": 13 } ], "bans": [] },
-            { "name": "Gigalith", "legendary": false, "moves": [ { "name": "Stone Edge", "tag": null, "share": 97 } ], "bans": [] }
+            {
+              "name": "Terrakion",
+              "legendary": true,
+              "moves": [
+                {
+                  "name": "Stone Edge",
+                  "tag": null,
+                  "share": 99
+                }
+              ],
+              "bans": []
+            },
+            {
+              "name": "Landorus Therian",
+              "legendary": true,
+              "moves": [
+                {
+                  "name": "Earthquake",
+                  "tag": null,
+                  "share": 100
+                }
+              ],
+              "bans": []
+            },
+            {
+              "name": "Rhyperior",
+              "legendary": false,
+              "moves": [
+                {
+                  "name": "Earthquake",
+                  "tag": null,
+                  "share": 99
+                }
+              ],
+              "bans": []
+            },
+            {
+              "name": "Rampardos",
+              "legendary": false,
+              "moves": [
+                {
+                  "name": "Head Smash",
+                  "tag": null,
+                  "share": 99
+                }
+              ],
+              "bans": []
+            },
+            {
+              "name": "Garbodor",
+              "legendary": false,
+              "moves": [
+                {
+                  "name": "Gunk Shot",
+                  "tag": "PSN",
+                  "share": 86
+                },
+                {
+                  "name": "Toxic",
+                  "tag": "PSN",
+                  "share": 13
+                }
+              ],
+              "bans": []
+            },
+            {
+              "name": "Gigalith",
+              "legendary": false,
+              "moves": [
+                {
+                  "name": "Stone Edge",
+                  "tag": null,
+                  "share": 97
+                }
+              ],
+              "bans": []
+            }
           ],
           "alternates": [],
           "alternateBans": []
@@ -441,12 +3118,77 @@
         "noLegendary": {
           "title": "WITHOUT ANY LEGENDARY - 100 WINS - 0:49 - 74/H",
           "members": [
-            { "name": "Nidoking", "moves": [ { "name": "Earthquake", "tag": null, "share": 79 }, { "name": "Toxic", "tag": "PSN", "share": 20 } ], "bans": [] },
-            { "name": "Metagross", "moves": [ { "name": "Meteor Mash", "tag": null, "share": 98 } ], "bans": [] },
-            { "name": "Tyranitar", "moves": [ { "name": "Stone Edge", "tag": null, "share": 99 } ], "bans": [] },
-            { "name": "Rampardos", "moves": [ { "name": "Head Smash", "tag": null, "share": 100 } ], "bans": [] },
-            { "name": "Gigalith", "moves": [ { "name": "Stone Edge", "tag": null, "share": 99 } ], "bans": [] },
-            { "name": "Rhyperior", "moves": [ { "name": "Earthquake", "tag": null, "share": 98 } ], "bans": [] }
+            {
+              "name": "Nidoking",
+              "moves": [
+                {
+                  "name": "Earthquake",
+                  "tag": null,
+                  "share": 79
+                },
+                {
+                  "name": "Toxic",
+                  "tag": "PSN",
+                  "share": 20
+                }
+              ],
+              "bans": []
+            },
+            {
+              "name": "Metagross",
+              "moves": [
+                {
+                  "name": "Meteor Mash",
+                  "tag": null,
+                  "share": 98
+                }
+              ],
+              "bans": []
+            },
+            {
+              "name": "Tyranitar",
+              "moves": [
+                {
+                  "name": "Stone Edge",
+                  "tag": null,
+                  "share": 99
+                }
+              ],
+              "bans": []
+            },
+            {
+              "name": "Rampardos",
+              "moves": [
+                {
+                  "name": "Head Smash",
+                  "tag": null,
+                  "share": 100
+                }
+              ],
+              "bans": []
+            },
+            {
+              "name": "Gigalith",
+              "moves": [
+                {
+                  "name": "Stone Edge",
+                  "tag": null,
+                  "share": 99
+                }
+              ],
+              "bans": []
+            },
+            {
+              "name": "Rhyperior",
+              "moves": [
+                {
+                  "name": "Earthquake",
+                  "tag": null,
+                  "share": 98
+                }
+              ],
+              "bans": []
+            }
           ],
           "alternates": [],
           "alternateBans": []
@@ -455,28 +3197,173 @@
       {
         "region": "Unova",
         "boss": "Zekrom",
-        "title": { "time": "0:49", "winsPerHour": 74, "mode": "LESSER LEGENDARIES ALLOWED", "bansBonus": "+12%" },
+        "title": {
+          "time": "0:49",
+          "winsPerHour": 74,
+          "mode": null,
+          "bansBonus": null
+        },
         "team": {
           "members": [
-            { "name": "Landorus", "legendary": true, "moves": [ { "name": "Scorching Sands", "tag": null, "share": 100 } ], "bans": ["Dig", "Earth Power", "Earthquake"] },
-            { "name": "Jirachi", "legendary": true, "moves": [ { "name": "Doom Desire", "tag": null, "share": 99 } ], "bans": [] },
-            { "name": "Latios", "legendary": true, "moves": [ { "name": "Draco Meteor", "tag": null, "share": 99 } ], "bans": [] },
-            { "name": "Tyranitar", "legendary": false, "moves": [ { "name": "Foul Play", "tag": null, "share": 99 } ], "bans": [] },
-            { "name": "Regice", "legendary": false, "moves": [ { "name": "Blizzard", "tag": "FRZ", "share": 98 } ], "bans": [] },
-            { "name": "Excadrill", "legendary": false, "moves": [ { "name": "Earthquake", "tag": null, "share": 99 } ], "bans": [] }
+            {
+              "name": "Landorus",
+              "legendary": true,
+              "moves": [
+                {
+                  "name": "Scorching Sands",
+                  "tag": null,
+                  "share": 100
+                }
+              ],
+              "bans": [
+                "Dig",
+                "Earth Power",
+                "Earthquake"
+              ]
+            },
+            {
+              "name": "Jirachi",
+              "legendary": true,
+              "moves": [
+                {
+                  "name": "Doom Desire",
+                  "tag": null,
+                  "share": 99
+                }
+              ],
+              "bans": []
+            },
+            {
+              "name": "Latios",
+              "legendary": true,
+              "moves": [
+                {
+                  "name": "Draco Meteor",
+                  "tag": null,
+                  "share": 99
+                }
+              ],
+              "bans": []
+            },
+            {
+              "name": "Tyranitar",
+              "legendary": false,
+              "moves": [
+                {
+                  "name": "Foul Play",
+                  "tag": null,
+                  "share": 99
+                }
+              ],
+              "bans": []
+            },
+            {
+              "name": "Regice",
+              "legendary": false,
+              "moves": [
+                {
+                  "name": "Blizzard",
+                  "tag": "FRZ",
+                  "share": 98
+                }
+              ],
+              "bans": []
+            },
+            {
+              "name": "Excadrill",
+              "legendary": false,
+              "moves": [
+                {
+                  "name": "Earthquake",
+                  "tag": null,
+                  "share": 99
+                }
+              ],
+              "bans": []
+            }
           ],
           "alternates": [],
           "alternateBans": []
         },
         "noLegendary": {
-          "title": "NO LEGENDARY - 100 WINS - 0:48 - 75/H",
+          "title": "WITHOUT ANY LEGENDARY - 100 WINS - 0:55 - 66/H",
           "members": [
-            { "name": "Gallade", "moves": [ { "name": "Close Combat", "tag": null, "share": 82 }, { "name": "Hypnosis", "tag": "SLP", "share": 18 } ], "bans": [] },
-            { "name": "Aggron", "moves": [ { "name": "Head Smash", "tag": null, "share": 73 } ], "bans": [] },
-            { "name": "Scizor", "moves": [ { "name": "Bullet Punch", "tag": null, "share": 73 } ], "bans": [] },
-            { "name": "Excadrill", "moves": [ { "name": "Earthquake", "tag": null, "share": 99 } ], "bans": [] },
-            { "name": "Whimsicott", "moves": [ { "name": "Moonblast", "tag": null, "share": 82 }, { "name": "Poison Powder", "tag": "PSN", "share": 18 } ], "bans": [] },
-            { "name": "Rhyperior", "moves": [ { "name": "Earthquake", "tag": null, "share": 99 } ], "bans": [] }
+            {
+              "name": "Gallade",
+              "moves": [
+                {
+                  "name": "Close Combat",
+                  "tag": null,
+                  "share": 82
+                },
+                {
+                  "name": "Hypnosis",
+                  "tag": "SLP",
+                  "share": 18
+                }
+              ],
+              "bans": []
+            },
+            {
+              "name": "Aggron",
+              "moves": [
+                {
+                  "name": "Head Smash",
+                  "tag": null,
+                  "share": 73
+                }
+              ],
+              "bans": []
+            },
+            {
+              "name": "Scizor",
+              "moves": [
+                {
+                  "name": "Bullet Punch",
+                  "tag": null,
+                  "share": 73
+                }
+              ],
+              "bans": []
+            },
+            {
+              "name": "Excadrill",
+              "moves": [
+                {
+                  "name": "Earthquake",
+                  "tag": null,
+                  "share": 99
+                }
+              ],
+              "bans": []
+            },
+            {
+              "name": "Whimsicott",
+              "moves": [
+                {
+                  "name": "Moonblast",
+                  "tag": null,
+                  "share": 82
+                },
+                {
+                  "name": "Poison Powder",
+                  "tag": "PSN",
+                  "share": 18
+                }
+              ],
+              "bans": []
+            },
+            {
+              "name": "Rhyperior",
+              "moves": [
+                {
+                  "name": "Earthquake",
+                  "tag": null,
+                  "share": 99
+                }
+              ],
+              "bans": []
+            }
           ],
           "alternates": [],
           "alternateBans": []
@@ -485,45 +3372,428 @@
       {
         "region": "Unova",
         "boss": "Kyurem",
-        "title": { "time": "0:45", "winsPerHour": 80, "mode": "LESSER LEGENDARIES ALLOWED", "bansBonus": null },
+        "title": {
+          "time": "0:45",
+          "winsPerHour": 80,
+          "mode": "LESSER LEGENDARIES ALLOWED",
+          "bansBonus": null
+        },
         "team": {
           "members": [
-            { "name": "Terrakion", "legendary": true, "moves": [ { "name": "Sacred Sword", "tag": null, "share": 97 } ], "bans": [] },
-            { "name": "Meloetta Pirouette", "legendary": true, "moves": [ { "name": "Close Combat", "tag": null, "share": 82 }, { "name": "Sing", "tag": "SLP", "share": 16 } ], "bans": [] },
-            { "name": "Keldeo", "legendary": true, "moves": [ { "name": "Secret Sword", "tag": null, "share": 98 } ], "bans": [] },
-            { "name": "Machamp", "legendary": false, "moves": [ { "name": "Superpower", "tag": null, "share": 98 } ], "bans": [] },
-            { "name": "Metagross", "legendary": false, "moves": [ { "name": "Meteor Mash", "tag": null, "share": 98 } ], "bans": [] },
-            { "name": "Gallade", "legendary": false, "moves": [ { "name": "Close Combat", "tag": null, "share": 87 }, { "name": "Hypnosis", "tag": "SLP", "share": 13 } ], "bans": [] }
+            {
+              "name": "Terrakion",
+              "legendary": true,
+              "moves": [
+                {
+                  "name": "Sacred Sword",
+                  "tag": null,
+                  "share": 97
+                }
+              ],
+              "bans": []
+            },
+            {
+              "name": "Meloetta Pirouette",
+              "legendary": true,
+              "moves": [
+                {
+                  "name": "Close Combat",
+                  "tag": null,
+                  "share": 82
+                },
+                {
+                  "name": "Sing",
+                  "tag": "SLP",
+                  "share": 16
+                }
+              ],
+              "bans": []
+            },
+            {
+              "name": "Keldeo",
+              "legendary": true,
+              "moves": [
+                {
+                  "name": "Secret Sword",
+                  "tag": null,
+                  "share": 98
+                }
+              ],
+              "bans": []
+            },
+            {
+              "name": "Machamp",
+              "legendary": false,
+              "moves": [
+                {
+                  "name": "Superpower",
+                  "tag": null,
+                  "share": 98
+                }
+              ],
+              "bans": []
+            },
+            {
+              "name": "Metagross",
+              "legendary": false,
+              "moves": [
+                {
+                  "name": "Meteor Mash",
+                  "tag": null,
+                  "share": 98
+                }
+              ],
+              "bans": []
+            },
+            {
+              "name": "Gallade",
+              "legendary": false,
+              "moves": [
+                {
+                  "name": "Close Combat",
+                  "tag": null,
+                  "share": 87
+                },
+                {
+                  "name": "Hypnosis",
+                  "tag": "SLP",
+                  "share": 13
+                }
+              ],
+              "bans": []
+            }
           ],
-          "alternates": [],
+          "alternates": [
+            {
+              "memberIndex": 0,
+              "name": "Lucario",
+              "rate": 79,
+              "withBan": false
+            },
+            {
+              "memberIndex": 0,
+              "name": "Poliwrath",
+              "rate": 78,
+              "withBan": false
+            },
+            {
+              "memberIndex": 1,
+              "name": "Lucario",
+              "rate": 80,
+              "withBan": false
+            },
+            {
+              "memberIndex": 1,
+              "name": "Gardevoir",
+              "rate": 80,
+              "withBan": false
+            },
+            {
+              "memberIndex": 2,
+              "name": "Lucario",
+              "rate": 81,
+              "withBan": false
+            },
+            {
+              "memberIndex": 2,
+              "name": "Gardevoir",
+              "rate": 80,
+              "withBan": false
+            },
+            {
+              "memberIndex": 3,
+              "name": "Lucario",
+              "rate": 81,
+              "withBan": false
+            },
+            {
+              "memberIndex": 3,
+              "name": "Gardevoir",
+              "rate": 80,
+              "withBan": false
+            },
+            {
+              "memberIndex": 4,
+              "name": "Lucario",
+              "rate": 83,
+              "withBan": false
+            },
+            {
+              "memberIndex": 4,
+              "name": "Poliwrath",
+              "rate": 82,
+              "withBan": false
+            },
+            {
+              "memberIndex": 5,
+              "name": "Lucario",
+              "rate": 80,
+              "withBan": false
+            },
+            {
+              "memberIndex": 5,
+              "name": "Gardevoir",
+              "rate": 81,
+              "withBan": false
+            }
+          ],
           "alternateBans": []
         },
         "noLegendary": {
           "title": "NO LEGENDARY - 100 WINS - 0:55 - 66/H",
           "members": [
-            { "name": "Gallade", "moves": [ { "name": "Close Combat", "tag": null, "share": 82 }, { "name": "Hypnosis", "tag": "SLP", "share": 18 } ], "bans": [] },
-            { "name": "Poliwrath", "moves": [ { "name": "Superpower", "tag": null, "share": 85 }, { "name": "Hypnosis", "tag": "SLP", "share": 13 } ], "bans": [] },
-            { "name": "Conkeldurr", "moves": [ { "name": "Superpower", "tag": null, "share": 99 } ], "bans": [] },
-            { "name": "Metagross", "moves": [ { "name": "Meteor Mash", "tag": null, "share": 98 } ], "bans": [] },
-            { "name": "Lucario", "moves": [ { "name": "Focus Blast", "tag": null, "share": 82 }, { "name": "Close Combat", "tag": null, "share": 17 } ], "bans": [] },
-            { "name": "Escavalier", "moves": [ { "name": "Iron Head", "tag": null, "share": 99 } ], "bans": [] }
+            {
+              "name": "Gallade",
+              "moves": [
+                {
+                  "name": "Close Combat",
+                  "tag": null,
+                  "share": 82
+                },
+                {
+                  "name": "Hypnosis",
+                  "tag": "SLP",
+                  "share": 18
+                }
+              ],
+              "bans": []
+            },
+            {
+              "name": "Poliwrath",
+              "moves": [
+                {
+                  "name": "Superpower",
+                  "tag": null,
+                  "share": 85
+                },
+                {
+                  "name": "Hypnosis",
+                  "tag": "SLP",
+                  "share": 13
+                }
+              ],
+              "bans": []
+            },
+            {
+              "name": "Conkeldurr",
+              "moves": [
+                {
+                  "name": "Superpower",
+                  "tag": null,
+                  "share": 99
+                }
+              ],
+              "bans": []
+            },
+            {
+              "name": "Metagross",
+              "moves": [
+                {
+                  "name": "Meteor Mash",
+                  "tag": null,
+                  "share": 98
+                }
+              ],
+              "bans": []
+            },
+            {
+              "name": "Lucario",
+              "moves": [
+                {
+                  "name": "Focus Blast",
+                  "tag": null,
+                  "share": 82
+                },
+                {
+                  "name": "Close Combat",
+                  "tag": null,
+                  "share": 17
+                }
+              ],
+              "bans": []
+            },
+            {
+              "name": "Escavalier",
+              "moves": [
+                {
+                  "name": "Iron Head",
+                  "tag": null,
+                  "share": 99
+                }
+              ],
+              "bans": []
+            }
           ],
-          "alternates": [],
+          "alternates": [
+            {
+              "memberIndex": 0,
+              "name": "Scizor",
+              "rate": 74,
+              "withBan": false
+            },
+            {
+              "memberIndex": 0,
+              "name": "Escavalier",
+              "rate": 74,
+              "withBan": false
+            },
+            {
+              "memberIndex": 1,
+              "name": "Escavalier",
+              "rate": 72,
+              "withBan": false
+            },
+            {
+              "memberIndex": 1,
+              "name": "Scizor",
+              "rate": 72,
+              "withBan": false
+            },
+            {
+              "memberIndex": 2,
+              "name": "Poliwrath",
+              "rate": 75,
+              "withBan": false
+            },
+            {
+              "memberIndex": 2,
+              "name": "Escavalier",
+              "rate": 74,
+              "withBan": false
+            },
+            {
+              "memberIndex": 3,
+              "name": "Escavalier",
+              "rate": 74,
+              "withBan": false
+            },
+            {
+              "memberIndex": 3,
+              "name": "Scizor",
+              "rate": 74,
+              "withBan": false
+            },
+            {
+              "memberIndex": 4,
+              "name": "Escavalier",
+              "rate": 73,
+              "withBan": false
+            },
+            {
+              "memberIndex": 4,
+              "name": "Scizor",
+              "rate": 73,
+              "withBan": false
+            },
+            {
+              "memberIndex": 5,
+              "name": "Poliwrath",
+              "rate": 72,
+              "withBan": false
+            },
+            {
+              "memberIndex": 5,
+              "name": "Escavalier",
+              "rate": 72,
+              "withBan": false
+            }
+          ],
           "alternateBans": []
         }
       },
       {
         "region": "Unova",
         "boss": "Black Kyurem",
-        "title": { "time": "0:42", "winsPerHour": 85, "mode": "LESSER LEGENDARIES ALLOWED", "bansBonus": null },
+        "title": {
+          "time": null,
+          "winsPerHour": 85,
+          "mode": null,
+          "bansBonus": null
+        },
         "team": {
           "members": [
-            { "name": "Landorus", "legendary": true, "moves": [ { "name": "Scorching Sands", "tag": null, "share": 100 } ], "bans": [] },
-            { "name": "Jirachi", "legendary": true, "moves": [ { "name": "Doom Desire", "tag": null, "share": 99 } ], "bans": [] },
-            { "name": "Latios", "legendary": true, "moves": [ { "name": "Draco Meteor", "tag": null, "share": 99 } ], "bans": [] },
-            { "name": "Entei", "legendary": true, "moves": [ { "name": "Sacred Fire", "tag": "BRN", "share": 99 } ], "bans": [] },
-            { "name": "Meloetta Pirouette", "legendary": true, "moves": [ { "name": "Close Combat", "tag": null, "share": 91 }, { "name": "Sing", "tag": "SLP", "share": 9 } ], "bans": [] },
-            { "name": "Gallade", "legendary": false, "moves": [ { "name": "Close Combat", "tag": null, "share": 90 }, { "name": "Hypnosis", "tag": "SLP", "share": 9 } ], "bans": [] }
+            {
+              "name": "Landorus",
+              "legendary": true,
+              "moves": [
+                {
+                  "name": "Scorching Sands",
+                  "tag": null,
+                  "share": 100
+                }
+              ],
+              "bans": []
+            },
+            {
+              "name": "Jirachi",
+              "legendary": true,
+              "moves": [
+                {
+                  "name": "Doom Desire",
+                  "tag": null,
+                  "share": 99
+                }
+              ],
+              "bans": []
+            },
+            {
+              "name": "Latios",
+              "legendary": true,
+              "moves": [
+                {
+                  "name": "Draco Meteor",
+                  "tag": null,
+                  "share": 99
+                }
+              ],
+              "bans": []
+            },
+            {
+              "name": "Entei",
+              "legendary": true,
+              "moves": [
+                {
+                  "name": "Sacred Fire",
+                  "tag": "BRN",
+                  "share": 99
+                }
+              ],
+              "bans": []
+            },
+            {
+              "name": "Meloetta Pirouette",
+              "legendary": true,
+              "moves": [
+                {
+                  "name": "Close Combat",
+                  "tag": null,
+                  "share": 91
+                },
+                {
+                  "name": "Sing",
+                  "tag": "SLP",
+                  "share": 9
+                }
+              ],
+              "bans": []
+            },
+            {
+              "name": "Gallade",
+              "legendary": false,
+              "moves": [
+                {
+                  "name": "Close Combat",
+                  "tag": null,
+                  "share": 90
+                },
+                {
+                  "name": "Hypnosis",
+                  "tag": "SLP",
+                  "share": 9
+                }
+              ],
+              "bans": []
+            }
           ],
           "alternates": [],
           "alternateBans": []
@@ -531,12 +3801,87 @@
         "noLegendary": {
           "title": "WITHOUT ANY LEGENDARY - 100 WINS - 0:48 - 75/H",
           "members": [
-            { "name": "Gallade", "moves": [ { "name": "Close Combat", "tag": null, "share": 82 }, { "name": "Hypnosis", "tag": "SLP", "share": 18 } ], "bans": [] },
-            { "name": "Poliwrath", "moves": [ { "name": "Superpower", "tag": null, "share": 85 }, { "name": "Hypnosis", "tag": "SLP", "share": 13 } ], "bans": [] },
-            { "name": "Conkeldurr", "moves": [ { "name": "Superpower", "tag": null, "share": 99 } ], "bans": [] },
-            { "name": "Metagross", "moves": [ { "name": "Meteor Mash", "tag": null, "share": 98 } ], "bans": [] },
-            { "name": "Lucario", "moves": [ { "name": "Focus Blast", "tag": null, "share": 82 }, { "name": "Close Combat", "tag": null, "share": 17 } ], "bans": [] },
-            { "name": "Escavalier", "moves": [ { "name": "Iron Head", "tag": null, "share": 99 } ], "bans": [] }
+            {
+              "name": "Gallade",
+              "moves": [
+                {
+                  "name": "Close Combat",
+                  "tag": null,
+                  "share": 82
+                },
+                {
+                  "name": "Hypnosis",
+                  "tag": "SLP",
+                  "share": 18
+                }
+              ],
+              "bans": []
+            },
+            {
+              "name": "Poliwrath",
+              "moves": [
+                {
+                  "name": "Superpower",
+                  "tag": null,
+                  "share": 85
+                },
+                {
+                  "name": "Hypnosis",
+                  "tag": "SLP",
+                  "share": 13
+                }
+              ],
+              "bans": []
+            },
+            {
+              "name": "Conkeldurr",
+              "moves": [
+                {
+                  "name": "Superpower",
+                  "tag": null,
+                  "share": 99
+                }
+              ],
+              "bans": []
+            },
+            {
+              "name": "Metagross",
+              "moves": [
+                {
+                  "name": "Meteor Mash",
+                  "tag": null,
+                  "share": 98
+                }
+              ],
+              "bans": []
+            },
+            {
+              "name": "Lucario",
+              "moves": [
+                {
+                  "name": "Focus Blast",
+                  "tag": null,
+                  "share": 82
+                },
+                {
+                  "name": "Close Combat",
+                  "tag": null,
+                  "share": 17
+                }
+              ],
+              "bans": []
+            },
+            {
+              "name": "Escavalier",
+              "moves": [
+                {
+                  "name": "Iron Head",
+                  "tag": null,
+                  "share": 99
+                }
+              ],
+              "bans": []
+            }
           ],
           "alternates": [],
           "alternateBans": []
@@ -545,28 +3890,159 @@
       {
         "region": "Unova",
         "boss": "White Kyurem",
-        "title": { "time": "0:48", "winsPerHour": 74, "mode": "LESSER LEGENDARIES ALLOWED", "bansBonus": null },
+        "title": {
+          "time": null,
+          "winsPerHour": 74,
+          "mode": null,
+          "bansBonus": null
+        },
         "team": {
           "members": [
-            { "name": "Entei", "legendary": true, "moves": [ { "name": "Sacred Fire", "tag": "BRN", "share": 99 } ], "bans": [] },
-            { "name": "Terrakion", "legendary": true, "moves": [ { "name": "Sacred Sword", "tag": null, "share": 99 } ], "bans": [] },
-            { "name": "Heracross", "legendary": false, "moves": [ { "name": "Close Combat", "tag": null, "share": 99 } ], "bans": [] },
-            { "name": "Rampardos", "legendary": false, "moves": [ { "name": "Head Smash", "tag": null, "share": 99 } ], "bans": [] },
-            { "name": "Machamp", "legendary": false, "moves": [ { "name": "Superpower", "tag": null, "share": 98 } ], "bans": [] },
-            { "name": "Tyranitar", "legendary": false, "moves": [ { "name": "Stone Edge", "tag": null, "share": 99 } ], "bans": [] }
+            {
+              "name": "Entei",
+              "legendary": true,
+              "moves": [
+                {
+                  "name": "Sacred Fire",
+                  "tag": "BRN",
+                  "share": 99
+                }
+              ],
+              "bans": []
+            },
+            {
+              "name": "Terrakion",
+              "legendary": true,
+              "moves": [
+                {
+                  "name": "Sacred Sword",
+                  "tag": null,
+                  "share": 99
+                }
+              ],
+              "bans": []
+            },
+            {
+              "name": "Heracross",
+              "legendary": false,
+              "moves": [
+                {
+                  "name": "Close Combat",
+                  "tag": null,
+                  "share": 99
+                }
+              ],
+              "bans": []
+            },
+            {
+              "name": "Rampardos",
+              "legendary": false,
+              "moves": [
+                {
+                  "name": "Head Smash",
+                  "tag": null,
+                  "share": 99
+                }
+              ],
+              "bans": []
+            },
+            {
+              "name": "Machamp",
+              "legendary": false,
+              "moves": [
+                {
+                  "name": "Superpower",
+                  "tag": null,
+                  "share": 98
+                }
+              ],
+              "bans": []
+            },
+            {
+              "name": "Tyranitar",
+              "legendary": false,
+              "moves": [
+                {
+                  "name": "Stone Edge",
+                  "tag": null,
+                  "share": 99
+                }
+              ],
+              "bans": []
+            }
           ],
           "alternates": [],
           "alternateBans": []
         },
         "noLegendary": {
-          "title": "WITHOUT ANY LEGENDARY - 100 WINS - 0:49 - 74/H",
+          "title": "WITHOUT ANY LEGENDARY - 99 WINS - 0:52 - 68/H",
           "members": [
-            { "name": "Terrakion", "moves": [ { "name": "Sacred Sword", "tag": null, "share": 99 } ], "bans": [] },
-            { "name": "Rhydon", "moves": [ { "name": "Earthquake", "tag": null, "share": 99 } ], "bans": [] },
-            { "name": "Machamp", "moves": [ { "name": "Superpower", "tag": null, "share": 98 } ], "bans": [] },
-            { "name": "Tyranitar", "moves": [ { "name": "Stone Edge", "tag": null, "share": 99 } ], "bans": [] },
-            { "name": "Rampardos", "moves": [ { "name": "Head Smash", "tag": null, "share": 99 } ], "bans": [] },
-            { "name": "Gigalith", "moves": [ { "name": "Stone Edge", "tag": null, "share": 98 } ], "bans": [] }
+            {
+              "name": "Terrakion",
+              "moves": [
+                {
+                  "name": "Sacred Sword",
+                  "tag": null,
+                  "share": 99
+                }
+              ],
+              "bans": []
+            },
+            {
+              "name": "Rhydon",
+              "moves": [
+                {
+                  "name": "Earthquake",
+                  "tag": null,
+                  "share": 99
+                }
+              ],
+              "bans": []
+            },
+            {
+              "name": "Machamp",
+              "moves": [
+                {
+                  "name": "Superpower",
+                  "tag": null,
+                  "share": 98
+                }
+              ],
+              "bans": []
+            },
+            {
+              "name": "Tyranitar",
+              "moves": [
+                {
+                  "name": "Stone Edge",
+                  "tag": null,
+                  "share": 99
+                }
+              ],
+              "bans": []
+            },
+            {
+              "name": "Rampardos",
+              "moves": [
+                {
+                  "name": "Head Smash",
+                  "tag": null,
+                  "share": 99
+                }
+              ],
+              "bans": []
+            },
+            {
+              "name": "Gigalith",
+              "moves": [
+                {
+                  "name": "Stone Edge",
+                  "tag": null,
+                  "share": 98
+                }
+              ],
+              "bans": []
+            }
           ],
           "alternates": [],
           "alternateBans": []
@@ -576,33 +4052,79 @@
     "shield": {
       "rules": "Before the capture fight, the players break Arceus's shield together: 3 attacks a day for 3 days, up to 6 Pokémon per attack, each Pokémon once a day. No battle: each Pokémon's higher attacking stat counts (Attack or Sp. Atk, the number shown at Lv 100 and *0); types and moves don't matter. ×1.15 per rank, +10% for a shiny, one form per species.",
       "bestBelowTop": [
-        { "name": "Deoxys Attack", "atk": 365 },
-        { "name": "Rampardos", "atk": 335 },
-        { "name": "Slaking", "atk": 325 },
-        { "name": "Haxorus", "atk": 299 },
-        { "name": "Chandelure", "atk": 295 },
-        { "name": "Landorus Therian", "atk": 295 },
-        { "name": "Darmanitan", "atk": 285 },
-        { "name": "Rhyperior", "atk": 285 },
-        { "name": "Conkeldurr", "atk": 285 },
-        { "name": "Archeops", "atk": 285 }
+        {
+          "name": "Deoxys Attack",
+          "atk": 365
+        },
+        {
+          "name": "Rampardos",
+          "atk": 335
+        },
+        {
+          "name": "Slaking",
+          "atk": 325
+        },
+        {
+          "name": "Haxorus",
+          "atk": 299
+        },
+        {
+          "name": "Chandelure",
+          "atk": 295
+        },
+        {
+          "name": "Landorus Therian",
+          "atk": 295
+        },
+        {
+          "name": "Darmanitan",
+          "atk": 285
+        },
+        {
+          "name": "Rhyperior",
+          "atk": 285
+        },
+        {
+          "name": "Conkeldurr",
+          "atk": 285
+        },
+        {
+          "name": "Archeops",
+          "atk": 285
+        }
       ],
       "noLegendary": [
-        { "name": "Rampardos", "atk": 335 },
-        { "name": "Slaking", "atk": 325 },
-        { "name": "Conkeldurr", "atk": 285 },
-        { "name": "Archeops", "atk": 285 },
-        { "name": "Porygon-Z", "atk": 275 },
-        { "name": "Gigalith", "atk": 275 }
+        {
+          "name": "Rampardos",
+          "atk": 335
+        },
+        {
+          "name": "Slaking",
+          "atk": 325
+        },
+        {
+          "name": "Conkeldurr",
+          "atk": 285
+        },
+        {
+          "name": "Archeops",
+          "atk": 285
+        },
+        {
+          "name": "Porygon-Z",
+          "atk": 275
+        },
+        {
+          "name": "Gigalith",
+          "atk": 275
+        }
       ]
     }
   },
   "uncertain": [
-    "The board prints two alternates per member (with their wins/h); the OCR recovered the Mewtwo pair in full but only fragments for later cards, so `alternates` is populated where legible and left empty elsewhere rather than guessed.",
-    "The team lists are transcribed in board order; where the OCR merged two cards (Palkia's sixth slot, Black Kyurem's fourth/fifth), the member is a best read and is marked here rather than silently invented. Palkia's sixth is stored as Hydreigon; Black Kyurem's team includes Entei and Meloetta Pirouette.",
-    "Giratina Origin's no-legendary team is printed as 'the same team'; the `members` array is empty and the UI shows the shared team.",
-    "Giratina's first team and White Kyurem's team are the least certain blocks: their card headers are cut by the OCR, and the member sequence was rebuilt from the move lines.",
-    "Status tags follow the decoding rules (s_p/sip/sLP = SLP, cNF/cnr = CNF, psn/PsN = PSN, BRN, par/PAR, FRz/Frz); sprite-chip garble was dropped.",
-    "Bans printed as 'N attacks, all but X' are stored in `banAllButNote` with the kept move in the note; the `bans` array stays empty for those members."
+    "Alternates: Mewtwo and Kyogre carry the OCR pairs for all six members; Dialga, Rayquaza, Kyurem, Arceus and Giratina Origin were transcribed by hand from the 640px columns. The other ten cards keep empty alternate lists because the column OCR lost or shifted a member on those cards: storing the shifted pairs would attach the wrong rate to a name, so they are left out instead.",
+    "The \"(Ban)\" marker is preserved in  on the alternate entries and in the alternate-bans list; the OCR spelling \"(Gan)\" was decoded as \"(Ban)\".",
+    "Palkia sixth slot: the board shows Whimsicott (Moonblast 80, Poison Powder 19), not Hydreigon; corrected.",
+    "Members and moves remain from the round-1 transcription; the alternates above are the round-2 addition."
   ]
 }

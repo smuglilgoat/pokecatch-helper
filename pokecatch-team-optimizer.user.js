@@ -9524,7 +9524,7 @@
               "name": "Giratina Origin",
               "wins": 12,
               "hp": "+2%",
-              "fights": "24/56"
+              "fights": "16/56"
             },
             "others": [
               {
@@ -9553,7 +9553,7 @@
                 "rarity": "R",
                 "wins": 15,
                 "hp": "+4%",
-                "fights": "22/56"
+                "fights": "20/56"
               },
               {
                 "name": "Golurk",
@@ -10528,14 +10528,14 @@
                 "rarity": "R",
                 "wins": 14,
                 "hp": "+3%",
-                "fights": "22/56"
+                "fights": "19/56"
               },
               {
                 "name": "Jellicent",
                 "rarity": "U",
                 "wins": 14,
                 "hp": "+3%",
-                "fights": "19/56"
+                "fights": "22/56"
               },
               {
                 "name": "Relicanth",
@@ -10556,7 +10556,7 @@
                 "rarity": "R",
                 "wins": 13,
                 "hp": "+3%",
-                "fights": "20/56"
+                "fights": "18/56"
               }
             ],
             "legendaryNext": [
@@ -10632,9 +10632,9 @@
       "uncertain": [
         "The board has no legendary pick for Fairy (no Fairy legendary in the game's dex); the six printed cards are all stored under `others` and `legendary` is null.",
         "The rarity letters on the six main picks are partly hidden behind the gem chips; the stored R/U/C is the printed chip where readable and the next-list grouping otherwise.",
-        "The Ghost section's first card is not legible; `Giratina Origin` is stored as the legendary pick from the card that carries its numbers, with base Giratina in `legendaryNext`. If the board's pick was base Giratina, the two swap.",
         "The Dragon and Fairy next lists are cut by the OCR after a few names; the stored rows are the legible ones and `more` counts are null where the board did not print a count.",
-        "The board's win numbers are 'per 100 fights at *5' and are much smaller than the *0 boards; the order, not the absolute number, is what the board says to read."
+        "The board's win numbers are 'per 100 fights at *5' and are much smaller than the *0 boards; the order, not the absolute number, is what the board says to read.",
+        "Ghost: the legendary card is Giratina Origin (12 wins, +2% HP, 16/56); base Giratina is the first legendary alternative."
       ]
     },
     "catch-teams": {
@@ -10699,9 +10699,9 @@
             "region": "Kanto",
             "boss": "Mewtwo",
             "title": {
-              "time": "0:52",
+              "time": null,
               "winsPerHour": 69,
-              "mode": "LESSER LEGENDARIES ALLOWED",
+              "mode": null,
               "bansBonus": null
             },
             "team": {
@@ -10865,7 +10865,7 @@
                   "memberIndex": 5,
                   "name": "Spiritomb",
                   "rate": 65,
-                  "withBan": true
+                  "withBan": false
                 }
               ],
               "alternateBans": [
@@ -10957,7 +10957,68 @@
                   "bans": []
                 }
               ],
-              "alternates": [],
+              "alternates": [
+                {
+                  "memberIndex": 0,
+                  "name": "Scizor",
+                  "rate": 64,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 0,
+                  "name": "Hydreigon",
+                  "rate": 63,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 0,
+                  "name": "Scizor",
+                  "rate": 63,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 0,
+                  "name": "Hydreigon",
+                  "rate": 62,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 1,
+                  "name": "Scizor",
+                  "rate": 63,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 1,
+                  "name": "Hydreigon",
+                  "rate": 62,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 2,
+                  "name": "Scizor",
+                  "rate": 65,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 2,
+                  "name": "Hydreigon",
+                  "rate": 64,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 3,
+                  "name": "Scizor",
+                  "rate": 61,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 3,
+                  "name": "Hydreigon",
+                  "rate": 61,
+                  "withBan": false
+                }
+              ],
               "alternateBans": []
             }
           },
@@ -10965,9 +11026,9 @@
             "region": "Johto",
             "boss": "Ho-Oh",
             "title": {
-              "time": "0:51",
+              "time": null,
               "winsPerHour": 71,
-              "mode": "LESSER LEGENDARIES ALLOWED",
+              "mode": null,
               "bansBonus": null
             },
             "team": {
@@ -11136,10 +11197,10 @@
             "region": "Johto",
             "boss": "Lugia",
             "title": {
-              "time": "0:57",
+              "time": null,
               "winsPerHour": 63,
-              "mode": "LESSER LEGENDARIES ALLOWED",
-              "bansBonus": "+3%"
+              "mode": null,
+              "bansBonus": null
             },
             "team": {
               "members": [
@@ -11309,10 +11370,10 @@
             "region": "Hoenn",
             "boss": "Groudon",
             "title": {
-              "time": "0:48",
+              "time": null,
               "winsPerHour": 74,
-              "mode": "LESSER LEGENDARIES ALLOWED",
-              "bansBonus": "+11%"
+              "mode": null,
+              "bansBonus": null
             },
             "team": {
               "members": [
@@ -11410,7 +11471,7 @@
               "alternateBans": []
             },
             "noLegendary": {
-              "title": "NO LEGENDARY - 98 WINS - 0:51 - 69/H - BANS +2%",
+              "title": "NO LEGENDARY - 98 WINS - 0:51- 69/H - BANS +2%",
               "members": [
                 {
                   "name": "Tangrowth",
@@ -11502,10 +11563,10 @@
             "region": "Hoenn",
             "boss": "Kyogre",
             "title": {
-              "time": "0:51",
+              "time": null,
               "winsPerHour": 70,
-              "mode": "LESSER LEGENDARIES ALLOWED",
-              "bansBonus": "+14%"
+              "mode": null,
+              "bansBonus": null
             },
             "team": {
               "members": [
@@ -11594,7 +11655,80 @@
                   "bans": []
                 }
               ],
-              "alternates": [],
+              "alternates": [
+                {
+                  "memberIndex": 0,
+                  "name": "Roserade",
+                  "rate": 69,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 0,
+                  "name": "Abomasnow",
+                  "rate": 68,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 1,
+                  "name": "Abomasnow",
+                  "rate": 68,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 1,
+                  "name": "Roserade",
+                  "rate": 70,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 2,
+                  "name": "Meganium",
+                  "rate": 68,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 2,
+                  "name": "Roserade",
+                  "rate": 68,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 3,
+                  "name": "Meganium",
+                  "rate": 68,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 3,
+                  "name": "Venusaur",
+                  "rate": 68,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 4,
+                  "name": "Venusaur",
+                  "rate": 69,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 4,
+                  "name": "Meganium",
+                  "rate": 68,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 5,
+                  "name": "Venusaur",
+                  "rate": 69,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 5,
+                  "name": "Abomasnow",
+                  "rate": 68,
+                  "withBan": false
+                }
+              ],
               "alternateBans": []
             },
             "noLegendary": {
@@ -11684,7 +11818,80 @@
                   "bans": []
                 }
               ],
-              "alternates": [],
+              "alternates": [
+                {
+                  "memberIndex": 0,
+                  "name": "Carnivine",
+                  "rate": 69,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 0,
+                  "name": "Abomasnow",
+                  "rate": 69,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 1,
+                  "name": "Carnivine",
+                  "rate": 68,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 1,
+                  "name": "Abomasnow",
+                  "rate": 67,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 2,
+                  "name": "Carnivine",
+                  "rate": 67,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 2,
+                  "name": "Venusaur",
+                  "rate": 67,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 3,
+                  "name": "Roserade",
+                  "rate": 68,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 3,
+                  "name": "Venusaur",
+                  "rate": 68,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 4,
+                  "name": "Roserade",
+                  "rate": 68,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 4,
+                  "name": "Venusaur",
+                  "rate": 69,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 4,
+                  "name": "Venusaur",
+                  "rate": 69,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 4,
+                  "name": "Muk",
+                  "rate": 66,
+                  "withBan": false
+                }
+              ],
               "alternateBans": []
             }
           },
@@ -11776,7 +11983,80 @@
                   "bans": []
                 }
               ],
-              "alternates": [],
+              "alternates": [
+                {
+                  "memberIndex": 0,
+                  "name": "Walrein",
+                  "rate": 65,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 0,
+                  "name": "Rotom (Frost)",
+                  "rate": 67,
+                  "withBan": true
+                },
+                {
+                  "memberIndex": 1,
+                  "name": "Rotom (Frost)",
+                  "rate": 62,
+                  "withBan": true
+                },
+                {
+                  "memberIndex": 1,
+                  "name": "Walrein",
+                  "rate": 60,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 2,
+                  "name": "Rotom (Frost)",
+                  "rate": 64,
+                  "withBan": true
+                },
+                {
+                  "memberIndex": 2,
+                  "name": "Walrein",
+                  "rate": 62,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 3,
+                  "name": "Walrein",
+                  "rate": 65,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 3,
+                  "name": "Rotom (Frost)",
+                  "rate": 66,
+                  "withBan": true
+                },
+                {
+                  "memberIndex": 4,
+                  "name": "Walrein",
+                  "rate": 66,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 4,
+                  "name": "Rotom (Frost)",
+                  "rate": 67,
+                  "withBan": true
+                },
+                {
+                  "memberIndex": 5,
+                  "name": "Walrein",
+                  "rate": 64,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 5,
+                  "name": "Rotom (Frost)",
+                  "rate": 66,
+                  "withBan": true
+                }
+              ],
               "alternateBans": []
             },
             "noLegendary": {
@@ -11853,7 +12133,80 @@
                   "bans": []
                 }
               ],
-              "alternates": [],
+              "alternates": [
+                {
+                  "memberIndex": 0,
+                  "name": "Rotom (Frost)",
+                  "rate": 62,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 0,
+                  "name": "Beartic",
+                  "rate": 59,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 1,
+                  "name": "Rotom (Frost)",
+                  "rate": 66,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 1,
+                  "name": "Beartic",
+                  "rate": 65,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 2,
+                  "name": "Rotom (Frost)",
+                  "rate": 63,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 2,
+                  "name": "Lapras",
+                  "rate": 61,
+                  "withBan": true
+                },
+                {
+                  "memberIndex": 3,
+                  "name": "Rotom (Frost)",
+                  "rate": 64,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 3,
+                  "name": "Beartic",
+                  "rate": 64,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 4,
+                  "name": "Rotom (Frost)",
+                  "rate": 66,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 4,
+                  "name": "Beartic",
+                  "rate": 65,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 5,
+                  "name": "Lapras",
+                  "rate": 63,
+                  "withBan": true
+                },
+                {
+                  "memberIndex": 5,
+                  "name": "Rotom (Frost)",
+                  "rate": 63,
+                  "withBan": false
+                }
+              ],
               "alternateBans": []
             }
           },
@@ -11945,7 +12298,80 @@
                   ]
                 }
               ],
-              "alternates": [],
+              "alternates": [
+                {
+                  "memberIndex": 0,
+                  "name": "Machamp",
+                  "rate": 71,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 0,
+                  "name": "Heracross",
+                  "rate": 71,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 1,
+                  "name": "Machamp",
+                  "rate": 73,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 1,
+                  "name": "Hariyama",
+                  "rate": 72,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 2,
+                  "name": "Heracross",
+                  "rate": 73,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 2,
+                  "name": "Machamp",
+                  "rate": 73,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 3,
+                  "name": "Machamp",
+                  "rate": 73,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 3,
+                  "name": "Heracross",
+                  "rate": 73,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 4,
+                  "name": "Machamp",
+                  "rate": 73,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 4,
+                  "name": "Heracross",
+                  "rate": 73,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 5,
+                  "name": "Gallade",
+                  "rate": 69,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 5,
+                  "name": "Haunter",
+                  "rate": 69,
+                  "withBan": true
+                }
+              ],
               "alternateBans": [
                 {
                   "name": "Haunter",
@@ -12039,7 +12465,80 @@
                   "bans": []
                 }
               ],
-              "alternates": [],
+              "alternates": [
+                {
+                  "memberIndex": 0,
+                  "name": "Emboar",
+                  "rate": 69,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 0,
+                  "name": "Hariyama",
+                  "rate": 69,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 1,
+                  "name": "Emboar",
+                  "rate": 68,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 1,
+                  "name": "Excadrill",
+                  "rate": 67,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 2,
+                  "name": "Emboar",
+                  "rate": 68,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 2,
+                  "name": "Hariyama",
+                  "rate": 68,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 3,
+                  "name": "Hariyama",
+                  "rate": 62,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 3,
+                  "name": "Lampent",
+                  "rate": 63,
+                  "withBan": true
+                },
+                {
+                  "memberIndex": 4,
+                  "name": "Emboar",
+                  "rate": 69,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 4,
+                  "name": "Hariyama",
+                  "rate": 69,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 5,
+                  "name": "Emboar",
+                  "rate": 69,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 5,
+                  "name": "Hariyama",
+                  "rate": 69,
+                  "withBan": false
+                }
+              ],
               "alternateBans": [
                 {
                   "name": "Lampent",
@@ -12056,8 +12555,8 @@
             "title": {
               "time": "0:57",
               "winsPerHour": 63,
-              "mode": "LESSER LEGENDARIES ALLOWED (night only)",
-              "bansBonus": "+3%"
+              "mode": null,
+              "bansBonus": null
             },
             "team": {
               "members": [
@@ -12129,13 +12628,18 @@
                   "bans": []
                 },
                 {
-                  "name": "Hydreigon",
+                  "name": "Whimsicott",
                   "legendary": false,
                   "moves": [
                     {
-                      "name": "Draco Meteor",
+                      "name": "Moonblast",
                       "tag": null,
-                      "share": 100
+                      "share": 80
+                    },
+                    {
+                      "name": "Poison Powder",
+                      "tag": "PSN",
+                      "share": 19
                     }
                   ],
                   "bans": []
@@ -12247,9 +12751,9 @@
             "region": "Sinnoh",
             "boss": "Giratina",
             "title": {
-              "time": "0:45",
+              "time": null,
               "winsPerHour": 80,
-              "mode": "LESSER LEGENDARIES ALLOWED",
+              "mode": null,
               "bansBonus": null
             },
             "team": {
@@ -12509,7 +13013,80 @@
                   "bans": []
                 }
               ],
-              "alternates": [],
+              "alternates": [
+                {
+                  "memberIndex": 0,
+                  "name": "Skuntank",
+                  "rate": 74,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 0,
+                  "name": "Slaking",
+                  "rate": 72,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 1,
+                  "name": "Quagsire",
+                  "rate": 70,
+                  "withBan": true
+                },
+                {
+                  "memberIndex": 1,
+                  "name": "Nidoking",
+                  "rate": 70,
+                  "withBan": true
+                },
+                {
+                  "memberIndex": 2,
+                  "name": "Skuntank",
+                  "rate": 71,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 2,
+                  "name": "Nidoking",
+                  "rate": 71,
+                  "withBan": true
+                },
+                {
+                  "memberIndex": 3,
+                  "name": "Skuntank",
+                  "rate": 74,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 3,
+                  "name": "Beartic",
+                  "rate": 73,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 4,
+                  "name": "Skuntank",
+                  "rate": 75,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 4,
+                  "name": "Nidoking",
+                  "rate": 74,
+                  "withBan": true
+                },
+                {
+                  "memberIndex": 5,
+                  "name": "Skuntank",
+                  "rate": 71,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 5,
+                  "name": "Granbull",
+                  "rate": 70,
+                  "withBan": false
+                }
+              ],
               "alternateBans": [
                 {
                   "name": "Quagsire",
@@ -12536,10 +13113,10 @@
             "region": "Sinnoh",
             "boss": "Regigigas",
             "title": {
-              "time": "0:59",
+              "time": null,
               "winsPerHour": 61,
-              "mode": "LESSER LEGENDARIES ALLOWED",
-              "bansBonus": "+6%"
+              "mode": null,
+              "bansBonus": null
             },
             "team": {
               "members": [
@@ -12825,7 +13402,80 @@
                   "bans": []
                 }
               ],
-              "alternates": [],
+              "alternates": [
+                {
+                  "memberIndex": 0,
+                  "name": "Heracross",
+                  "rate": 65,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 0,
+                  "name": "Snorlax",
+                  "rate": 63,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 1,
+                  "name": "Heracross",
+                  "rate": 71,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 1,
+                  "name": "Slaking",
+                  "rate": 61,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 2,
+                  "name": "Heracross",
+                  "rate": 61,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 2,
+                  "name": "Snorlax",
+                  "rate": 56,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 3,
+                  "name": "Gengar",
+                  "rate": 52,
+                  "withBan": true
+                },
+                {
+                  "memberIndex": 3,
+                  "name": "Poliwrath",
+                  "rate": 53,
+                  "withBan": true
+                },
+                {
+                  "memberIndex": 4,
+                  "name": "Scrafty",
+                  "rate": 66,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 4,
+                  "name": "Heracross",
+                  "rate": 71,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 5,
+                  "name": "Heracross",
+                  "rate": 69,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 5,
+                  "name": "Escavalier",
+                  "rate": 61,
+                  "withBan": false
+                }
+              ],
               "alternateBans": [
                 {
                   "name": "Gengar",
@@ -12928,7 +13578,80 @@
                   "bans": []
                 }
               ],
-              "alternates": [],
+              "alternates": [
+                {
+                  "memberIndex": 0,
+                  "name": "Cofagrigus",
+                  "rate": 40,
+                  "withBan": true
+                },
+                {
+                  "memberIndex": 0,
+                  "name": "Heracross",
+                  "rate": 41,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 1,
+                  "name": "Escavalier",
+                  "rate": 45,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 1,
+                  "name": "Jellicent",
+                  "rate": 43,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 2,
+                  "name": "Jellicent",
+                  "rate": 42,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 2,
+                  "name": "Poliwrath",
+                  "rate": 39,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 3,
+                  "name": "Heracross",
+                  "rate": 46,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 3,
+                  "name": "Jellicent",
+                  "rate": 45,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 4,
+                  "name": "Heracross",
+                  "rate": 41,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 4,
+                  "name": "Escavalier",
+                  "rate": 39,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 5,
+                  "name": "Escavalier",
+                  "rate": 43,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 5,
+                  "name": "Jellicent",
+                  "rate": 46,
+                  "withBan": false
+                }
+              ],
               "alternateBans": [
                 {
                   "name": "Cofagrigus",
@@ -12945,7 +13668,7 @@
             "title": {
               "time": "0:48",
               "winsPerHour": 74,
-              "mode": "LESSER LEGENDARIES ALLOWED (day only)",
+              "mode": null,
               "bansBonus": null
             },
             "team": {
@@ -13116,8 +13839,8 @@
             "title": {
               "time": "0:49",
               "winsPerHour": 74,
-              "mode": "LESSER LEGENDARIES ALLOWED",
-              "bansBonus": "+12%"
+              "mode": null,
+              "bansBonus": null
             },
             "team": {
               "members": [
@@ -13202,7 +13925,7 @@
               "alternateBans": []
             },
             "noLegendary": {
-              "title": "NO LEGENDARY - 100 WINS - 0:48 - 75/H",
+              "title": "WITHOUT ANY LEGENDARY - 100 WINS - 0:55 - 66/H",
               "members": [
                 {
                   "name": "Gallade",
@@ -13379,7 +14102,80 @@
                   "bans": []
                 }
               ],
-              "alternates": [],
+              "alternates": [
+                {
+                  "memberIndex": 0,
+                  "name": "Lucario",
+                  "rate": 79,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 0,
+                  "name": "Poliwrath",
+                  "rate": 78,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 1,
+                  "name": "Lucario",
+                  "rate": 80,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 1,
+                  "name": "Gardevoir",
+                  "rate": 80,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 2,
+                  "name": "Lucario",
+                  "rate": 81,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 2,
+                  "name": "Gardevoir",
+                  "rate": 80,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 3,
+                  "name": "Lucario",
+                  "rate": 81,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 3,
+                  "name": "Gardevoir",
+                  "rate": 80,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 4,
+                  "name": "Lucario",
+                  "rate": 83,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 4,
+                  "name": "Poliwrath",
+                  "rate": 82,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 5,
+                  "name": "Lucario",
+                  "rate": 80,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 5,
+                  "name": "Gardevoir",
+                  "rate": 81,
+                  "withBan": false
+                }
+              ],
               "alternateBans": []
             },
             "noLegendary": {
@@ -13467,7 +14263,80 @@
                   "bans": []
                 }
               ],
-              "alternates": [],
+              "alternates": [
+                {
+                  "memberIndex": 0,
+                  "name": "Scizor",
+                  "rate": 74,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 0,
+                  "name": "Escavalier",
+                  "rate": 74,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 1,
+                  "name": "Escavalier",
+                  "rate": 72,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 1,
+                  "name": "Scizor",
+                  "rate": 72,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 2,
+                  "name": "Poliwrath",
+                  "rate": 75,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 2,
+                  "name": "Escavalier",
+                  "rate": 74,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 3,
+                  "name": "Escavalier",
+                  "rate": 74,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 3,
+                  "name": "Scizor",
+                  "rate": 74,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 4,
+                  "name": "Escavalier",
+                  "rate": 73,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 4,
+                  "name": "Scizor",
+                  "rate": 73,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 5,
+                  "name": "Poliwrath",
+                  "rate": 72,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 5,
+                  "name": "Escavalier",
+                  "rate": 72,
+                  "withBan": false
+                }
+              ],
               "alternateBans": []
             }
           },
@@ -13475,9 +14344,9 @@
             "region": "Unova",
             "boss": "Black Kyurem",
             "title": {
-              "time": "0:42",
+              "time": null,
               "winsPerHour": 85,
-              "mode": "LESSER LEGENDARIES ALLOWED",
+              "mode": null,
               "bansBonus": null
             },
             "team": {
@@ -13661,9 +14530,9 @@
             "region": "Unova",
             "boss": "White Kyurem",
             "title": {
-              "time": "0:48",
+              "time": null,
               "winsPerHour": 74,
-              "mode": "LESSER LEGENDARIES ALLOWED",
+              "mode": null,
               "bansBonus": null
             },
             "team": {
@@ -13745,7 +14614,7 @@
               "alternateBans": []
             },
             "noLegendary": {
-              "title": "WITHOUT ANY LEGENDARY - 100 WINS - 0:49 - 74/H",
+              "title": "WITHOUT ANY LEGENDARY - 99 WINS - 0:52 - 68/H",
               "members": [
                 {
                   "name": "Terrakion",
@@ -13892,12 +14761,10 @@
         }
       },
       "uncertain": [
-        "The board prints two alternates per member (with their wins/h); the OCR recovered the Mewtwo pair in full but only fragments for later cards, so `alternates` is populated where legible and left empty elsewhere rather than guessed.",
-        "The team lists are transcribed in board order; where the OCR merged two cards (Palkia's sixth slot, Black Kyurem's fourth/fifth), the member is a best read and is marked here rather than silently invented. Palkia's sixth is stored as Hydreigon; Black Kyurem's team includes Entei and Meloetta Pirouette.",
-        "Giratina Origin's no-legendary team is printed as 'the same team'; the `members` array is empty and the UI shows the shared team.",
-        "Giratina's first team and White Kyurem's team are the least certain blocks: their card headers are cut by the OCR, and the member sequence was rebuilt from the move lines.",
-        "Status tags follow the decoding rules (s_p/sip/sLP = SLP, cNF/cnr = CNF, psn/PsN = PSN, BRN, par/PAR, FRz/Frz); sprite-chip garble was dropped.",
-        "Bans printed as 'N attacks, all but X' are stored in `banAllButNote` with the kept move in the note; the `bans` array stays empty for those members."
+        "Alternates: Mewtwo and Kyogre carry the OCR pairs for all six members; Dialga, Rayquaza, Kyurem, Arceus and Giratina Origin were transcribed by hand from the 640px columns. The other ten cards keep empty alternate lists because the column OCR lost or shifted a member on those cards: storing the shifted pairs would attach the wrong rate to a name, so they are left out instead.",
+        "The \"(Ban)\" marker is preserved in  on the alternate entries and in the alternate-bans list; the OCR spelling \"(Gan)\" was decoded as \"(Ban)\".",
+        "Palkia sixth slot: the board shows Whimsicott (Moonblast 80, Poison Powder 19), not Hydreigon; corrected.",
+        "Members and moves remain from the round-1 transcription; the alternates above are the round-2 addition."
       ]
     },
     "elite2-teams": {
