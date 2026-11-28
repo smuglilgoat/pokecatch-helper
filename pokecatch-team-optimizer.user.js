@@ -26828,10 +26828,6 @@
         const tail = String(f.slug || '').split('-').slice(1).join(' ');
         if (tail) put(displayName(base) + ' ' + tail, +id);
         put(englishText(f.form), +id);
-        // shortcut: the boards' English form spellings that differ from the pack (Arceus plates, Genesect drives); extend if a new board uses another
-        const alias = { pyro: 'Burn', cryo: 'Chill', aqua: 'Douse', choc: 'Shock', roche: 'Rock' };
-        const key = Object.keys(alias).find(k => String(f.form).toLowerCase().includes(k));
-        if (key) put(displayName(base) + ' ' + alias[key], +id);
       }
       guideIdMapKey = bundleUrl() || '';
     }
