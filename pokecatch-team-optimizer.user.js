@@ -5350,8 +5350,8 @@
       .pcopt-hspr{display:inline-grid;place-items:center;width:30px;height:30px;flex:none}
       .pcopt-hspr img{max-width:30px;max-height:30px;image-rendering:pixelated}
       .pcopt-htabs{display:flex;flex-wrap:wrap;gap:4px;margin:8px 0}
-      .pcopt-htabs button{font-size:12px;padding:4px 8px;border:1px solid var(--line);border-radius:7px;
-        background:color-mix(in srgb,var(--panel-2) 65%,transparent);color:var(--text-2);cursor:pointer;font:inherit}
+      .pcopt-htabs button{font:inherit;font-size:12px;padding:4px 8px;border:1px solid var(--line);border-radius:7px;
+        background:color-mix(in srgb,var(--panel-2) 65%,transparent);color:var(--text-2);cursor:pointer}
       .pcopt-htabs button.on{color:var(--text);border-color:var(--yellow);background:color-mix(in srgb,var(--yellow) 14%,var(--panel-2))}
       .pcopt-htabs .n{margin-left:4px;font-size:10px;color:var(--muted)}
       .pcopt-hsearch{display:flex;gap:6px;align-items:center;margin:0 0 6px}
@@ -5383,8 +5383,8 @@
       .pcopt-ban{font-size:11px;color:var(--red)}
       .pcopt-galt{font-size:12px;color:var(--muted);padding:2px 0}
       .pcopt-gregion{display:flex;flex-wrap:wrap;gap:4px;margin:6px 0}
-      .pcopt-gregion button{font-size:11px;padding:2px 8px;border-radius:12px;border:1px solid var(--line);
-        background:transparent;color:var(--muted);cursor:pointer;font:inherit}
+      .pcopt-gregion button{font:inherit;font-size:11px;padding:2px 8px;border-radius:12px;border:1px solid var(--line);
+        background:transparent;color:var(--muted);cursor:pointer}
       .pcopt-gregion button.on{color:var(--text);border-color:var(--yellow)}
       .pcopt-gtiers{display:flex;gap:3px}
       .pcopt-gtiers span{font-size:10px;min-width:22px;text-align:center;border-radius:4px;background:var(--panel);color:var(--muted);padding:1px 3px}
