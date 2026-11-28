@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         Poke'Catch Team Optimizer
 // @namespace    pokecatch-helper
-// @version      1.13.1
-// @description  Reads the current chapter events, then builds an optimal team of 6 from the PC with an offense preset, optimizes legendary, elite, underground and raid teams, and prepares per-segment template teams.
+// @version      1.14.0
+// @description  Reads the current chapter events, then builds an optimal team of 6 from the PC with an offense preset, optimizes legendary, elite, underground and raid teams, prepares per-segment template teams, and a Helper page with community guides and the dashboard.
 // @author       GrumpyOwl
 // @match        https://pokecatch-online.netlify.app/*
 // @match        https://pokecatch-online.pages.dev/*
@@ -27,7 +27,7 @@
    * 0. Small helpers
    * ------------------------------------------------------------------ */
   const SAVE_KEY = 'gachamon-save-v1';
-  const VERSION = '1.13.1';
+  const VERSION = '1.14.0';
   const UPDATE_URL = 'https://raw.githubusercontent.com/smuglilgoat/pokecatch-helper/main/pokecatch-team-optimizer.user.js';
   const $ = (sel, root = document) => root.querySelector(sel);
   const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
@@ -4873,7 +4873,8 @@
     league: false, leagueInfo: null, legOdds: null,
     segments: null, segOn: null, switching: false, selfClick: false, manual: null,
     hunt: null, huntSel: null, loop: null, loopSel: null,
-    lastMonUid: null, candy: null, candyClick: null, candyGate: null
+    lastMonUid: null, candy: null, candyClick: null, candyGate: null,
+    helperTab: 'Dashboard', helperSearch: '', helperRegion: null, helperOpen: {}
   };
 
   function esc(s) {
@@ -5327,6 +5328,56 @@
       .pcopt-tier.next{box-shadow:0 0 0 2px var(--yellow);color:var(--text)}
       .pcopt-elite-act{padding-top:2px}
       .pcopt-elite .modal-actions{padding:10px 18px 16px}
+      /* Helper page (community guides + dashboard) */
+      .pcopt-helper{padding:0}
+      #screen-pcopt-helper{padding:0 4px 8px}
+      .pcopt-helper .map-head{align-items:flex-start}
+      .pcopt-helper .map-head .ic img{width:22px;height:22px}
+      .pcopt-hspr{display:inline-grid;place-items:center;width:30px;height:30px;flex:none}
+      .pcopt-hspr img{max-width:30px;max-height:30px;image-rendering:pixelated}
+      .pcopt-htabs{display:flex;flex-wrap:wrap;gap:4px;margin:8px 0}
+      .pcopt-htabs button{font-size:12px;padding:4px 8px;border:1px solid var(--line);border-radius:7px;
+        background:color-mix(in srgb,var(--panel-2) 65%,transparent);color:var(--text-2);cursor:pointer;font:inherit}
+      .pcopt-htabs button.on{color:var(--text);border-color:var(--yellow);background:color-mix(in srgb,var(--yellow) 14%,var(--panel-2))}
+      .pcopt-htabs .n{margin-left:4px;font-size:10px;color:var(--muted)}
+      .pcopt-hsearch{display:flex;gap:6px;align-items:center;margin:0 0 6px}
+      .pcopt-hsearch input{flex:1;min-width:0;font:inherit;font-size:13px;padding:5px 9px;
+        border:1px solid var(--line);border-radius:7px;background:var(--panel-2);color:var(--text)}
+      .pcopt-gcard{border:1px solid var(--line);border-radius:9px;margin:6px 0;overflow:hidden;
+        background:color-mix(in srgb,var(--panel-2) 55%,transparent)}
+      .pcopt-gcard-h{display:flex;align-items:center;gap:8px;width:100%;padding:6px 8px;border:0;
+        background:none;color:inherit;font:inherit;text-align:left;cursor:pointer}
+      .pcopt-gcard-h.static{cursor:default}
+      .pcopt-gcard-h:hover{border-color:var(--yellow)}
+      .pcopt-gcard-h .grow{flex:1;min-width:0}
+      .pcopt-gcard-h small{display:block;color:var(--muted);font-size:11px;line-height:1.35}
+      .pcopt-gbody{padding:2px 10px 9px;border-top:1px solid var(--line)}
+      .pcopt-gmem{display:flex;align-items:center;gap:7px;flex-wrap:wrap;padding:4px 0;border-bottom:1px dashed var(--line)}
+      .pcopt-gmem:last-child{border-bottom:0}
+      .pcopt-gold{color:var(--yellow);font-weight:700}
+      .pcopt-gmoves{display:flex;flex-wrap:wrap;gap:4px}
+      .pcopt-movechip{display:inline-flex;align-items:center;gap:4px;font-size:11px;padding:1px 6px;border-radius:5px;
+        background:color-mix(in srgb,var(--line) 60%,transparent)}
+      .pcopt-movechip i{font-style:normal;font-size:9px;padding:0 3px;border-radius:3px;background:var(--panel);color:var(--muted)}
+      .pcopt-movechip b{font-weight:600;color:var(--muted)}
+      .pcopt-ban{font-size:11px;color:var(--red)}
+      .pcopt-galt{font-size:12px;color:var(--muted);padding:2px 0}
+      .pcopt-gregion{display:flex;flex-wrap:wrap;gap:4px;margin:6px 0}
+      .pcopt-gregion button{font-size:11px;padding:2px 8px;border-radius:12px;border:1px solid var(--line);
+        background:transparent;color:var(--muted);cursor:pointer;font:inherit}
+      .pcopt-gregion button.on{color:var(--text);border-color:var(--yellow)}
+      .pcopt-gtiers{display:flex;gap:3px}
+      .pcopt-gtiers span{font-size:10px;min-width:22px;text-align:center;border-radius:4px;background:var(--panel);color:var(--muted);padding:1px 3px}
+      .pcopt-gtable{width:100%;border-collapse:collapse;font-size:12px;margin:6px 0}
+      .pcopt-gtable th,.pcopt-gtable td{padding:3px 6px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+      .pcopt-gtable th{color:var(--muted);font-size:11px;font-weight:600}
+      .pcopt-gtable td.n{text-align:right;font-variant-numeric:tabular-nums}
+      .pcopt-helper details{margin:6px 0;border:1px solid var(--line);border-radius:8px;padding:6px 9px}
+      .pcopt-helper summary{cursor:pointer;font-size:12px;color:var(--muted)}
+      .pcopt-helper details p,.pcopt-helper details li{font-size:12px;line-height:1.45;color:var(--text-2)}
+      .pcopt-helper details ul{padding-left:18px;margin:4px 0}
+      .pcopt-hnote{font-size:11px;color:var(--muted);line-height:1.45;margin:4px 0}
+      .pcopt-hsrc{font-size:11px;color:var(--muted);line-height:1.45}
       @media(max-width:560px){
         .pcopt-elite-row{grid-template-columns:44px minmax(0,1fr)}
         .pcopt-elite-act{grid-column:2}
@@ -5475,9 +5526,8 @@
 
   /** The Progress screen dashboard: chapter state, data and the three hunter card rows.
    *  Mounted above #map-root so the game's own map render never replaces it. */
-  function mountDashboard() {
-    const host = document.querySelector('#screen-map');
-    if (!host || !document.querySelector('#map-root')) return;
+  function mountDashboard(host = document.querySelector('#screen-map')) {
+    if (!host) return;
     const save = readSave();
     const adv = save?.adv;
     const now = Date.now();
@@ -6170,7 +6220,8 @@
     try {
       cleanupLegacy();
       reorderLegendChapters();
-      mountDashboard();
+      ensureHelperShell();
+      mountHelper();
       mountTemplates();
       mountPokeTimer();
       mountChapter();
@@ -6185,6 +6236,9400 @@
       else { state.raidBoss = null; markRecommended(); }
     } catch (e) { logError('ui: refresh', e); }
   }
+
+  /* ------------------------------------------------------------------ *
+   * 9c-0. Community guides: data, generated from guides/data/*.json
+   * ------------------------------------------------------------------ */
+/* ---------- 9c-0. COMMUNITY GUIDES DATA (generated by tools/embed-guides.mjs from guides/data/*.json — edit those, not this) ---------- */
+  const GUIDES = {
+    "underground": {
+      "id": "underground",
+      "title": "Underground Expedition Picks",
+      "subject": "The best Pokémon to send for each of the 6 expedition themes",
+      "credit": "@destryyy",
+      "board": {
+        "gameVersion": "v0.5.06",
+        "build": "v0.5.06",
+        "pulled": "2026-11-20",
+        "title": "Underground Expedition Picks — Rank 0 — average floors reached from floor 1 — Unova included"
+      },
+      "ingested": "2026-11-28",
+      "sourceImage": "underground-guide-2.png",
+      "method": {
+        "summary": "Simulated with the game's own expedition engine: 3 copies of the same Pokémon, Lv 100, Rank 0 (every stat ×1.00), no gems, 48 expeditions each, foes from all 5 regions (every League beaten), game v0.5.06. Only the wild foes' types change with the theme: every floor is one foe of the theme's types, with HP carried over, a camp now and then, and a guard twice as strong every 10 floors. There is no stat bonus for matching the theme, so hitting its types hard (and taking their hits) is what counts. There is no set cycle for the rotation: each bay rolls its next theme at random when you send, never the same as that bay's last one nor another bay's; the game shows it on the bay before you send, and it differs for every player. One expedition swings by 10+ floors, so picks within ~2 floors of each other are a toss-up. Ranks and gems push everyone further, and the picks change at max Rank (the Rank 5 sheet was not part of this ingestion).",
+        "algorithm": {
+          "goal": "Rank the Pokémon that reach the most Underground floors for each of the six expedition themes at Rank 0.",
+          "engine": "The game's own expedition engine at v0.5.06",
+          "steps": [
+            "Build a team of three identical copies of the candidate, Lv 100, Rank 0, no gems.",
+            "Run 48 expeditions from floor 1 against foes drawn from all five regions with every League beaten.",
+            "Average the floors reached over the 48 expeditions.",
+            "Repeat for every candidate and every theme; sort descending.",
+            "List the best legendary or mythical form once per species (Arceus with its best plate) and the best no-legendary picks separately."
+          ],
+          "parameters": {
+            "team": "3 copies of one Pokémon",
+            "level": "100",
+            "rank": "0 (×1.00 stats)",
+            "gems": "none",
+            "expeditionsPerPick": "48",
+            "regionPool": "all 5 regions, every League beaten",
+            "gameVersion": "v0.5.06"
+          },
+          "acceptance": {
+            "noise": "One expedition swings by 10+ floors; picks within ~2 floors of each other are a toss-up.",
+            "rank": "The ranking is valid at Rank 0 only; the picks change at max Rank."
+          }
+        },
+        "gameFacts": [
+          "Only the wild foes' types change with the theme; HP is carried over between floors.",
+          "A camp appears now and then; a guard is twice as strong every 10 floors.",
+          "No stat bonus for matching the theme.",
+          "Theme rotation is random per bay, never repeating that bay's last theme nor another bay's.",
+          "Three copies of one Pokémon, Lv 100, Rank 0, no gems.",
+          "The Rank 5 sheet exists on the original board but was not supplied."
+        ]
+      },
+      "data": {
+        "themes": [
+          {
+            "key": "flooded",
+            "boardLabel": "Flooded",
+            "picks": [
+              {
+                "name": "White Kyurem",
+                "floors": 113
+              },
+              {
+                "name": "Dialga",
+                "floors": 105
+              },
+              {
+                "name": "Reshiram",
+                "floors": 104
+              },
+              {
+                "name": "Arceus Poison",
+                "floors": 104
+              },
+              {
+                "name": "Giratina Origin",
+                "floors": 104
+              },
+              {
+                "name": "Regigigas",
+                "floors": 104
+              },
+              {
+                "name": "Genesect Burn",
+                "floors": 104
+              }
+            ],
+            "noLegendary": [
+              {
+                "name": "Garchomp",
+                "floors": 100
+              }
+            ]
+          },
+          {
+            "key": "volcanic",
+            "boardLabel": "Volcanic",
+            "picks": [
+              {
+                "name": "Arceus Water",
+                "floors": 109
+              },
+              {
+                "name": "Palkia",
+                "floors": 103
+              },
+              {
+                "name": "Giratina",
+                "floors": 102
+              },
+              {
+                "name": "Suicune",
+                "floors": 102
+              },
+              {
+                "name": "White Kyurem",
+                "floors": 102
+              }
+            ],
+            "noLegendary": []
+          },
+          {
+            "key": "crystal",
+            "boardLabel": "Crystal",
+            "picks": [
+              {
+                "name": "Regigigas",
+                "floors": 105
+              },
+              {
+                "name": "Giratina",
+                "floors": 104
+              },
+              {
+                "name": "Reshiram",
+                "floors": 104
+              },
+              {
+                "name": "Dialga",
+                "floors": 104
+              },
+              {
+                "name": "Arceus",
+                "floors": 104
+              },
+              {
+                "name": "Palkia",
+                "floors": 104
+              },
+              {
+                "name": "Groudon",
+                "floors": 104
+              }
+            ],
+            "noLegendary": [
+              {
+                "name": "Metagross",
+                "floors": 100
+              },
+              {
+                "name": "Chandelure",
+                "floors": 98
+              },
+              {
+                "name": "Snorlax",
+                "floors": 98
+              },
+              {
+                "name": "Darmanitan",
+                "floors": 98
+              },
+              {
+                "name": "Gallade",
+                "floors": 98
+              }
+            ]
+          },
+          {
+            "key": "dark",
+            "boardLabel": "Shadowy",
+            "picks": [
+              {
+                "name": "White Kyurem",
+                "floors": 111
+              },
+              {
+                "name": "Arceus Steel",
+                "floors": 106
+              },
+              {
+                "name": "Reshiram",
+                "floors": 104
+              },
+              {
+                "name": "Slaking",
+                "floors": 102
+              },
+              {
+                "name": "Ho-Oh",
+                "floors": 102
+              },
+              {
+                "name": "Groudon",
+                "floors": 102
+              }
+            ],
+            "noLegendary": []
+          },
+          {
+            "key": "ancient",
+            "boardLabel": "Ancient",
+            "picks": [
+              {
+                "name": "Arceus Psychic",
+                "floors": 104
+              },
+              {
+                "name": "Landorus Therian",
+                "floors": 103
+              },
+              {
+                "name": "Mewtwo",
+                "floors": 103
+              },
+              {
+                "name": "Giratina",
+                "floors": 102
+              },
+              {
+                "name": "Groudon",
+                "floors": 102
+              },
+              {
+                "name": "Dragonite",
+                "floors": 99
+              }
+            ],
+            "noLegendary": [
+              {
+                "name": "Dragonite",
+                "floors": 99
+              }
+            ]
+          },
+          {
+            "key": "galleries",
+            "boardLabel": "Tunnels",
+            "picks": [
+              {
+                "name": "White Kyurem",
+                "floors": 118
+              },
+              {
+                "name": "Zekrom",
+                "floors": 106
+              },
+              {
+                "name": "Regigigas",
+                "floors": 105
+              },
+              {
+                "name": "Giratina Origin",
+                "floors": 104
+              },
+              {
+                "name": "Arceus Rock",
+                "floors": 104
+              }
+            ],
+            "noLegendary": [
+              {
+                "name": "Rampardos",
+                "floors": 100
+              },
+              {
+                "name": "Ampharos",
+                "floors": 100
+              }
+            ]
+          }
+        ]
+      },
+      "uncertain": [
+        "The board prints two floor numbers under each pick (e.g. 109 and 113 for White Kyurem). `floors` stores the higher/first-read value; the second is the other replay set and is not stored.",
+        "Each theme section is unlabeled on the board except Volcanic, Shadowy (Poison), Ancient (Dragon/Fighting) and Tunnels. The remaining sections were mapped by pick logic vs the theme's foe types: the Water plate/Palkia/Suicune section is Volcanic, the Ghost plate/Chandelure/Gallade section is Crystal, and the White Kyurem/Dialga/Reshiram/Arceus Poison section is Flooded. This is a reasoned mapping, not a printed label.",
+        "Several picks have a number obscured by the board's sprite chips; the repeated 102–104 floors were filled from the neighbouring cards where the OCR left a gap, not invented.",
+        "The no-legendary row is only legible on the Flooded (Garchomp), Crystal (Metagross, Chandelure, Snorlax, Darmanitan, Gallade), Ancient (Dragonite) and Tunnels (Rampardos, Ampharos) sections; Volcanic and Dark show none in the OCR.",
+        "The Rank 5 sheet mentioned in the footnote was not provided, so max-rank picks are unknown."
+      ]
+    },
+    "farming": {
+      "id": "farming",
+      "title": "Auto-Replay Farming Guide",
+      "subject": "Pick what you want, set the loop, walk away — every chapter simulated, per hour",
+      "credit": "@destryyy",
+      "board": {
+        "gameVersion": "v0.5.091",
+        "build": "3bdd8140e1",
+        "pulled": "2026-11-19",
+        "title": "Auto-Replay Farming Guide — per hour"
+      },
+      "ingested": "2026-11-28",
+      "sourceImage": "farming-guide-2.png",
+      "method": {
+        "summary": "Simulated with the game's own battle engine on the current build: 63 loops (every chapter, each League counted as one loop), 10 laps each per team. Money: the best of 2 strong endgame teams, because a faster lap is more money. Battle XP: Dialga (Lv 100, rank 5) in front and 5 Pokémon at Lv 40–70 behind it; every team member gets each win's XP even if it never fights, with +10% for the one that fought. Candy XP is counted as the XP the dropped candies give. Exp. Candy Big gives 810K XP for ₽96K (8.4 XP per ₽, the same in every region); buying candy adds only 1.9–3.9M XP/h, so the Kanto League stays on top. Candy drops are random, so the candy rankings shift from run to run.",
+        "algorithm": {
+          "goal": "Rank every auto-replay loop by money per hour, battle XP per hour, candy XP per hour and a mixed score.",
+          "engine": "The game's own battle engine at build 3bdd8140e1",
+          "steps": [
+            "Enumerate the 63 loops: every chapter, with each League as one loop.",
+            "Run 10 laps of each loop with each of the 2 strong endgame money teams; keep the faster lap.",
+            "Run 10 laps with Dialga Lv 100 rank 5 in front and 5 Pokémon at Lv 40–70 behind; count every member's XP, +10% for the one that fought.",
+            "Count candy drops as the XP those candies give.",
+            "Divide each total by the lap time to get the hourly rate; the mixed goal scores each loop against the best loop for each of the three.",
+            "Also add the XP bought by spending the loop's money on Exp. Candy Big (810K XP for ₽96K)."
+          ],
+          "parameters": {
+            "loops": "63 (every chapter, each League as one)",
+            "lapsPerTeam": "10",
+            "moneyTeam": "best of 2 strong endgame teams",
+            "xpTeam": "Dialga Lv 100 rank 5 + 5 Pokémon Lv 40–70",
+            "teamXpShare": "every member gets each win's XP; +10% for the one that fought",
+            "expCandyBig": "810K XP for ₽96K (8.4 XP per ₽)",
+            "build": "3bdd8140e1"
+          },
+          "acceptance": {
+            "money": "A faster lap is more money; the money ranking uses the faster of the two teams.",
+            "candy": "Candy drops are random, so the candy-XP order moves between runs."
+          }
+        },
+        "gameFacts": [
+          "Every team member gets each win's XP even if it never fights; the one that fought gets +10%.",
+          "Money is earned per lap, so a faster lap is more money.",
+          "Candy XP is the XP the dropped candies are worth.",
+          "Exp. Candy Big: 810K XP for ₽96K, 8.4 XP per ₽, the same in every region.",
+          "Buying candy adds only 1.9–3.9M XP/h; the Kanto League stays the best battle-XP loop.",
+          "Candy drops are random from run to run."
+        ]
+      },
+      "data": {
+        "goals": [
+          {
+            "goal": "money",
+            "best": {
+              "loop": "Legend Badge",
+              "perHour": "₽990K/h",
+              "lapSec": 82,
+              "note": "won every lap; the most money of every loop with an endgame team — bring a team that sweeps it, a faster lap is more money"
+            },
+            "runnerUps": [
+              {
+                "loop": "Giant Chasm",
+                "perHour": "₽520K/h"
+              },
+              {
+                "loop": "Unova Victory Road",
+                "perHour": "₽510K/h"
+              }
+            ]
+          },
+          {
+            "goal": "battleXp",
+            "best": {
+              "loop": "Kanto League",
+              "perHour": "72M/h",
+              "lapSec": null,
+              "note": "whole League on a loop; put one Pokémon that solos it in front (Dialga) and 5 to level behind it"
+            },
+            "runnerUps": [
+              {
+                "loop": "Johto League",
+                "perHour": "69M/h"
+              },
+              {
+                "loop": "Unova League",
+                "perHour": "66M/h"
+              }
+            ]
+          },
+          {
+            "goal": "mixed",
+            "best": {
+              "loop": "Giant Chasm",
+              "perHour": "₽820K + 35M battle XP + 20M candy XP/h",
+              "lapSec": 241,
+              "note": "the best mix of the three, each scored against the best loop for it"
+            },
+            "runnerUps": [
+              {
+                "loop": "Stark Mountain",
+                "perHour": null
+              },
+              {
+                "loop": "Kanto Victory Road",
+                "perHour": null
+              }
+            ]
+          },
+          {
+            "goal": "candyXp",
+            "best": {
+              "loop": "Kanto Victory Road",
+              "perHour": "23M/h",
+              "lapSec": null,
+              "note": "drops the most Exp. Candies (counted as the XP they give); 24M battle XP/h"
+            },
+            "runnerUps": [
+              {
+                "loop": "Hoenn Victory Road",
+                "perHour": "22M/h"
+              },
+              {
+                "loop": "Giant Chasm",
+                "perHour": "20M/h"
+              }
+            ]
+          }
+        ],
+        "topLoops": [
+          {
+            "loop": "Giant Chasm",
+            "money": "₽820K",
+            "battleXp": "35M",
+            "candyXp": "20M",
+            "lapSec": 241
+          },
+          {
+            "loop": "Stark Mountain",
+            "money": "₽690K",
+            "battleXp": "40M",
+            "candyXp": "19M",
+            "lapSec": 144
+          },
+          {
+            "loop": "Kanto Victory Road",
+            "money": null,
+            "battleXp": "24M",
+            "candyXp": "23M",
+            "lapSec": null
+          },
+          {
+            "loop": "Hoenn Victory Road",
+            "money": null,
+            "battleXp": null,
+            "candyXp": "22M",
+            "lapSec": null
+          },
+          {
+            "loop": "Sinnoh Victory Road",
+            "money": null,
+            "battleXp": null,
+            "candyXp": null,
+            "lapSec": null
+          },
+          {
+            "loop": "Unova Victory Road",
+            "money": null,
+            "battleXp": null,
+            "candyXp": null,
+            "lapSec": null
+          },
+          {
+            "loop": "Galactic HQ",
+            "money": null,
+            "battleXp": null,
+            "candyXp": null,
+            "lapSec": null
+          },
+          {
+            "loop": "Unova League",
+            "money": null,
+            "battleXp": "66M",
+            "candyXp": null,
+            "lapSec": null
+          },
+          {
+            "loop": "Legend Badge",
+            "money": "₽990K",
+            "battleXp": null,
+            "candyXp": null,
+            "lapSec": 82
+          },
+          {
+            "loop": "Beacon Badge",
+            "money": null,
+            "battleXp": null,
+            "candyXp": null,
+            "lapSec": null
+          },
+          {
+            "loop": "Sinnoh League",
+            "money": null,
+            "battleXp": "63M",
+            "candyXp": null,
+            "lapSec": null
+          },
+          {
+            "loop": "Johto Victory Road",
+            "money": null,
+            "battleXp": null,
+            "candyXp": null,
+            "lapSec": null
+          },
+          {
+            "loop": "Kanto League",
+            "money": null,
+            "battleXp": "72M",
+            "candyXp": null,
+            "lapSec": null
+          },
+          {
+            "loop": "Mt Silver",
+            "money": null,
+            "battleXp": null,
+            "candyXp": null,
+            "lapSec": null
+          },
+          {
+            "loop": "Johto League",
+            "money": null,
+            "battleXp": "69M",
+            "candyXp": null,
+            "lapSec": null
+          },
+          {
+            "loop": "Hoenn League",
+            "money": null,
+            "battleXp": "64M",
+            "candyXp": null,
+            "lapSec": null
+          }
+        ],
+        "leagueCandy": [
+          {
+            "league": "Kanto League",
+            "battleXp": "72M",
+            "candyDrops": "₽220K",
+            "bought": "+1.9M",
+            "totalXp": "73.7M"
+          },
+          {
+            "league": "Johto League",
+            "battleXp": "69M",
+            "candyDrops": "₽220K",
+            "bought": "+1.9M",
+            "totalXp": "70.6M"
+          },
+          {
+            "league": "Unova League",
+            "battleXp": "66M",
+            "candyDrops": "₽460K",
+            "bought": "+3.9M",
+            "totalXp": "69.5M"
+          },
+          {
+            "league": "Hoenn League",
+            "battleXp": "64M",
+            "candyDrops": "₽270K",
+            "bought": "+2.3M",
+            "totalXp": "65.8M"
+          },
+          {
+            "league": "Sinnoh League",
+            "battleXp": "63M",
+            "candyDrops": "₽340K",
+            "bought": "+2.8M",
+            "totalXp": "65.5M"
+          }
+        ],
+        "rules": [
+          "Money: the best of 2 strong endgame teams; a faster lap is more money.",
+          "Battle XP: Dialga Lv 100 rank 5 in front + 5 Pokémon Lv 40–70 behind; every member gets each win's XP, +10% for the one that fought.",
+          "Candy XP is counted as the XP the dropped candies give.",
+          "Exp. Candy Big: 810K XP for ₽96K (8.4 XP per ₽, the same in every region).",
+          "Buying candy adds only 1.9–3.9M XP/h, so the Kanto League stays on top.",
+          "Candy drops are random, so the candy rankings shift from run to run."
+        ]
+      },
+      "uncertain": [
+        "The top-16 table's bars are graphical; only the two rows the OCR read as text (Giant Chasm ₽820K/35M/20M/241s, Stark Mountain ₽690K/40M/19M/144s) carry full numbers. The other rows keep the board order with null values rather than guessed figures.",
+        "The money goal's runner-ups read ₽520K/h and ₽510K/h; the second token is 'P35 10K' in the OCR and was read as ₽510K.",
+        "Lap seconds for the goal cards are only printed on the money, mixed and candy cards; the battle-XP card shows a lap bar without a number."
+      ]
+    },
+    "berry": {
+      "id": "berry",
+      "title": "Berry Farming Guide",
+      "subject": "Where every berry comes from — odds from the game's own tables — per hour on auto-replay",
+      "credit": "@destryyy",
+      "board": {
+        "gameVersion": "v0.5.161",
+        "build": "d8622a1fb3",
+        "pulled": "2026-11-24",
+        "title": "Berry Farming Guide — per hour on auto-replay"
+      },
+      "ingested": "2026-11-28",
+      "sourceImage": "berry-guide-2.png",
+      "method": {
+        "summary": "Expected values from the game's own drop tables, not measured runs. Lap times come from the farming guide's simulation (best endgame team, every lap won). Town events are counted once per lap and at most 6 an hour; Battle Points and pachinko balls are not counted per hour. Badges unlock better berries: route ? and town events only drop a berry once the region has enough gym badges before that chapter — Golden Razz and Pecha 3, Nanab, Enigma and Sitrus 6, Starf and Belue 8. Belue and Rowap never drop on routes: town events, the shop and pachinko only. The shop sells common berries at 40 BP, Starf at 250 BP on floor 75+, Belue at 250 BP on floor 87+, always in stock. Pachinko gives about 2.5% of cup prizes as berries, one prize per ball in the cup. Underground loot rolls start at floor 150 and get better deeper.",
+        "algorithm": {
+          "goal": "Rank loops by expected good berries per hour and list each berry's best sources.",
+          "engine": "The game's own drop tables at build d8622a1fb3; lap times from the farming guide's simulation",
+          "steps": [
+            "Take each berry's drop chance from the game's route, town-event, shop, pachinko and Underground tables.",
+            "Apply the badge gates before a chapter: Golden Razz/Pecha 3 region badges, Nanab/Enigma/Sitrus 6, Starf/Belue 8.",
+            "Count town events once per lap, capped at 6 an hour.",
+            "Use the farming guide's lap time for each loop (best endgame team, every lap won).",
+            "Multiply expected drops per lap by laps per hour; report good berries/h, Starf/h and Oran-and-friends/h.",
+            "Ignore Battle Points and pachinko balls in the per-hour totals."
+          ],
+          "parameters": {
+            "lapTimes": "farming guide's simulation, every lap won",
+            "townEvents": "once per lap, at most 6/h",
+            "badgeGates": "Golden Razz & Pecha 3, Nanab/Enigma & Sitrus 6, Starf & Belue 8",
+            "build": "d8622a1fb3"
+          },
+          "acceptance": {
+            "expected": "Values are expected values from the drop tables, not measured runs.",
+            "excluded": "Battle Points and pachinko balls are not counted per hour."
+          }
+        },
+        "gameFacts": [
+          "Routes: 70% chance per item route, once per run, with 8+ region badges.",
+          "Town events: once per run, at most 6 an hour, 8+ region badges.",
+          "Shop: common berries 40 BP, Starf 250 BP at floor 75+, Belue 250 BP at floor 87+, always in stock.",
+          "Pachinko: about 2.5% of cup prizes, one prize per ball in the cup.",
+          "Underground: loot rolls at floor 150+, deeper is better.",
+          "Belue and Rowap never drop on routes.",
+          "Badge gates: Golden Razz & Pecha 3 region badges, Nanab/Enigma & Sitrus 6, Starf & Belue 8."
+        ]
+      },
+      "data": {
+        "berries": [
+          {
+            "name": "Belue",
+            "use": "shiny eggs ×2 (stacks to 4)",
+            "best": {
+              "kind": "shop",
+              "loop": "Battle Tower shop",
+              "rate": "250 BP (floor 75+)",
+              "lapSec": null,
+              "why": "guaranteed source; loops only drop it from town events, at most 6 an hour"
+            },
+            "runnerUps": [],
+            "buy": "250 BP (floor 75+)"
+          },
+          {
+            "name": "Starf",
+            "use": "shiny odds ×2",
+            "best": {
+              "kind": "loop",
+              "loop": "Giant Chasm",
+              "rate": "0.9/h",
+              "lapSec": 241,
+              "why": "needs 8 badges in the region before the chapter, so only these late loops drop it"
+            },
+            "runnerUps": [
+              {
+                "loop": "Stark Mountain",
+                "rate": "0.9/h"
+              },
+              {
+                "loop": "Sinnoh Victory Road",
+                "rate": "0.8/h"
+              }
+            ],
+            "buy": "250 BP (floor 75+)"
+          },
+          {
+            "name": "Nanab",
+            "use": "—",
+            "best": {
+              "kind": "loop",
+              "loop": "Freeze Badge",
+              "rate": "4.4/h each",
+              "lapSec": 102,
+              "why": "a short loop with 6+ region badges: many ? rolls an hour"
+            },
+            "runnerUps": [
+              {
+                "loop": "Distortion World",
+                "rate": "4.4/h"
+              },
+              {
+                "loop": "Dragonspiral Tower",
+                "rate": "4.2/h each"
+              }
+            ],
+            "buy": "40 BP"
+          },
+          {
+            "name": "Enigma",
+            "use": "—",
+            "best": {
+              "kind": "loop",
+              "loop": "Freeze Badge",
+              "rate": "4.4/h each",
+              "lapSec": 102,
+              "why": "a short loop with 6+ region badges: many ? rolls an hour"
+            },
+            "runnerUps": [
+              {
+                "loop": "Distortion World",
+                "rate": "4.4/h"
+              },
+              {
+                "loop": "Dragonspiral Tower",
+                "rate": "4.2/h each"
+              }
+            ],
+            "buy": "40 BP"
+          },
+          {
+            "name": "Golden Razz",
+            "use": "—",
+            "best": {
+              "kind": "loop",
+              "loop": "Balance Badge",
+              "rate": "5.3/h",
+              "lapSec": 96,
+              "why": "3–5 region badges: Pecha is unlocked but Nanab and Enigma aren't, so it gets a bigger share"
+            },
+            "runnerUps": [
+              {
+                "loop": "Jet Badge",
+                "rate": "5.1/h"
+              },
+              {
+                "loop": "Relic Castle",
+                "rate": "4.8/h"
+              }
+            ],
+            "buy": "40 BP"
+          },
+          {
+            "name": "Lansat",
+            "use": "money ×1.25 · XP ×1.25",
+            "best": {
+              "kind": "loop",
+              "loop": "?",
+              "rate": "8.1/h each",
+              "lapSec": 54,
+              "why": "early chapters (0–2 region badges): the rarer berries are locked, so these take their share"
+            },
+            "runnerUps": [
+              {
+                "loop": "Trio Badge",
+                "rate": "7.2/h"
+              },
+              {
+                "loop": "Boulder Badge",
+                "rate": "6.9/h each"
+              }
+            ],
+            "buy": "40 BP"
+          },
+          {
+            "name": "Pinap",
+            "use": "money ×1.25 · XP ×1.25",
+            "best": {
+              "kind": "loop",
+              "loop": "?",
+              "rate": "8.1/h each",
+              "lapSec": 54,
+              "why": "early chapters (0–2 region badges): the rarer berries are locked, so these take their share"
+            },
+            "runnerUps": [
+              {
+                "loop": "Trio Badge",
+                "rate": "7.2/h"
+              },
+              {
+                "loop": "Boulder Badge",
+                "rate": "6.9/h each"
+              }
+            ],
+            "buy": "40 BP"
+          },
+          {
+            "name": "Rowap",
+            "use": "—",
+            "best": {
+              "kind": "townEvent",
+              "loop": "Town event",
+              "rate": "3.2%",
+              "lapSec": null,
+              "why": "never drops on routes; town events, the shop and pachinko only"
+            },
+            "runnerUps": [],
+            "buy": "40 BP"
+          }
+        ],
+        "sources": {
+          "route": {
+            "note": "70% chance per item route, once per run, min 8+ region badges",
+            "table": [
+              {
+                "name": "Oran",
+                "chance": "19%"
+              },
+              {
+                "name": "Pecha",
+                "chance": "8.4%"
+              },
+              {
+                "name": "Razz",
+                "chance": "8.3%"
+              },
+              {
+                "name": "Golden Razz",
+                "chance": "4.2%"
+              },
+              {
+                "name": "Nanab",
+                "chance": "4.2%"
+              },
+              {
+                "name": "Enigma",
+                "chance": "4.2%"
+              },
+              {
+                "name": "Lansat",
+                "chance": "4.2%"
+              },
+              {
+                "name": "Pinap",
+                "chance": "4.2%"
+              },
+              {
+                "name": "Sitrus",
+                "chance": "3.1%"
+              },
+              {
+                "name": "Starf",
+                "chance": "1%"
+              }
+            ]
+          },
+          "townEvent": {
+            "note": "once per run, at most 6 an hour, min 8+ region badges",
+            "table": [
+              {
+                "name": "Oran",
+                "chance": "48%"
+              },
+              {
+                "name": "Golden Razz",
+                "chance": "3.2%"
+              },
+              {
+                "name": "Nanab",
+                "chance": "3.2%"
+              },
+              {
+                "name": "Enigma",
+                "chance": "3.2%"
+              },
+              {
+                "name": "Rowap",
+                "chance": "3.2%"
+              },
+              {
+                "name": "Razz",
+                "chance": "3.2%"
+              },
+              {
+                "name": "Belue",
+                "chance": "2.8%"
+              },
+              {
+                "name": "Starf",
+                "chance": "2.8%"
+              },
+              {
+                "name": "Lansat",
+                "chance": "2.4%"
+              },
+              {
+                "name": "Pinap",
+                "chance": "2.4%"
+              },
+              {
+                "name": "Pecha",
+                "chance": "2.4%"
+              },
+              {
+                "name": "Sitrus",
+                "chance": "1.6%"
+              }
+            ]
+          },
+          "shop": {
+            "table": [
+              {
+                "name": "Golden Razz",
+                "price": "40 BP"
+              },
+              {
+                "name": "Nanab",
+                "price": "40 BP"
+              },
+              {
+                "name": "Enigma",
+                "price": "40 BP"
+              },
+              {
+                "name": "Starf",
+                "price": "250 BP (floor 75+)"
+              },
+              {
+                "name": "Rowap",
+                "price": "40 BP"
+              },
+              {
+                "name": "Belue",
+                "price": "250 BP (floor 87+)"
+              }
+            ]
+          },
+          "pachinko": {
+            "note": "per loot roll in the cup, one prize each, 2.5% of cup prizes",
+            "table": [
+              {
+                "name": "Golden Razz",
+                "chance": "0.9%"
+              },
+              {
+                "name": "Oran",
+                "chance": "0.9%"
+              },
+              {
+                "name": "Pecha",
+                "chance": "0.9%"
+              },
+              {
+                "name": "Enigma",
+                "chance": "0.9%"
+              },
+              {
+                "name": "Starf",
+                "chance": "0.8%"
+              },
+              {
+                "name": "Lansat",
+                "chance": "0.1%"
+              },
+              {
+                "name": "Pinap",
+                "chance": "0.1%"
+              },
+              {
+                "name": "Razz",
+                "chance": "0.1%"
+              }
+            ]
+          },
+          "underground": {
+            "note": "per loot roll, floor 150+ (deeper = better)",
+            "table": []
+          }
+        },
+        "topLoops": [
+          {
+            "loop": "Freeze Badge",
+            "good": 22.1,
+            "starf": null,
+            "oranEtc": 31
+          },
+          {
+            "loop": "Distortion World",
+            "good": 22.1,
+            "starf": null,
+            "oranEtc": 31
+          },
+          {
+            "loop": "Dragonspiral Tower",
+            "good": 20.9,
+            "starf": null,
+            "oranEtc": 29
+          },
+          {
+            "loop": "Rising Badge",
+            "good": 18.9,
+            "starf": null,
+            "oranEtc": 26
+          },
+          {
+            "loop": "Earth Badge",
+            "good": 17.6,
+            "starf": null,
+            "oranEtc": 24
+          },
+          {
+            "loop": "Giant Chasm",
+            "good": 17.5,
+            "starf": 0.94,
+            "oranEtc": 23
+          },
+          {
+            "loop": "Sinnoh Victory Road",
+            "good": 16.9,
+            "starf": 0.81,
+            "oranEtc": 23
+          },
+          {
+            "loop": "Stark Mountain",
+            "good": 16.8,
+            "starf": 0.9,
+            "oranEtc": 22
+          },
+          {
+            "loop": "Zephyr Badge",
+            "good": 16.4,
+            "starf": null,
+            "oranEtc": 36
+          },
+          {
+            "loop": "Balance Badge",
+            "good": 15.9,
+            "starf": null,
+            "oranEtc": 33
+          },
+          {
+            "loop": "Radio Tower",
+            "good": null,
+            "starf": null,
+            "oranEtc": null
+          },
+          {
+            "loop": "Jet Badge",
+            "good": 15.3,
+            "starf": null,
+            "oranEtc": 32
+          },
+          {
+            "loop": "Icicle Badge",
+            "good": 14.9,
+            "starf": null,
+            "oranEtc": 20
+          },
+          {
+            "loop": "Lake of Rage",
+            "good": 14.8,
+            "starf": null,
+            "oranEtc": 20
+          }
+        ],
+        "rules": [
+          "Expected values from the drop tables, not measured runs.",
+          "Lap times from the farming guide's simulation (best endgame team, every lap won).",
+          "Town events counted once per lap, at most 6 an hour.",
+          "Battle Points and pachinko balls are not counted per hour.",
+          "Badge gates: Golden Razz & Pecha 3 region badges, Nanab/Enigma & Sitrus 6, Starf & Belue 8.",
+          "Belue and Rowap never drop on routes: town events, the shop and pachinko only.",
+          "Shop prices: common berries 40 BP, Starf 250 BP at floor 75+, Belue 250 BP at floor 87+, always in stock.",
+          "Pachinko: about 2.5% of cup prizes, one prize per ball in the cup.",
+          "Underground loot rolls at floor 150+, deeper is better."
+        ]
+      },
+      "uncertain": [
+        "The Lansat/Pinap card's best loop is cut off in the OCR (the loop name is missing); the rate (8.1/h each) and lap time (54s) are legible, so the loop is stored as '?' rather than guessed.",
+        "Several route and town-event percentages are OCR-damaged: Pecha 8.4% (read '84%'), Razz 8.3%, Sitrus 3.1%, Starf 1% and the Belue/Starf/Sitrus tail of the table. The clear rows are stored; the damaged tail rows were left out instead of invented.",
+        "The Underground column's berry rows did not survive the OCR at all; only its floor rule is stored, with an empty table.",
+        "Radio Tower's good-berries/h and Oran/h are unreadable; kept as null in board order."
+      ]
+    },
+    "overnight": {
+      "id": "overnight",
+      "title": "Overnight Farming",
+      "subject": "Which map pays most while you sleep",
+      "credit": "@destryyy",
+      "board": {
+        "gameVersion": "build aa84889c89",
+        "build": "aa84889c89",
+        "pulled": "2026-11-21",
+        "title": "Overnight Farming — every map per night, in story order"
+      },
+      "ingested": "2026-11-28",
+      "sourceImage": "image-2.png",
+      "method": {
+        "summary": "The game's own offline run (what it plays when you come back), 8 hours from 23:00 to 07:00, on every story chapter, averaged over 3 nights. Money night: White Kyurem, Tyranitar, Chandelure, Metagross, Gyarados, Garchomp, all Lv 100. Leveling night: White Kyurem, Tyranitar, Chandelure, Metagross at Lv 100 carry while Skuntank and Garchomp level (Lv 50, *1), Garchomp as companion. Simulated with the game's own code on build aa84889c89, with a save past the story (gifts and one-time finds done). A weaker team wins fewer fights a night and can lose to League trainers. Time: each action takes 1.5 s of your absence, for at most 8 hours. After every wild Pokémon it beats, the game spends 4.5 s more: it tries to catch a new species and turns one you own into candy. So a trainer-only map gets about 19,000 actions a night, a route with wild Pokémon 10,000 to 13,000. Gyms are skipped while away: at a chapter's gym the run starts that chapter again. In a League you have beaten, it walks on through the Elite Four and Champion routes and round again, so any of them gives the same night. Your companion gets ×1.3 EXP and, every few KOs (every 20 for a rare), a candy worth three levels of base EXP at its level, so the more wins the better; it reaches the level cap on every map here. Chapters marked as loops share the night (the run moves to the next one at each gym). Captures can't be turned off: a map with fewer wild Pokémon loses less time to them. Money: only trainers pay (30 × their level, ×0.9); wild Pokémon pay nothing. The best maps pack many high-level trainers into a short loop. EXP = wins × EXP per win: every win pays every team member (+10% for one that fought), at half rate while away. Fast maps win more often; League trainers pay far more per win. The ranking is for the leveler that isn't your companion. Level cap: while away, a Pokémon gains at most 12 levels, however much EXP comes in, so the EXP map only matters for high levels and high ranks.",
+        "algorithm": {
+          "goal": "Rank every story map by money per night and by EXP per night for a leveler that is not the companion.",
+          "engine": "The game's own offline run at build aa84889c89",
+          "steps": [
+            "Start from a save past the story (gifts and one-time finds done).",
+            "Run the offline simulation for 8 hours, 23:00 to 07:00, with each action costing 1.5 s and each wild KO costing 4.5 s more.",
+            "Money night: White Kyurem, Tyranitar, Chandelure, Metagross, Gyarados, Garchomp, all Lv 100.",
+            "Leveling night: the same four at Lv 100 carry while Skuntank and Garchomp level (Lv 50, *1), Garchomp as companion.",
+            "Average over 3 nights.",
+            "Count money from trainers only: 30 × level × 0.9; wild Pokémon pay nothing.",
+            "Count EXP as wins × EXP per win, paid to every member at half rate while away, +10% for the one that fought; the companion gets ×1.3 and candy every few KOs.",
+            "Apply the 12-level cap and rank the leveler that is not the companion."
+          ],
+          "parameters": {
+            "window": "8h, 23:00–07:00",
+            "nightsAveraged": "3",
+            "actionTime": "1.5 s",
+            "wildKoExtra": "4.5 s",
+            "actionsPerNight": "~19,000 trainer-only; 10,000–13,000 on wild routes",
+            "levelCapPerNight": "12 levels",
+            "build": "aa84889c89"
+          },
+          "acceptance": {
+            "money": "Only trainers pay, 30 × level × 0.9; wild Pokémon pay nothing.",
+            "exp": "Every win pays every team member, half rate while away, +10% for the one that fought.",
+            "cap": "A Pokémon gains at most 12 levels in one night, so the EXP map only matters at high level and rank."
+          }
+        },
+        "gameFacts": [
+          "Each action takes 1.5 s of absence, for at most 8 hours.",
+          "After each wild KO the game spends 4.5 s more to try a capture and turn an owned duplicate into candy.",
+          "Gyms are skipped while away: at a gym the run restarts the chapter.",
+          "A beaten League loops Elite Four + Champion rounds; any of them gives the same night.",
+          "Loops share the night, moving to the next loop at each gym.",
+          "Captures cannot be turned off.",
+          "Money = 30 × trainer level × 0.9; wild Pokémon pay nothing.",
+          "EXP = wins × EXP/win; every member is paid, half rate while away, +10% if it fought.",
+          "Companion: ×1.3 EXP and a candy every 20 KOs for a rare, worth three levels of base EXP at its level.",
+          "Level cap: 12 levels per night.",
+          "Ranking is for the leveler that is not the companion."
+        ]
+      },
+      "data": {
+        "moneyTop": [
+          {
+            "rank": 1,
+            "map": "Legend Badge",
+            "region": "Unova",
+            "money": "4.85M",
+            "note": "4,406 wins a night"
+          },
+          {
+            "rank": 2,
+            "map": "Galactic HQ",
+            "region": "Sinnoh",
+            "money": "4.43M",
+            "note": "3,814 wins a night"
+          },
+          {
+            "rank": 3,
+            "map": "Victory Road",
+            "region": "Unova",
+            "money": "3.46M",
+            "note": "4,027 wins a night"
+          },
+          {
+            "rank": 4,
+            "map": "Dragonspiral Tower",
+            "region": "Unova",
+            "money": "3.37M",
+            "note": "4,072 wins a night"
+          },
+          {
+            "rank": 5,
+            "map": "Freeze Badge",
+            "region": "Unova",
+            "money": "3.23M",
+            "note": "4,319 wins a night"
+          },
+          {
+            "rank": 6,
+            "map": "Quake Badge",
+            "region": "Unova",
+            "money": "3.23M",
+            "note": "4,608 wins a night"
+          },
+          {
+            "rank": 7,
+            "map": "Unova League",
+            "region": "Unova",
+            "money": "2.98M",
+            "note": "2,582 wins a night"
+          },
+          {
+            "rank": 8,
+            "map": "Bolt Badge",
+            "region": "Unova",
+            "money": "2.82M",
+            "note": "4,339 wins a night"
+          },
+          {
+            "rank": 9,
+            "map": "Victory Road",
+            "region": "Sinnoh",
+            "money": "2.82M",
+            "note": "4,215 wins a night"
+          },
+          {
+            "rank": 10,
+            "map": "Jet Badge",
+            "region": "Unova",
+            "money": "2.69M",
+            "note": "4,107 wins a night"
+          }
+        ],
+        "xpTop": [
+          {
+            "rank": 1,
+            "map": "Kanto League",
+            "region": "Kanto",
+            "xp": "38.58M",
+            "note": "2,289 wins × 16.9k EXP",
+            "companion": "51.11M"
+          },
+          {
+            "rank": 2,
+            "map": "Johto League",
+            "region": "Johto",
+            "xp": "37.65M",
+            "note": "2,364 wins × 15.9k EXP",
+            "companion": "50.08M"
+          },
+          {
+            "rank": 3,
+            "map": "Unova League",
+            "region": "Unova",
+            "xp": "35.23M",
+            "note": "2,363 wins × 14.9k EXP",
+            "companion": "46.72M"
+          },
+          {
+            "rank": 4,
+            "map": "Sinnoh League",
+            "region": "Sinnoh",
+            "xp": "34.69M",
+            "note": "2,404 wins × 14.4k EXP",
+            "companion": "46.19M"
+          },
+          {
+            "rank": 5,
+            "map": "Hoenn League",
+            "region": "Hoenn",
+            "xp": "32.60M",
+            "note": "2,290 wins × 14.2k EXP",
+            "companion": "43.19M"
+          },
+          {
+            "rank": 6,
+            "map": "Stark Mountain",
+            "region": "Sinnoh",
+            "xp": "11.47M",
+            "note": "2,409 wins × 4.8k EXP - 26 defeats",
+            "companion": "16.34M"
+          },
+          {
+            "rank": 7,
+            "map": "Giant Chasm",
+            "region": "Unova",
+            "xp": "11.43M",
+            "note": "2,330 wins × 4.9k EXP - 40 defeats",
+            "companion": "16.35M"
+          },
+          {
+            "rank": 8,
+            "map": "Mt. Silver",
+            "region": "Johto",
+            "xp": "8.91M",
+            "note": "2,504 wins × 3.6k EXP - 42 defeats",
+            "companion": "13.22M"
+          },
+          {
+            "rank": 9,
+            "map": "Victory Road",
+            "region": "Kanto",
+            "xp": "8.84M",
+            "note": "3,307 wins × 2.7k EXP",
+            "companion": "13.72M"
+          },
+          {
+            "rank": 10,
+            "map": "Galactic HQ",
+            "region": "Sinnoh",
+            "xp": "8.04M",
+            "note": "3,811 wins × 2.1k EXP",
+            "companion": "13.29M"
+          }
+        ],
+        "xpNeed": [
+          {
+            "from": 5,
+            "byRank": {
+              "0": "11k",
+              "1": "17k",
+              "3": "38k",
+              "5": "85k"
+            },
+            "verdict": "any good map"
+          },
+          {
+            "from": 20,
+            "byRank": {
+              "0": "128k",
+              "1": "193k",
+              "3": "434k",
+              "5": "976k"
+            },
+            "verdict": "any good map"
+          },
+          {
+            "from": 40,
+            "byRank": {
+              "0": "1.01M",
+              "1": "1.51M",
+              "3": "3.40M",
+              "5": "7.64M"
+            },
+            "verdict": "any good map"
+          },
+          {
+            "from": 60,
+            "byRank": {
+              "0": "4.85M",
+              "1": "7.27M",
+              "3": "16.36M",
+              "5": "36.80M"
+            },
+            "verdict": "any good map / the League / the League"
+          },
+          {
+            "from": 80,
+            "byRank": {
+              "0": "18.57M",
+              "1": "27.85M",
+              "3": "62.67M",
+              "5": "141.01M"
+            },
+            "verdict": "the League / the League / not in one night / not in one night"
+          },
+          {
+            "from": 88,
+            "byRank": {
+              "0": "30.52M",
+              "1": "45.78M",
+              "3": "103.01M",
+              "5": "231.78M"
+            },
+            "verdict": "the League / not in one night / not in one night / not in one night"
+          }
+        ],
+        "regions": [
+          {
+            "region": "Kanto",
+            "maps": [
+              {
+                "map": "Boulder Badge",
+                "money": "402k",
+                "xp": "50k"
+              },
+              {
+                "map": "Cascade Badge",
+                "money": "810k",
+                "xp": "338k"
+              },
+              {
+                "map": "Thunder Badge",
+                "money": "850k",
+                "xp": "714k"
+              },
+              {
+                "map": "Rainbow Badge",
+                "money": "999k",
+                "xp": "1.16M"
+              },
+              {
+                "map": "Soul Badge",
+                "money": "1.08M",
+                "xp": "2.05M"
+              },
+              {
+                "map": "Marsh Badge",
+                "money": "1.99M",
+                "xp": "4.01M"
+              },
+              {
+                "map": "Volcano Badge",
+                "money": "2.11M",
+                "xp": "5.10M"
+              },
+              {
+                "map": "Earth Badge",
+                "money": "1.97M",
+                "xp": "5.96M"
+              },
+              {
+                "map": "Victory Road",
+                "money": "2.50M",
+                "xp": "8.84M"
+              },
+              {
+                "map": "Kanto League",
+                "money": "1.53M",
+                "xp": "38.58M"
+              }
+            ]
+          },
+          {
+            "region": "Johto",
+            "maps": [
+              {
+                "map": "Zephyr Badge",
+                "money": "441k",
+                "xp": "36k"
+              },
+              {
+                "map": "Hive Badge",
+                "money": "591k",
+                "xp": "259k"
+              },
+              {
+                "map": "Plain Badge",
+                "money": "879k",
+                "xp": "702k"
+              },
+              {
+                "map": "Fog Badge",
+                "money": "1.25M",
+                "xp": "1.38M"
+              },
+              {
+                "map": "Storm Badge",
+                "money": "1.35M",
+                "xp": "2.33M"
+              },
+              {
+                "map": "Mineral Badge",
+                "money": "1.61M",
+                "xp": "3.67M"
+              },
+              {
+                "map": "Lake of Rage",
+                "money": "1.94M",
+                "xp": "4.59M"
+              },
+              {
+                "map": "Glacier Badge",
+                "money": "1.94M",
+                "xp": "4.62M"
+              },
+              {
+                "map": "Radio Tower",
+                "money": "1.76M",
+                "xp": "5.86M"
+              },
+              {
+                "map": "Rising Badge",
+                "money": "1.96M",
+                "xp": "6.71M"
+              },
+              {
+                "map": "Victory Road",
+                "money": "1.81M",
+                "xp": "7.37M"
+              },
+              {
+                "map": "Johto League",
+                "money": "1.46M",
+                "xp": "37.65M"
+              },
+              {
+                "map": "Mt. Silver",
+                "money": "1.04M",
+                "xp": "8.91M"
+              }
+            ]
+          },
+          {
+            "region": "Hoenn",
+            "maps": [
+              {
+                "map": "Stone Badge",
+                "money": "520k",
+                "xp": "40k"
+              },
+              {
+                "map": "Knuckle Badge",
+                "money": "651k",
+                "xp": "204k"
+              },
+              {
+                "map": "Dynamo Badge",
+                "money": "981k",
+                "xp": "529k"
+              },
+              {
+                "map": "Heat Badge",
+                "money": "1.04M",
+                "xp": "809k"
+              },
+              {
+                "map": "Mt. Chimney",
+                "money": "1.17M",
+                "xp": "1.46M"
+              },
+              {
+                "map": "Balance Badge",
+                "money": "1.17M",
+                "xp": "1.53M"
+              },
+              {
+                "map": "Feather Badge",
+                "money": "1.76M",
+                "xp": "2.80M"
+              },
+              {
+                "map": "Mt. Pyre",
+                "money": "1.29M",
+                "xp": "2.96M"
+              },
+              {
+                "map": "Mind Badge",
+                "money": "1.81M",
+                "xp": "4.31M"
+              },
+              {
+                "map": "The Crisis",
+                "money": "1.72M",
+                "xp": "4.85M"
+              },
+              {
+                "map": "Rain Badge",
+                "money": "2.02M",
+                "xp": "5.58M"
+              },
+              {
+                "map": "Victory Road",
+                "money": "2.06M",
+                "xp": "6.79M"
+              },
+              {
+                "map": "Hoenn League",
+                "money": "1.76M",
+                "xp": "32.60M"
+              }
+            ]
+          },
+          {
+            "region": "Sinnoh",
+            "maps": [
+              {
+                "map": "Coal Badge",
+                "money": "533k",
+                "xp": "38k"
+              },
+              {
+                "map": "Forest Badge",
+                "money": "981k",
+                "xp": "280k"
+              },
+              {
+                "map": "Relic Badge",
+                "money": "919k",
+                "xp": "488k"
+              },
+              {
+                "map": "Cobble Badge",
+                "money": "1.40M",
+                "xp": "946k"
+              },
+              {
+                "map": "Fen Badge",
+                "money": "1.31M",
+                "xp": "1.36M"
+              },
+              {
+                "map": "Mine Badge",
+                "money": "2.02M",
+                "xp": "2.37M"
+              },
+              {
+                "map": "The Lakes",
+                "money": "1.98M",
+                "xp": "2.97M"
+              },
+              {
+                "map": "Icicle Badge",
+                "money": "2.23M",
+                "xp": "3.84M"
+              },
+              {
+                "map": "Galactic HQ",
+                "money": "4.43M",
+                "xp": "8.04M"
+              },
+              {
+                "map": "Distortion World",
+                "money": "1.74M",
+                "xp": "4.91M"
+              },
+              {
+                "map": "Beacon Badge",
+                "money": "2.82M",
+                "xp": "5.90M"
+              },
+              {
+                "map": "Victory Road",
+                "money": "2.13M",
+                "xp": "6.69M"
+              },
+              {
+                "map": "Sinnoh League",
+                "money": "2.27M",
+                "xp": "34.69M"
+              },
+              {
+                "map": "Stark Mountain",
+                "money": "1.96M",
+                "xp": "11.47M"
+              }
+            ]
+          },
+          {
+            "region": "Unova",
+            "maps": [
+              {
+                "map": "Trio Badge",
+                "money": "870k",
+                "xp": "54k"
+              },
+              {
+                "map": "Basic Badge",
+                "money": "1.57M",
+                "xp": "313k"
+              },
+              {
+                "map": "Insect Badge",
+                "money": "2.14M",
+                "xp": "721k"
+              },
+              {
+                "map": "Relic Castle",
+                "money": "1.59M",
+                "xp": "873k"
+              },
+              {
+                "map": "Bolt Badge",
+                "money": "2.82M",
+                "xp": "1.83M"
+              },
+              {
+                "map": "Quake Badge",
+                "money": "3.23M",
+                "xp": "2.78M"
+              },
+              {
+                "map": "Jet Badge",
+                "money": "2.69M",
+                "xp": "2.99M"
+              },
+              {
+                "map": "Freeze Badge",
+                "money": "3.23M",
+                "xp": "4.23M"
+              },
+              {
+                "map": "Dragonspiral Tower",
+                "money": "3.37M",
+                "xp": "5.52M"
+              },
+              {
+                "map": "Legend Badge",
+                "money": "4.85M",
+                "xp": "7.21M"
+              },
+              {
+                "map": "Victory Road",
+                "money": "3.46M",
+                "xp": "7.56M"
+              },
+              {
+                "map": "Unova League",
+                "money": "2.98M",
+                "xp": "35.23M"
+              },
+              {
+                "map": "Giant Chasm",
+                "money": "2.67M",
+                "xp": "11.43M"
+              }
+            ]
+          }
+        ]
+      },
+      "uncertain": [
+        "The OCR of the per-region tables interleaves Johto and Hoenn in two columns; the rows were re-aligned by map order and the money/EXP top lists, which match (Johto League 37.65M / 1.46M, Hoenn League 32.60M / 1.76M).",
+        "Sinnoh's first money cell was blank before 533k; 533k is stored for Coal Badge, and the alternative (Coal missing, 533k for Forest Badge) is not used because 14 maps need 14 values.",
+        "The xpNeed matrix's verdicts are printed as colour blocks plus short labels; the stored `verdict` concatenates the four rank verdicts in *0/*1/*3/*5 order for the Lv 60–88 rows where they differ.",
+        "The board gives no 'from Lv 100' row; the matrix stops at Lv 88 because the 12-level cap reaches 100 from there."
+      ]
+    },
+    "gem-tiers": {
+      "id": "gem-tiers",
+      "title": "Legendary Gem Tier List Rank *0 → *5",
+      "subject": "Which legendaries gain the most from gems — Elite Leagues, Elite legendary fights and the Underground",
+      "credit": "@destryyy",
+      "board": {
+        "gameVersion": "v0.5.161",
+        "build": "d8622a1fb3",
+        "pulled": "2026-11-24",
+        "title": "Legendary Gem Tier List Rank *0 — *5 — all Lv 100"
+      },
+      "ingested": "2026-11-28",
+      "sourceImage": "legendary-rank-tiers-2.png",
+      "method": {
+        "summary": "Rank 5 doubles a Pokémon's stats (×1.15 per rank, ×2.01 at 5). This list shows who gains the most: each legendary ranked to *5 alone and dropped into the best *0 team. White Kyurem is still #1 overall, but no longer everywhere: Dialga now leads the Elite Leagues and Ho-Oh the Elite legendary fights. Since v0.5.03, Ho-Oh (60 → 80), Entei (33 → 63), Dialga, Reshiram and Kyogre climbed the most. Gems are type-locked: a legendary only ranks up with gems of the types tagged under it, and each Arceus plate is a separate Pokémon with its own gem type. Simulated with the game's own battle engine on build d8622a1fb3. Box: all 79 gemmable legendaries and forms plus strong non-legendaries, all Lv 100, Rank 0, not shiny. For each fight the best Rank-0 team was searched, then each legendary was set to Rank 5, ranked in place or swapped into its best slot, and replayed on the same seeds. Elite: 45 legendary Elite fights + 5 Elite Leagues × 2 tiers, each at the first tier a Rank-0 team wins under half the time (48 tries per fight, 24 per League; win rate + 0.2 × damage dealt). Underground: best Rank-0 trio per theme, 6 themes × 16 expeditions, gain in floors reached. Bars are scaled to the best legendary in each area; the tier is the average of the three. Changes since v0.5.03 that matter: signature moves (v0.5.08) help Ho-Oh and Entei most; draining moves no longer heal (v0.5.141); status lands ≤75% and sleep/freeze/paralysis stack resistance (v0.5.13); boss fights got small tweaks (v0.5.142).",
+        "algorithm": {
+          "goal": "Rank every gemmable legendary by how much going from Rank 0 to Rank 5 improves Elite Leagues, Elite legendary fights and the Underground.",
+          "engine": "The game's own battle engine at build d8622a1fb3",
+          "steps": [
+            "Build the box: all 79 gemmable legendaries and forms plus strong non-legendaries, Lv 100, Rank 0, not shiny.",
+            "For each fight, search the best Rank-0 team.",
+            "Set each legendary to Rank 5, rank it in place or swap it into its best slot, and replay the same seeds.",
+            "Elite: 45 legendary Elite fights + 5 Elite Leagues × 2 tiers, each at the first tier a Rank-0 team wins under half the time; 48 tries per fight, 24 per League; score = win rate + 0.2 × damage dealt.",
+            "Underground: best Rank-0 trio per theme, 6 themes × 16 expeditions; score = gain in floors reached.",
+            "Scale each area's bars to the best legendary in that area; the tier is the average of the three."
+          ],
+          "parameters": {
+            "box": "79 gemmable legendaries and forms + strong non-legendaries",
+            "level": "100",
+            "rank": "0 and 5 (×1.15 per rank, ×2.01 at 5)",
+            "elite": "45 legendary fights + 5 Leagues × 2 tiers; 48 tries/fight, 24/League",
+            "underground": "6 themes × 16 expeditions",
+            "build": "d8622a1fb3"
+          },
+          "acceptance": {
+            "eliteTier": "A Rank-0 team must win under half the time at the chosen tier.",
+            "score": "Elite score = win rate + 0.2 × damage dealt; the Underground score is floors gained.",
+            "sameSeeds": "Rank-0 and Rank-5 runs use the same seeds."
+          }
+        },
+        "gameFacts": [
+          "Rank 5 multiplies stats by ×2.01; each rank gives ×1.15.",
+          "Gems are type-locked: a legendary only ranks up with gems of its own types.",
+          "Each Arceus plate is a separate Pokémon with its own gem type.",
+          "Signature moves (v0.5.08) count as the strongest move of their type; Ho-Oh and Entei gain the most.",
+          "Draining moves no longer heal (v0.5.141).",
+          "Status moves land 75% at most; sleep, freeze and paralysis stack resistance on both sides (v0.5.13).",
+          "Boss fights had small adjustments in v0.5.142."
+        ]
+      },
+      "data": {
+        "bestSinks": [
+          {
+            "name": "Zekrom",
+            "gemTypes": [
+              "dragon",
+              "electric"
+            ]
+          },
+          {
+            "name": "Regigigas",
+            "gemTypes": [
+              "normal"
+            ]
+          },
+          {
+            "name": "Arceus Ice",
+            "gemTypes": [
+              "ice"
+            ]
+          },
+          {
+            "name": "Groudon",
+            "gemTypes": [
+              "ground"
+            ]
+          },
+          {
+            "name": "Entei",
+            "gemTypes": [
+              "fire"
+            ]
+          },
+          {
+            "name": "Arceus Dark",
+            "gemTypes": [
+              "dark"
+            ]
+          },
+          {
+            "name": "Arceus Dragon",
+            "gemTypes": [
+              "dragon"
+            ]
+          },
+          {
+            "name": "Landorus Therian",
+            "gemTypes": [
+              "ground",
+              "flying"
+            ]
+          },
+          {
+            "name": "Arceus Electric",
+            "gemTypes": [
+              "electric"
+            ]
+          },
+          {
+            "name": "Suicune",
+            "gemTypes": [
+              "water"
+            ]
+          },
+          {
+            "name": "Genesect Burn",
+            "gemTypes": [
+              "bug",
+              "steel"
+            ]
+          },
+          {
+            "name": "Arceus Ground",
+            "gemTypes": [
+              "ground"
+            ]
+          },
+          {
+            "name": "Victini",
+            "gemTypes": [
+              "psychic",
+              "fire"
+            ]
+          },
+          {
+            "name": "Arceus Psychic",
+            "gemTypes": [
+              "psychic"
+            ]
+          },
+          {
+            "name": "Arceus Flying",
+            "gemTypes": [
+              "flying"
+            ]
+          },
+          {
+            "name": "Arceus Rock",
+            "gemTypes": [
+              "rock"
+            ]
+          },
+          {
+            "name": "Landorus",
+            "gemTypes": [
+              "ground",
+              "flying"
+            ]
+          },
+          {
+            "name": "Arceus Fire",
+            "gemTypes": [
+              "fire"
+            ]
+          },
+          {
+            "name": "Genesect",
+            "gemTypes": [
+              "bug",
+              "steel"
+            ]
+          },
+          {
+            "name": "Deoxys Defense",
+            "gemTypes": [
+              "psychic"
+            ]
+          }
+        ],
+        "tiers": [
+          {
+            "label": "Best gem sinks (board order)",
+            "members": [
+              {
+                "name": "Zekrom",
+                "gemTypes": [
+                  "dragon",
+                  "electric"
+                ],
+                "areas": {
+                  "eliteLeagues": null,
+                  "eliteFights": null,
+                  "underground": null
+                }
+              },
+              {
+                "name": "Regigigas",
+                "gemTypes": [
+                  "normal"
+                ],
+                "areas": {
+                  "eliteLeagues": null,
+                  "eliteFights": null,
+                  "underground": null
+                }
+              },
+              {
+                "name": "Arceus Ice",
+                "gemTypes": [
+                  "ice"
+                ],
+                "areas": {
+                  "eliteLeagues": null,
+                  "eliteFights": null,
+                  "underground": null
+                }
+              },
+              {
+                "name": "Groudon",
+                "gemTypes": [
+                  "ground"
+                ],
+                "areas": {
+                  "eliteLeagues": null,
+                  "eliteFights": null,
+                  "underground": null
+                }
+              },
+              {
+                "name": "Entei",
+                "gemTypes": [
+                  "fire"
+                ],
+                "areas": {
+                  "eliteLeagues": null,
+                  "eliteFights": null,
+                  "underground": null
+                }
+              },
+              {
+                "name": "Arceus Dark",
+                "gemTypes": [
+                  "dark"
+                ],
+                "areas": {
+                  "eliteLeagues": null,
+                  "eliteFights": null,
+                  "underground": null
+                }
+              },
+              {
+                "name": "Arceus Dragon",
+                "gemTypes": [
+                  "dragon"
+                ],
+                "areas": {
+                  "eliteLeagues": null,
+                  "eliteFights": null,
+                  "underground": null
+                }
+              },
+              {
+                "name": "Landorus Therian",
+                "gemTypes": [
+                  "ground",
+                  "flying"
+                ],
+                "areas": {
+                  "eliteLeagues": null,
+                  "eliteFights": null,
+                  "underground": null
+                }
+              },
+              {
+                "name": "Arceus Electric",
+                "gemTypes": [
+                  "electric"
+                ],
+                "areas": {
+                  "eliteLeagues": null,
+                  "eliteFights": null,
+                  "underground": null
+                }
+              },
+              {
+                "name": "Suicune",
+                "gemTypes": [
+                  "water"
+                ],
+                "areas": {
+                  "eliteLeagues": null,
+                  "eliteFights": null,
+                  "underground": null
+                }
+              },
+              {
+                "name": "Genesect Burn",
+                "gemTypes": [
+                  "bug",
+                  "steel"
+                ],
+                "areas": {
+                  "eliteLeagues": null,
+                  "eliteFights": null,
+                  "underground": null
+                }
+              },
+              {
+                "name": "Arceus Ground",
+                "gemTypes": [
+                  "ground"
+                ],
+                "areas": {
+                  "eliteLeagues": null,
+                  "eliteFights": null,
+                  "underground": null
+                }
+              },
+              {
+                "name": "Victini",
+                "gemTypes": [
+                  "psychic",
+                  "fire"
+                ],
+                "areas": {
+                  "eliteLeagues": null,
+                  "eliteFights": null,
+                  "underground": null
+                }
+              },
+              {
+                "name": "Arceus Psychic",
+                "gemTypes": [
+                  "psychic"
+                ],
+                "areas": {
+                  "eliteLeagues": null,
+                  "eliteFights": null,
+                  "underground": null
+                }
+              },
+              {
+                "name": "Arceus Flying",
+                "gemTypes": [
+                  "flying"
+                ],
+                "areas": {
+                  "eliteLeagues": null,
+                  "eliteFights": null,
+                  "underground": null
+                }
+              },
+              {
+                "name": "Arceus Rock",
+                "gemTypes": [
+                  "rock"
+                ],
+                "areas": {
+                  "eliteLeagues": null,
+                  "eliteFights": null,
+                  "underground": null
+                }
+              },
+              {
+                "name": "Landorus",
+                "gemTypes": [
+                  "ground",
+                  "flying"
+                ],
+                "areas": {
+                  "eliteLeagues": null,
+                  "eliteFights": null,
+                  "underground": null
+                }
+              },
+              {
+                "name": "Arceus Fire",
+                "gemTypes": [
+                  "fire"
+                ],
+                "areas": {
+                  "eliteLeagues": null,
+                  "eliteFights": null,
+                  "underground": null
+                }
+              },
+              {
+                "name": "Genesect",
+                "gemTypes": [
+                  "bug",
+                  "steel"
+                ],
+                "areas": {
+                  "eliteLeagues": null,
+                  "eliteFights": null,
+                  "underground": null
+                }
+              },
+              {
+                "name": "Deoxys Defense",
+                "gemTypes": [
+                  "psychic"
+                ],
+                "areas": {
+                  "eliteLeagues": null,
+                  "eliteFights": null,
+                  "underground": null
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "uncertain": [
+        "The board's bars are pixel art and no area value is legible, so every `areas` value is null and the stored order is the board order.",
+        "The vertical tier grouping (which row belongs to which letter tier) is not legible; all members are stored in one 'board order' group.",
+        "The OCR also read 'Arceus Flying?' with a question mark; the sprite chip follows the Flying plate row, so it is stored as Arceus Flying.",
+        "Two best-sink names are ambiguous between a base and a form (Landorus vs Landorus Therian, Genesect vs Genesect Burn); both appear in the OCR rows and both are stored as separate entries."
+      ]
+    },
+    "ru-tiers": {
+      "id": "ru-tiers",
+      "title": "Rare & Uncommon Investment Tier List",
+      "subject": "Every fully evolved rare & uncommon species in the game (304), simulated at Lv 100, rank 5",
+      "credit": "@destryyy",
+      "board": {
+        "gameVersion": "v0.5.161",
+        "build": "d8622a1fb3",
+        "pulled": "2026-11-24",
+        "title": "Rare & Uncommon Investment Tier List — v0.5.161"
+      },
+      "ingested": "2026-11-28",
+      "sourceImage": "rare-uncommon-tiers-2.png",
+      "method": {
+        "summary": "Every fully evolved rare and uncommon species in the game (304) was simulated at Lv 100, rank 5 in the game's own battle engine. An Elite team can field only one Legendary, so 5 of the 6 Elite slots are non-legendaries: those are the Pokémon worth ranking up. Rare ones rank up with rare gems of their types, uncommon ones with cheaper uncommon gems; each rank gives ×1.15 stats. This rerun is on v0.5.161: draining moves no longer heal, status moves land 75% at most, and repeated Sleep/Freeze/Paralysis gets resisted. Simisage, Simisear and Simipour are now Rare, and the seasonal Sawsbuck forms are counted. How it is measured: the best unranked team for each of 45 Elite legendary fights and 10 Elite League fights, at the tier where it first wins under half the time; each candidate at *5 is put in its best slot, 16–32 fights each with the same random draws for all. Underground: put in the best trio for each of the 6 themes. Score = average of the three areas (100 = the best of all 304 there).",
+        "algorithm": {
+          "goal": "Rank the 304 fully evolved rare and uncommon species by how much a rank-5 copy adds across Elite fights, Elite Leagues and the Underground.",
+          "engine": "The game's own battle engine at build d8622a1fb3",
+          "steps": [
+            "Start from the best unranked team for each of 45 Elite legendary fights and 10 Elite League fights.",
+            "Raise each fight to the tier where the unranked team first wins under half the time.",
+            "Put each candidate at *5 in its best slot, next to the rest of the team as it would fight.",
+            "Run 16–32 fights per candidate with the same random draws for every candidate.",
+            "Put each candidate in the best trio for each of the 6 Underground themes.",
+            "Score each area against the best of all 304 in that area (100 = best), then average the three areas."
+          ],
+          "parameters": {
+            "candidates": "304 fully evolved rare & uncommon species",
+            "level": "100",
+            "rank": "5 (×1.15 per rank)",
+            "eliteFights": "45 legendary fights + 10 League fights",
+            "fightsPerCandidate": "16–32",
+            "underground": "best trio per theme, 6 themes",
+            "build": "d8622a1fb3"
+          },
+          "acceptance": {
+            "sameDraws": "Every candidate uses the same random draws, so the order is not seed luck.",
+            "scale": "100 = the best of all 304 in that area; the tier score is the average of the three."
+          }
+        },
+        "gameFacts": [
+          "An Elite team fields only one legendary, so 5 of 6 slots are non-legendaries.",
+          "Rare species rank up with rare gems of their types; uncommon species with cheaper uncommon gems.",
+          "Each rank gives ×1.15 stats.",
+          "Draining moves no longer heal (v0.5.141).",
+          "Status moves land 75% at most and repeated Sleep/Freeze/Paralysis gets resisted (v0.5.13).",
+          "Simisage, Simisear and Simipour are Rare in v0.5.161; seasonal Sawsbuck forms are counted."
+        ]
+      },
+      "data": {
+        "pseudoLegendary": [
+          {
+            "name": "Metagross",
+            "gemTypes": [
+              "steel",
+              "psychic"
+            ],
+            "pts": 78,
+            "bestArea": "Underground #2 of 304"
+          },
+          {
+            "name": "Garchomp",
+            "gemTypes": [
+              "dragon",
+              "ground"
+            ],
+            "pts": 70,
+            "bestArea": "Underground #3 of 304"
+          },
+          {
+            "name": "Tyranitar",
+            "gemTypes": [
+              "rock",
+              "dark"
+            ],
+            "pts": 65,
+            "bestArea": "Elite #2 of 304"
+          },
+          {
+            "name": "Hydreigon",
+            "gemTypes": [
+              "dark",
+              "dragon"
+            ],
+            "pts": 64,
+            "bestArea": "Elite #12 of 304"
+          },
+          {
+            "name": "Salamence",
+            "gemTypes": [
+              "dragon",
+              "flying"
+            ],
+            "pts": 61,
+            "bestArea": "Underground #7 of 304"
+          },
+          {
+            "name": "Dragonite",
+            "gemTypes": [
+              "dragon",
+              "flying"
+            ],
+            "pts": 61,
+            "bestArea": "Underground #11 of 304"
+          }
+        ],
+        "topRare": [
+          {
+            "name": "Slaking",
+            "gemTypes": [
+              "normal"
+            ],
+            "pts": 92,
+            "bestArea": "Underground #1 of 304"
+          },
+          {
+            "name": "Gyarados",
+            "gemTypes": [
+              "water",
+              "flying"
+            ],
+            "pts": 78,
+            "bestArea": "League #3 of 304"
+          },
+          {
+            "name": "Walrein",
+            "gemTypes": [
+              "ice",
+              "water"
+            ],
+            "pts": 74,
+            "bestArea": "League #1 of 304"
+          },
+          {
+            "name": "Mamoswine",
+            "gemTypes": [
+              "ice",
+              "ground"
+            ],
+            "pts": 71,
+            "bestArea": "League #2 of 304"
+          },
+          {
+            "name": "Rhyperior",
+            "gemTypes": [
+              "ground",
+              "rock"
+            ],
+            "pts": 68,
+            "bestArea": "Elite #7 of 304"
+          },
+          {
+            "name": "Feraligatr",
+            "gemTypes": [
+              "water"
+            ],
+            "pts": 67,
+            "bestArea": "League #4 of 304"
+          },
+          {
+            "name": "Emboar",
+            "gemTypes": [
+              "fire",
+              "fighting"
+            ],
+            "pts": 66,
+            "bestArea": "Elite #8 of 304"
+          },
+          {
+            "name": "Lapras",
+            "gemTypes": [
+              "water",
+              "ice"
+            ],
+            "pts": 66,
+            "bestArea": "League #10 of 304"
+          },
+          {
+            "name": "Chandelure",
+            "gemTypes": [
+              "ghost",
+              "fire"
+            ],
+            "pts": 65,
+            "bestArea": "Elite #1 of 304"
+          },
+          {
+            "name": "Glaceon",
+            "gemTypes": [
+              "ice"
+            ],
+            "pts": 64,
+            "bestArea": "League #12 of 304"
+          }
+        ],
+        "topUncommon": [
+          {
+            "name": "Golurk",
+            "gemTypes": [
+              "ground",
+              "ghost"
+            ],
+            "pts": 61,
+            "bestArea": "Underground #15 of 304"
+          },
+          {
+            "name": "Dewgong",
+            "gemTypes": [
+              "water",
+              "ice"
+            ],
+            "pts": 60,
+            "bestArea": "Elite #9 of 304"
+          },
+          {
+            "name": "Darmanitan",
+            "gemTypes": [
+              "fire"
+            ],
+            "pts": 54,
+            "bestArea": "Underground #27 of 304"
+          },
+          {
+            "name": "Froslass",
+            "gemTypes": [
+              "ice",
+              "ghost"
+            ],
+            "pts": 49,
+            "bestArea": "Elite #57 of 304"
+          },
+          {
+            "name": "Granbull",
+            "gemTypes": [
+              "fairy"
+            ],
+            "pts": 48,
+            "bestArea": "League #53 of 304"
+          },
+          {
+            "name": "Hariyama",
+            "gemTypes": [
+              "fighting"
+            ],
+            "pts": 48,
+            "bestArea": "Underground #26 of 304"
+          }
+        ],
+        "notes": [
+          "Simisage, Simisear and Simipour are now Rare.",
+          "Seasonal Sawsbuck forms are counted.",
+          "Pseudo-legendaries are not counted in the Top 10 Rare list (they are shown separately)."
+        ]
+      },
+      "uncertain": [
+        "The board's Top 10 Uncommon prints three of its first five names as sprites only; the OCR recovered Golurk, Dewgong, Darmanitan, Froslass, Granbull and Hariyama, so those six are stored and the rest omitted rather than invented.",
+        "Mamoswine's points read 'MA' and Glaceon's are cut off; 71 and 64 are best reads, not confirmed digits.",
+        "Darmanitan's 54 pts is printed in the second row group above the 52/51 of the first group; kept as read, so the stored top list is not strictly descending.",
+        "One best-area label reads 'Bite #57/#12 of 304' in the OCR; stored as 'Elite' where the column header makes that the likely word."
+      ]
+    },
+    "type-picks": {
+      "id": "type-picks",
+      "title": "Best by Type",
+      "subject": "Whose gems to spend first",
+      "credit": "@destryyy",
+      "board": {
+        "gameVersion": "v0.5.17",
+        "build": "824f567ed3",
+        "pulled": "2026-11-25",
+        "title": "Best by Type — 18 types, six picks each, most helpful first"
+      },
+      "ingested": "2026-11-28",
+      "sourceImage": "type_picks-2.png",
+      "method": {
+        "summary": "For each of the 18 types, the Pokémon that help most at *5 inside the best *2 teams of the 56 Elite legendary fights: one legendary and five others of any rarity, then who to rank instead. A Pokémon only takes gems of one of its own types and of its own rarity, and three gems fuse into one of the same type a rarity up, up to rare, so each type has one pick for its legendary gems and five for the others; the letter on a chip (R, U, C) says which gems it takes, and a Pokémon with two types shows up under both. Help: in each of the 56 Elite legendary fights the Pokémon goes to *5 inside that fight's best *2 team, in its own place if it is on the team, else in place of the weakest member of its kind (the legendary, or the weakest of the others), next to the teammates it would really fight with, the rest at *2 with their banned moves. Each fight runs at the first Elite tier where that team wins under half the time, on 6 seeded fights. The Pokémon comes with the moves that suit it best there (as it is, or with one move choice changed if that does better on 6 other fights). A fight where it would make the team worse counts as 0. The six picks are picked on their own: the six need not make a team. Then, per rarity, the next 4 of the type in the same order, with their wins. Not the tier lists: a tier list puts each Pokémon at *5 in a team of its own rarity only; here it fights beside the best team's other members. Smaller numbers than on the earlier boards: there the team was at *0, so a *5 Pokémon was twice as strong as its teammates and helped in half the fights; here the team is at *2, a *5 Pokémon is 1.5 times as strong, the fights are at higher Elite tiers, and it helps in fewer of them — the order is what to read. Everyone is tried: all 690 Pokémon of the four rarities, commons too.",
+        "algorithm": {
+          "goal": "For each type, rank the legendary gem pick, five other picks and the next four per rarity by help at *5 inside the best *2 Elite teams.",
+          "engine": "The game's own battles against each boss at build 824f567ed3",
+          "steps": [
+            "For each of the 56 Elite legendary fights, take the best *2 team from the *2 Teams board.",
+            "For each candidate of the type, put it at *5: in its own place if it is on the team, else in place of the weakest member of its kind (the legendary, or the weakest of the others).",
+            "Keep the teammates at *2 with their banned moves.",
+            "Run the fight at the first Elite tier where that team wins under half the time, on 6 seeded fights.",
+            "Try the candidate with its best moves: as-is, or with one move choice changed if that does better on 6 other fights.",
+            "Score a fight where the candidate makes the team worse as 0; count wins first and 5% of the boss's HP as one win.",
+            "Pick the legendary and five others independently; then list the next 4 per rarity in the same order."
+          ],
+          "parameters": {
+            "types": "18 canonical types",
+            "fights": "56 Elite legendary fights",
+            "teamRank": "*2, banned moves kept",
+            "candidateRank": "*5",
+            "seededFights": "6 per fight",
+            "moveTrial": "6 other fights for a single move change",
+            "box": "all 690 Pokémon of the four rarities",
+            "build": "824f567ed3"
+          },
+          "acceptance": {
+            "zero": "A fight where the candidate would make the team worse counts as 0.",
+            "win": "Wins count first; 5% of the boss's HP counts as one win.",
+            "independent": "The six picks are picked independently and need not form a team."
+          }
+        },
+        "gameFacts": [
+          "Gems are type- and rarity-locked; three gems fuse into one of the same type a rarity up, up to rare.",
+          "A dual-type Pokémon appears under both types.",
+          "The team is at *2 with its banned moves; the candidate is at *5.",
+          "Each fight runs at the first Elite tier where the team wins under half the time.",
+          "Wins count first; 5% of the boss's HP = one win.",
+          "All 690 Pokémon of the four rarities are tried, commons too.",
+          "Numbers are smaller than on the *0 boards; only the order compares."
+        ]
+      },
+      "data": {
+        "types": [
+          {
+            "type": "bug",
+            "legendary": {
+              "name": "Genesect Chill",
+              "wins": 9,
+              "hp": "+1%",
+              "fights": "13/56"
+            },
+            "others": [
+              {
+                "name": "Escavalier",
+                "rarity": "R",
+                "wins": 18,
+                "hp": "+4%",
+                "fights": "21/56"
+              },
+              {
+                "name": "Volcarona",
+                "rarity": "R",
+                "wins": 13,
+                "hp": "+3%",
+                "fights": "16/56"
+              },
+              {
+                "name": "Scizor",
+                "rarity": "R",
+                "wins": 12,
+                "hp": "+2%",
+                "fights": "15/56"
+              },
+              {
+                "name": "Heracross",
+                "rarity": "R",
+                "wins": 11,
+                "hp": "+2%",
+                "fights": "14/56"
+              },
+              {
+                "name": "Vespiquen",
+                "rarity": "U",
+                "wins": 9,
+                "hp": "+2%",
+                "fights": "11/56"
+              }
+            ],
+            "legendaryNext": [],
+            "next": {
+              "R": [
+                {
+                  "name": "Armaldo",
+                  "wins": 8
+                },
+                {
+                  "name": "Butterfree",
+                  "wins": 7
+                },
+                {
+                  "name": "Scolipede",
+                  "wins": 5
+                }
+              ],
+              "U": [
+                {
+                  "name": "Crustle",
+                  "wins": 6
+                },
+                {
+                  "name": "Forretress",
+                  "wins": 5
+                },
+                {
+                  "name": "Parasect",
+                  "wins": 4
+                },
+                {
+                  "name": "Durant",
+                  "wins": 4
+                }
+              ],
+              "C": [
+                {
+                  "name": "Paras",
+                  "wins": 2
+                },
+                {
+                  "name": "Venonat",
+                  "wins": 2
+                },
+                {
+                  "name": "Nincada",
+                  "wins": 1
+                },
+                {
+                  "name": "Illumise",
+                  "wins": 1
+                }
+              ],
+              "more": {
+                "R": 16,
+                "U": 18,
+                "C": 14
+              }
+            }
+          },
+          {
+            "type": "dark",
+            "legendary": {
+              "name": "Arceus Dark",
+              "wins": 14,
+              "hp": "+3%",
+              "fights": "15/56"
+            },
+            "others": [
+              {
+                "name": "Tyranitar",
+                "rarity": "R",
+                "wins": 26,
+                "hp": "+6%",
+                "fights": "31/56"
+              },
+              {
+                "name": "Skuntank",
+                "rarity": "R",
+                "wins": 18,
+                "hp": "+5%",
+                "fights": "24/56"
+              },
+              {
+                "name": "Drapion",
+                "rarity": "R",
+                "wins": 17,
+                "hp": "+3%",
+                "fights": "24/56"
+              },
+              {
+                "name": "Bisharp",
+                "rarity": "U",
+                "wins": 16,
+                "hp": "+4%",
+                "fights": "19/56"
+              },
+              {
+                "name": "Hydreigon",
+                "rarity": "R",
+                "wins": 15,
+                "hp": "+4%",
+                "fights": "23/56"
+              }
+            ],
+            "legendaryNext": [],
+            "next": {
+              "R": [
+                {
+                  "name": "Spiritomb",
+                  "wins": 15
+                },
+                {
+                  "name": "Krookodile",
+                  "wins": 13
+                },
+                {
+                  "name": "Houndoom",
+                  "wins": 12
+                }
+              ],
+              "U": [
+                {
+                  "name": "Scrafty",
+                  "wins": 14
+                },
+                {
+                  "name": "Cacturne",
+                  "wins": 7
+                },
+                {
+                  "name": "Crawdaunt",
+                  "wins": 5
+                }
+              ],
+              "C": [
+                {
+                  "name": "Scraggy",
+                  "wins": 4
+                },
+                {
+                  "name": "Stunky",
+                  "wins": 3
+                },
+                {
+                  "name": "Vullaby",
+                  "wins": 2
+                },
+                {
+                  "name": "Purrloin",
+                  "wins": 1
+                }
+              ],
+              "more": {
+                "R": 12,
+                "U": 8,
+                "C": 3
+              }
+            }
+          },
+          {
+            "type": "dragon",
+            "legendary": {
+              "name": "White Kyurem",
+              "wins": 30,
+              "hp": "+6%",
+              "fights": "27/56"
+            },
+            "others": [
+              {
+                "name": "Garchomp",
+                "rarity": "R",
+                "wins": 17,
+                "hp": "+3%",
+                "fights": "23/56"
+              },
+              {
+                "name": "Hydreigon",
+                "rarity": "R",
+                "wins": 15,
+                "hp": "+4%",
+                "fights": "23/56"
+              },
+              {
+                "name": "Dragonite",
+                "rarity": "R",
+                "wins": 13,
+                "hp": "+2%",
+                "fights": "18/56"
+              },
+              {
+                "name": "Salamence",
+                "rarity": "R",
+                "wins": 11,
+                "hp": "+2%",
+                "fights": "24/56"
+              },
+              {
+                "name": "Kingdra",
+                "rarity": "R",
+                "wins": 10,
+                "hp": "+2%",
+                "fights": "16/56"
+              }
+            ],
+            "legendaryNext": [
+              {
+                "name": "Black Kyurem",
+                "wins": 22
+              },
+              {
+                "name": "Dialga",
+                "wins": 20
+              },
+              {
+                "name": "Reshiram",
+                "wins": 18
+              }
+            ],
+            "next": {
+              "R": [
+                {
+                  "name": "Altaria",
+                  "wins": 9
+                },
+                {
+                  "name": "Druddigon",
+                  "wins": 8
+                },
+                {
+                  "name": "Haxorus",
+                  "wins": 7
+                },
+                {
+                  "name": "Flygon",
+                  "wins": 5
+                }
+              ],
+              "U": [
+                {
+                  "name": "Vibrava",
+                  "wins": 1
+                }
+              ],
+              "C": [],
+              "more": {
+                "R": 10,
+                "U": null,
+                "C": null
+              }
+            }
+          },
+          {
+            "type": "electric",
+            "legendary": {
+              "name": "Zekrom",
+              "wins": 14,
+              "hp": "+3%",
+              "fights": "20/56"
+            },
+            "others": [
+              {
+                "name": "Magnezone",
+                "rarity": "R",
+                "wins": 10,
+                "hp": "+3%",
+                "fights": "19/56"
+              },
+              {
+                "name": "Rotom (Frost)",
+                "rarity": "R",
+                "wins": 8,
+                "hp": "+2%",
+                "fights": "13/56"
+              },
+              {
+                "name": "Rotom (Heat)",
+                "rarity": "R",
+                "wins": 7,
+                "hp": "+2%",
+                "fights": "13/56"
+              },
+              {
+                "name": "Lanturn",
+                "rarity": "U",
+                "wins": 6,
+                "hp": "+2%",
+                "fights": "13/56"
+              },
+              {
+                "name": "Stunfisk",
+                "rarity": "U",
+                "wins": 6,
+                "hp": "+2%",
+                "fights": "14/56"
+              }
+            ],
+            "legendaryNext": [
+              {
+                "name": "Arceus Electric",
+                "wins": 6
+              },
+              {
+                "name": "Zapdos",
+                "wins": 3
+              }
+            ],
+            "next": {
+              "R": [
+                {
+                  "name": "Rotom (Wash)",
+                  "wins": 6
+                },
+                {
+                  "name": "Rotom (Fan)",
+                  "wins": 5
+                },
+                {
+                  "name": "Ampharos",
+                  "wins": 4
+                }
+              ],
+              "U": [
+                {
+                  "name": "Magneton",
+                  "wins": 4
+                },
+                {
+                  "name": "Raichu",
+                  "wins": 2
+                },
+                {
+                  "name": "Zebstrika",
+                  "wins": 1
+                },
+                {
+                  "name": "Flaaffy",
+                  "wins": 1
+                }
+              ],
+              "C": [
+                {
+                  "name": "Magnemite",
+                  "wins": 2
+                },
+                {
+                  "name": "Plusle",
+                  "wins": 1
+                },
+                {
+                  "name": "Chinchou",
+                  "wins": 1
+                },
+                {
+                  "name": "Blitzle",
+                  "wins": 1
+                }
+              ],
+              "more": {
+                "R": 10,
+                "U": 5,
+                "C": 9
+              }
+            }
+          },
+          {
+            "type": "fairy",
+            "legendary": null,
+            "others": [
+              {
+                "name": "Gardevoir",
+                "rarity": "R",
+                "wins": 9,
+                "hp": "+2%",
+                "fights": "14/56"
+              },
+              {
+                "name": "Togekiss",
+                "rarity": "R",
+                "wins": 8,
+                "hp": "+2%",
+                "fights": "13/56"
+              },
+              {
+                "name": "Wigglytuff",
+                "rarity": "U",
+                "wins": 8,
+                "hp": "+1%",
+                "fights": "12/56"
+              },
+              {
+                "name": "Clefable",
+                "rarity": "R",
+                "wins": 7,
+                "hp": "+2%",
+                "fights": "15/56"
+              },
+              {
+                "name": "Granbull",
+                "rarity": "U",
+                "wins": 6,
+                "hp": "+1%",
+                "fights": "16/56"
+              },
+              {
+                "name": "Whimsicott",
+                "rarity": "U",
+                "wins": 6,
+                "hp": "+2%",
+                "fights": "8/56"
+              }
+            ],
+            "legendaryNext": [],
+            "next": {
+              "R": [
+                {
+                  "name": "Mawile",
+                  "wins": 3
+                },
+                {
+                  "name": "Mr. Mime",
+                  "wins": 2
+                },
+                {
+                  "name": "Togetic",
+                  "wins": 2
+                }
+              ],
+              "U": [
+                {
+                  "name": "Azumarill",
+                  "wins": 4
+                },
+                {
+                  "name": "Kirlia",
+                  "wins": 1
+                }
+              ],
+              "C": [
+                {
+                  "name": "Cottonee",
+                  "wins": 2
+                },
+                {
+                  "name": "Igglybuff",
+                  "wins": 2
+                },
+                {
+                  "name": "Mime Jr.",
+                  "wins": 2
+                },
+                {
+                  "name": "Togepi",
+                  "wins": 2
+                }
+              ],
+              "more": {
+                "R": null,
+                "U": null,
+                "C": 7
+              }
+            }
+          },
+          {
+            "type": "fighting",
+            "legendary": {
+              "name": "Arceus Fighting",
+              "wins": 8,
+              "hp": "+2%",
+              "fights": "11/56"
+            },
+            "others": [
+              {
+                "name": "Conkeldurr",
+                "rarity": "R",
+                "wins": 14,
+                "hp": "+3%",
+                "fights": "21/56"
+              },
+              {
+                "name": "Scrafty",
+                "rarity": "U",
+                "wins": 14,
+                "hp": "+4%",
+                "fights": "17/56"
+              },
+              {
+                "name": "Heracross",
+                "rarity": "R",
+                "wins": 11,
+                "hp": "+2%",
+                "fights": "17/56"
+              },
+              {
+                "name": "Poliwrath",
+                "rarity": "U",
+                "wins": 12,
+                "hp": "+3%",
+                "fights": "14/56"
+              },
+              {
+                "name": "Emboar",
+                "rarity": "R",
+                "wins": 13,
+                "hp": "+3%",
+                "fights": "18/56"
+              }
+            ],
+            "legendaryNext": [
+              {
+                "name": "Terrakion",
+                "wins": 7
+              },
+              {
+                "name": "Keldeo",
+                "wins": 7
+              },
+              {
+                "name": "Cobalion",
+                "wins": 6
+              }
+            ],
+            "next": {
+              "R": [
+                {
+                  "name": "Gallade",
+                  "wins": 11
+                },
+                {
+                  "name": "Machamp",
+                  "wins": 11
+                },
+                {
+                  "name": "Blaziken",
+                  "wins": 11
+                }
+              ],
+              "U": [
+                {
+                  "name": "Toxicroak",
+                  "wins": 10
+                },
+                {
+                  "name": "Hariyama",
+                  "wins": 10
+                },
+                {
+                  "name": "Breloom",
+                  "wins": 9
+                }
+              ],
+              "C": [
+                {
+                  "name": "Scraggy",
+                  "wins": 4
+                },
+                {
+                  "name": "Mienfoo",
+                  "wins": 2
+                },
+                {
+                  "name": "Mankey",
+                  "wins": 1
+                },
+                {
+                  "name": "Meditite",
+                  "wins": 1
+                }
+              ],
+              "more": {
+                "R": 2,
+                "U": 11,
+                "C": 4
+              }
+            }
+          },
+          {
+            "type": "fire",
+            "legendary": {
+              "name": "Ho-Oh",
+              "wins": 35,
+              "hp": "+6%",
+              "fights": "32/56"
+            },
+            "others": [
+              {
+                "name": "Ninetales",
+                "rarity": "R",
+                "wins": 14,
+                "hp": "+4%",
+                "fights": "25/56"
+              },
+              {
+                "name": "Chandelure",
+                "rarity": "R",
+                "wins": 20,
+                "hp": "+4%",
+                "fights": "25/56"
+              },
+              {
+                "name": "Volcarona",
+                "rarity": "R",
+                "wins": 13,
+                "hp": "+3%",
+                "fights": "21/56"
+              },
+              {
+                "name": "Emboar",
+                "rarity": "R",
+                "wins": 13,
+                "hp": "+3%",
+                "fights": "18/56"
+              },
+              {
+                "name": "Typhlosion",
+                "rarity": "R",
+                "wins": 14,
+                "hp": "+3%",
+                "fights": "16/56"
+              }
+            ],
+            "legendaryNext": [
+              {
+                "name": "Victini",
+                "wins": 22
+              },
+              {
+                "name": "Heatran",
+                "wins": 19
+              },
+              {
+                "name": "Reshiram",
+                "wins": 18
+              },
+              {
+                "name": "Entei",
+                "wins": 16
+              }
+            ],
+            "next": {
+              "R": [
+                {
+                  "name": "Charizard",
+                  "wins": 12
+                },
+                {
+                  "name": "Arcanine",
+                  "wins": 12
+                },
+                {
+                  "name": "Houndoom",
+                  "wins": 12
+                }
+              ],
+              "U": [
+                {
+                  "name": "Darmanitan",
+                  "wins": 10
+                },
+                {
+                  "name": "Torkoal",
+                  "wins": 8
+                },
+                {
+                  "name": "Camerupt",
+                  "wins": 8
+                }
+              ],
+              "C": [
+                {
+                  "name": "Litwick",
+                  "wins": 5
+                },
+                {
+                  "name": "Ponyta",
+                  "wins": 2
+                },
+                {
+                  "name": "Vulpix",
+                  "wins": 2
+                },
+                {
+                  "name": "Numel",
+                  "wins": 1
+                }
+              ],
+              "more": {
+                "R": 22,
+                "U": 5,
+                "C": 2
+              }
+            }
+          },
+          {
+            "type": "flying",
+            "legendary": {
+              "name": "Ho-Oh",
+              "wins": 35,
+              "hp": "+6%",
+              "fights": "32/56"
+            },
+            "others": [
+              {
+                "name": "Charizard",
+                "rarity": "R",
+                "wins": 12,
+                "hp": "+3%",
+                "fights": "18/56"
+              },
+              {
+                "name": "Dragonite",
+                "rarity": "R",
+                "wins": 13,
+                "hp": "+2%",
+                "fights": "17/56"
+              },
+              {
+                "name": "Mantine",
+                "rarity": "U",
+                "wins": 10,
+                "hp": "+3%",
+                "fights": "24/56"
+              },
+              {
+                "name": "Mandibuzz",
+                "rarity": "U",
+                "wins": 10,
+                "hp": "+3%",
+                "fights": "15/56"
+              },
+              {
+                "name": "Salamence",
+                "rarity": "R",
+                "wins": 11,
+                "hp": "+2%",
+                "fights": "13/56"
+              }
+            ],
+            "legendaryNext": [
+              {
+                "name": "Rayquaza",
+                "wins": 10
+              },
+              {
+                "name": "Lugia",
+                "wins": 7
+              },
+              {
+                "name": "Landorus",
+                "wins": 6
+              }
+            ],
+            "next": {
+              "R": [
+                {
+                  "name": "Gyarados",
+                  "wins": 10
+                },
+                {
+                  "name": "Altaria",
+                  "wins": 9
+                },
+                {
+                  "name": "Honchkrow",
+                  "wins": 9
+                }
+              ],
+              "U": [
+                {
+                  "name": "Noctowl",
+                  "wins": 7
+                },
+                {
+                  "name": "Golbat",
+                  "wins": 5
+                },
+                {
+                  "name": "Drifblim",
+                  "wins": 5
+                },
+                {
+                  "name": "Tropius",
+                  "wins": 4
+                }
+              ],
+              "C": [
+                {
+                  "name": "Vullaby",
+                  "wins": 2
+                },
+                {
+                  "name": "Natu",
+                  "wins": 2
+                },
+                {
+                  "name": "Swablu",
+                  "wins": 2
+                },
+                {
+                  "name": "Hoothoot",
+                  "wins": 1
+                }
+              ],
+              "more": {
+                "R": 33,
+                "U": 12,
+                "C": 13
+              }
+            }
+          },
+          {
+            "type": "ghost",
+            "legendary": {
+              "name": "Giratina Origin",
+              "wins": 12,
+              "hp": "+2%",
+              "fights": "24/56"
+            },
+            "others": [
+              {
+                "name": "Dusknoir",
+                "rarity": "R",
+                "wins": 16,
+                "hp": "+4%",
+                "fights": "16/56"
+              },
+              {
+                "name": "Chandelure",
+                "rarity": "R",
+                "wins": 20,
+                "hp": "+4%",
+                "fights": "25/56"
+              },
+              {
+                "name": "Jellicent",
+                "rarity": "U",
+                "wins": 14,
+                "hp": "+3%",
+                "fights": "20/56"
+              },
+              {
+                "name": "Spiritomb",
+                "rarity": "R",
+                "wins": 15,
+                "hp": "+4%",
+                "fights": "22/56"
+              },
+              {
+                "name": "Golurk",
+                "rarity": "U",
+                "wins": 12,
+                "hp": "+2%",
+                "fights": "20/56"
+              }
+            ],
+            "legendaryNext": [
+              {
+                "name": "Giratina",
+                "wins": 12
+              },
+              {
+                "name": "Arceus Ghost",
+                "wins": 7
+              }
+            ],
+            "next": {
+              "R": [
+                {
+                  "name": "Sableye",
+                  "wins": 8
+                },
+                {
+                  "name": "Gengar",
+                  "wins": 6
+                },
+                {
+                  "name": "Banette",
+                  "wins": 5
+                },
+                {
+                  "name": "Mismagius",
+                  "wins": 3
+                }
+              ],
+              "U": [
+                {
+                  "name": "Cofagrigus",
+                  "wins": 10
+                },
+                {
+                  "name": "Dusclops",
+                  "wins": 10
+                },
+                {
+                  "name": "Froslass",
+                  "wins": 7
+                }
+              ],
+              "C": [
+                {
+                  "name": "Litwick",
+                  "wins": 5
+                },
+                {
+                  "name": "Golett",
+                  "wins": 3
+                },
+                {
+                  "name": "Frillish",
+                  "wins": 2
+                },
+                {
+                  "name": "Gastly",
+                  "wins": 2
+                }
+              ],
+              "more": {
+                "R": 3,
+                "U": 3,
+                "C": 4
+              }
+            }
+          },
+          {
+            "type": "grass",
+            "legendary": {
+              "name": "Arceus Grass",
+              "wins": 4,
+              "hp": "+1%",
+              "fights": "8/56"
+            },
+            "others": [
+              {
+                "name": "Ferrothorn",
+                "rarity": "U",
+                "wins": 11,
+                "hp": "+2%",
+                "fights": "17/56"
+              },
+              {
+                "name": "Exeggutor",
+                "rarity": "R",
+                "wins": 12,
+                "hp": "+3%",
+                "fights": "20/56"
+              },
+              {
+                "name": "Torterra",
+                "rarity": "R",
+                "wins": 10,
+                "hp": "+2%",
+                "fights": "18/56"
+              },
+              {
+                "name": "Abomasnow",
+                "rarity": "U",
+                "wins": 10,
+                "hp": "+2%",
+                "fights": "14/56"
+              },
+              {
+                "name": "Amoonguss",
+                "rarity": "U",
+                "wins": 9,
+                "hp": "+2%",
+                "fights": "19/56"
+              }
+            ],
+            "legendaryNext": [
+              {
+                "name": "Celebi",
+                "wins": 3
+              },
+              {
+                "name": "Shaymin",
+                "wins": 3
+              },
+              {
+                "name": "Shaymin Sky",
+                "wins": 2
+              },
+              {
+                "name": "Virizion",
+                "wins": 2
+              }
+            ],
+            "next": {
+              "R": [
+                {
+                  "name": "Meganium",
+                  "wins": 9
+                },
+                {
+                  "name": "Vileplume",
+                  "wins": 9
+                },
+                {
+                  "name": "Tangrowth",
+                  "wins": 9
+                }
+              ],
+              "U": [
+                {
+                  "name": "Breloom",
+                  "wins": 9
+                },
+                {
+                  "name": "Cacturne",
+                  "wins": 7
+                },
+                {
+                  "name": "Whimsicott",
+                  "wins": 6
+                }
+              ],
+              "C": [
+                {
+                  "name": "Deerling",
+                  "wins": 2
+                },
+                {
+                  "name": "Cottonee",
+                  "wins": 2
+                },
+                {
+                  "name": "Paras",
+                  "wins": 2
+                },
+                {
+                  "name": "Roselia",
+                  "wins": 1
+                }
+              ],
+              "more": {
+                "R": 28,
+                "U": 16,
+                "C": 14
+              }
+            }
+          },
+          {
+            "type": "ground",
+            "legendary": {
+              "name": "Groudon",
+              "wins": 15,
+              "hp": "+3%",
+              "fights": "18/56"
+            },
+            "others": [
+              {
+                "name": "Rhyperior",
+                "rarity": "R",
+                "wins": 21,
+                "hp": "+5%",
+                "fights": "24/56"
+              },
+              {
+                "name": "Garchomp",
+                "rarity": "R",
+                "wins": 17,
+                "hp": "+3%",
+                "fights": "23/56"
+              },
+              {
+                "name": "Krookodile",
+                "rarity": "R",
+                "wins": 13,
+                "hp": "+3%",
+                "fights": "21/56"
+              },
+              {
+                "name": "Nidoqueen",
+                "rarity": "R",
+                "wins": 14,
+                "hp": "+3%",
+                "fights": "20/56"
+              },
+              {
+                "name": "Swampert",
+                "rarity": "R",
+                "wins": 12,
+                "hp": "+3%",
+                "fights": "18/56"
+              }
+            ],
+            "legendaryNext": [
+              {
+                "name": "Arceus Ground",
+                "wins": 8
+              },
+              {
+                "name": "Landorus",
+                "wins": 6
+              },
+              {
+                "name": "Landorus Therian",
+                "wins": 6
+              }
+            ],
+            "next": {
+              "R": [
+                {
+                  "name": "Seismitoad",
+                  "wins": 12
+                },
+                {
+                  "name": "Excadrill",
+                  "wins": 12
+                },
+                {
+                  "name": "Golem",
+                  "wins": 10
+                }
+              ],
+              "U": [
+                {
+                  "name": "Golurk",
+                  "wins": 12
+                },
+                {
+                  "name": "Rhydon",
+                  "wins": 12
+                },
+                {
+                  "name": "Quagsire",
+                  "wins": 10
+                }
+              ],
+              "C": [
+                {
+                  "name": "Golett",
+                  "wins": 3
+                },
+                {
+                  "name": "Trapinch",
+                  "wins": 2
+                },
+                {
+                  "name": "Hippopotas",
+                  "wins": 2
+                }
+              ],
+              "more": {
+                "R": 17,
+                "U": 15,
+                "C": 11
+              }
+            }
+          },
+          {
+            "type": "ice",
+            "legendary": {
+              "name": "White Kyurem",
+              "wins": 30,
+              "hp": "+6%",
+              "fights": "18/56"
+            },
+            "others": [
+              {
+                "name": "Glaceon",
+                "rarity": "R",
+                "wins": 13,
+                "hp": "+3%",
+                "fights": "27/56"
+              },
+              {
+                "name": "Lapras",
+                "rarity": "R",
+                "wins": 12,
+                "hp": "+3%",
+                "fights": "17/56"
+              },
+              {
+                "name": "Weavile",
+                "rarity": "R",
+                "wins": 10,
+                "hp": "+3%",
+                "fights": "15/56"
+              },
+              {
+                "name": "Vanilluxe",
+                "rarity": "U",
+                "wins": 11,
+                "hp": "+2%",
+                "fights": "15/56"
+              },
+              {
+                "name": "Walrein",
+                "rarity": "R",
+                "wins": 11,
+                "hp": "+3%",
+                "fights": "18/56"
+              }
+            ],
+            "legendaryNext": [
+              {
+                "name": "Black Kyurem",
+                "wins": 22
+              },
+              {
+                "name": "Kyurem",
+                "wins": 10
+              },
+              {
+                "name": "Arceus Ice",
+                "wins": 10
+              }
+            ],
+            "next": {
+              "R": [
+                {
+                  "name": "Beartic",
+                  "wins": 10
+                },
+                {
+                  "name": "Mamoswine",
+                  "wins": 9
+                },
+                {
+                  "name": "Rotom (Frost)",
+                  "wins": 8
+                }
+              ],
+              "U": [
+                {
+                  "name": "Abomasnow",
+                  "wins": 10
+                },
+                {
+                  "name": "Froslass",
+                  "wins": 7
+                },
+                {
+                  "name": "Glalie",
+                  "wins": 6
+                }
+              ],
+              "C": [
+                {
+                  "name": "Swinub",
+                  "wins": 1
+                },
+                {
+                  "name": "Spheal",
+                  "wins": 1
+                },
+                {
+                  "name": "Vanillite",
+                  "wins": 1
+                },
+                {
+                  "name": "Snorunt",
+                  "wins": 1
+                }
+              ],
+              "more": {
+                "R": 6,
+                "U": 7,
+                "C": null
+              }
+            }
+          },
+          {
+            "type": "normal",
+            "legendary": {
+              "name": "Regigigas",
+              "wins": 7,
+              "hp": "+2%",
+              "fights": "11/56"
+            },
+            "others": [
+              {
+                "name": "Snorlax",
+                "rarity": "R",
+                "wins": 16,
+                "hp": "+4%",
+                "fights": "23/56"
+              },
+              {
+                "name": "Exploud",
+                "rarity": "U",
+                "wins": 13,
+                "hp": "+3%",
+                "fights": "18/56"
+              },
+              {
+                "name": "Braviary",
+                "rarity": "U",
+                "wins": 8,
+                "hp": "+1%",
+                "fights": "15/56"
+              },
+              {
+                "name": "Wigglytuff",
+                "rarity": "U",
+                "wins": 8,
+                "hp": "+1%",
+                "fights": "12/56"
+              },
+              {
+                "name": "Kangaskhan",
+                "rarity": "R",
+                "wins": 7,
+                "hp": "+1%",
+                "fights": "12/56"
+              }
+            ],
+            "legendaryNext": [
+              {
+                "name": "Meloetta Pirouette",
+                "wins": 5
+              },
+              {
+                "name": "Arceus",
+                "wins": 3
+              },
+              {
+                "name": "Meloetta",
+                "wins": 3
+              }
+            ],
+            "next": {
+              "R": [
+                {
+                  "name": "Bouffalant",
+                  "wins": 7
+                },
+                {
+                  "name": "Unfezant",
+                  "wins": 6
+                },
+                {
+                  "name": "Ursaring",
+                  "wins": 6
+                }
+              ],
+              "U": [
+                {
+                  "name": "Noctowl",
+                  "wins": 7
+                },
+                {
+                  "name": "Sawsbuck",
+                  "wins": 4
+                },
+                {
+                  "name": "Fearow",
+                  "wins": 3
+                }
+              ],
+              "C": [
+                {
+                  "name": "Spinda",
+                  "wins": 3
+                },
+                {
+                  "name": "Deerling",
+                  "wins": 2
+                },
+                {
+                  "name": "Igglybuff",
+                  "wins": 2
+                }
+              ],
+              "more": {
+                "R": 25,
+                "U": 20,
+                "C": 27
+              }
+            }
+          },
+          {
+            "type": "poison",
+            "legendary": {
+              "name": "Arceus Poison",
+              "wins": 3,
+              "hp": "+1%",
+              "fights": "6/56"
+            },
+            "others": [
+              {
+                "name": "Skuntank",
+                "rarity": "R",
+                "wins": 18,
+                "hp": "+5%",
+                "fights": "24/56"
+              },
+              {
+                "name": "Muk",
+                "rarity": "U",
+                "wins": 18,
+                "hp": "+4%",
+                "fights": "25/56"
+              },
+              {
+                "name": "Tentacruel",
+                "rarity": "U",
+                "wins": 10,
+                "hp": "+2%",
+                "fights": "21/56"
+              },
+              {
+                "name": "Drapion",
+                "rarity": "R",
+                "wins": 17,
+                "hp": "+3%",
+                "fights": "24/56"
+              },
+              {
+                "name": "Nidoqueen",
+                "rarity": "R",
+                "wins": 14,
+                "hp": "+3%",
+                "fights": "17/56"
+              }
+            ],
+            "legendaryNext": [],
+            "next": {
+              "R": [
+                {
+                  "name": "Vileplume",
+                  "wins": 9
+                },
+                {
+                  "name": "Roserade",
+                  "wins": 8
+                },
+                {
+                  "name": "Venusaur",
+                  "wins": 8
+                }
+              ],
+              "U": [
+                {
+                  "name": "Toxicroak",
+                  "wins": 10
+                },
+                {
+                  "name": "Amoonguss",
+                  "wins": 9
+                },
+                {
+                  "name": "Weezing",
+                  "wins": 9
+                }
+              ],
+              "C": [
+                {
+                  "name": "Grimer",
+                  "wins": 3
+                },
+                {
+                  "name": "Stunky",
+                  "wins": 3
+                },
+                {
+                  "name": "Koffing",
+                  "wins": 3
+                },
+                {
+                  "name": "Gastly",
+                  "wins": 2
+                }
+              ],
+              "more": {
+                "R": 10,
+                "U": 15,
+                "C": 17
+              }
+            }
+          },
+          {
+            "type": "psychic",
+            "legendary": {
+              "name": "Victini",
+              "wins": 22,
+              "hp": "+5%",
+              "fights": "24/56"
+            },
+            "others": [
+              {
+                "name": "Metagross",
+                "rarity": "R",
+                "wins": 16,
+                "hp": "+4%",
+                "fights": "22/56"
+              },
+              {
+                "name": "Bronzong",
+                "rarity": "U",
+                "wins": 14,
+                "hp": "+3%",
+                "fights": "25/56"
+              },
+              {
+                "name": "Gallade",
+                "rarity": "R",
+                "wins": 11,
+                "hp": "+2%",
+                "fights": "17/56"
+              },
+              {
+                "name": "Solrock",
+                "rarity": "R",
+                "wins": 11,
+                "hp": "+2%",
+                "fights": "14/56"
+              },
+              {
+                "name": "Exeggutor",
+                "rarity": "R",
+                "wins": 12,
+                "hp": "+3%",
+                "fights": "20/56"
+              }
+            ],
+            "legendaryNext": [
+              {
+                "name": "Jirachi",
+                "wins": 9
+              },
+              {
+                "name": "Lugia",
+                "wins": 7
+              },
+              {
+                "name": "Mewtwo",
+                "wins": 5
+              }
+            ],
+            "next": {
+              "R": [
+                {
+                  "name": "Gardevoir",
+                  "wins": 9
+                },
+                {
+                  "name": "Reuniclus",
+                  "wins": 8
+                },
+                {
+                  "name": "Starmie",
+                  "wins": 7
+                },
+                {
+                  "name": "Jynx",
+                  "wins": 7
+                }
+              ],
+              "U": [
+                {
+                  "name": "Slowbro",
+                  "wins": 11
+                },
+                {
+                  "name": "Slowking",
+                  "wins": 9
+                },
+                {
+                  "name": "Musharna",
+                  "wins": 8
+                }
+              ],
+              "C": [
+                {
+                  "name": "Bronzor",
+                  "wins": 3
+                },
+                {
+                  "name": "Munna",
+                  "wins": 3
+                },
+                {
+                  "name": "Wynaut",
+                  "wins": 2
+                },
+                {
+                  "name": "Drowzee",
+                  "wins": 2
+                }
+              ],
+              "more": {
+                "R": 13,
+                "U": 12,
+                "C": 13
+              }
+            }
+          },
+          {
+            "type": "rock",
+            "legendary": {
+              "name": "Arceus Rock",
+              "wins": 9,
+              "hp": "+2%",
+              "fights": "14/56"
+            },
+            "others": [
+              {
+                "name": "Tyranitar",
+                "rarity": "R",
+                "wins": 26,
+                "hp": "+6%",
+                "fights": "31/56"
+              },
+              {
+                "name": "Rhyperior",
+                "rarity": "R",
+                "wins": 21,
+                "hp": "+5%",
+                "fights": "24/56"
+              },
+              {
+                "name": "Gigalith",
+                "rarity": "U",
+                "wins": 15,
+                "hp": "+4%",
+                "fights": "20/56"
+              },
+              {
+                "name": "Relicanth",
+                "rarity": "U",
+                "wins": 13,
+                "hp": "+3%",
+                "fights": "20/56"
+              },
+              {
+                "name": "Rampardos",
+                "rarity": "R",
+                "wins": 15,
+                "hp": "+3%",
+                "fights": "20/56"
+              }
+            ],
+            "legendaryNext": [
+              {
+                "name": "Terrakion",
+                "wins": 7
+              },
+              {
+                "name": "Regirock",
+                "wins": 4
+              }
+            ],
+            "next": {
+              "R": [
+                {
+                  "name": "Solrock",
+                  "wins": 11
+                },
+                {
+                  "name": "Probopass",
+                  "wins": 11
+                },
+                {
+                  "name": "Golem",
+                  "wins": 10
+                }
+              ],
+              "U": [
+                {
+                  "name": "Rhydon",
+                  "wins": 12
+                },
+                {
+                  "name": "Sudowoodo",
+                  "wins": 10
+                },
+                {
+                  "name": "Crustle",
+                  "wins": 6
+                }
+              ],
+              "C": [
+                {
+                  "name": "Roggenrola",
+                  "wins": 2
+                },
+                {
+                  "name": "Geodude",
+                  "wins": 2
+                },
+                {
+                  "name": "Bonsly",
+                  "wins": 1
+                }
+              ],
+              "more": {
+                "R": 22,
+                "U": 6,
+                "C": 3
+              }
+            }
+          },
+          {
+            "type": "steel",
+            "legendary": {
+              "name": "Dialga",
+              "wins": 20,
+              "hp": "+4%",
+              "fights": "21/56"
+            },
+            "others": [
+              {
+                "name": "Escavalier",
+                "rarity": "R",
+                "wins": 18,
+                "hp": "+4%",
+                "fights": "22/56"
+              },
+              {
+                "name": "Metagross",
+                "rarity": "R",
+                "wins": 16,
+                "hp": "+4%",
+                "fights": "22/56"
+              },
+              {
+                "name": "Bisharp",
+                "rarity": "U",
+                "wins": 16,
+                "hp": "+4%",
+                "fights": "19/56"
+              },
+              {
+                "name": "Bronzong",
+                "rarity": "U",
+                "wins": 14,
+                "hp": "+3%",
+                "fights": "25/56"
+              },
+              {
+                "name": "Empoleon",
+                "rarity": "R",
+                "wins": 13,
+                "hp": "+4%",
+                "fights": "20/56"
+              }
+            ],
+            "legendaryNext": [
+              {
+                "name": "Heatran",
+                "wins": 19
+              },
+              {
+                "name": "Jirachi",
+                "wins": 9
+              },
+              {
+                "name": "Genesect Chill",
+                "wins": 9
+              }
+            ],
+            "next": {
+              "R": [
+                {
+                  "name": "Scizor",
+                  "wins": 12
+                },
+                {
+                  "name": "Excadrill",
+                  "wins": 12
+                },
+                {
+                  "name": "Probopass",
+                  "wins": 11
+                }
+              ],
+              "U": [
+                {
+                  "name": "Ferrothorn",
+                  "wins": 11
+                },
+                {
+                  "name": "Forretress",
+                  "wins": 5
+                },
+                {
+                  "name": "Durant",
+                  "wins": 4
+                }
+              ],
+              "C": [
+                {
+                  "name": "Bronzor",
+                  "wins": 3
+                },
+                {
+                  "name": "Magnemite",
+                  "wins": 2
+                },
+                {
+                  "name": "Ferroseed",
+                  "wins": 1
+                },
+                {
+                  "name": "Aron",
+                  "wins": 1
+                }
+              ],
+              "more": {
+                "R": 12,
+                "U": 4,
+                "C": 1
+              }
+            }
+          },
+          {
+            "type": "water",
+            "legendary": {
+              "name": "Palkia",
+              "wins": 14,
+              "hp": "+3%",
+              "fights": "17/56"
+            },
+            "others": [
+              {
+                "name": "Milotic",
+                "rarity": "R",
+                "wins": 14,
+                "hp": "+3%",
+                "fights": "22/56"
+              },
+              {
+                "name": "Jellicent",
+                "rarity": "U",
+                "wins": 14,
+                "hp": "+3%",
+                "fights": "19/56"
+              },
+              {
+                "name": "Relicanth",
+                "rarity": "U",
+                "wins": 13,
+                "hp": "+3%",
+                "fights": "20/56"
+              },
+              {
+                "name": "Empoleon",
+                "rarity": "R",
+                "wins": 13,
+                "hp": "+4%",
+                "fights": "20/56"
+              },
+              {
+                "name": "Vaporeon",
+                "rarity": "R",
+                "wins": 13,
+                "hp": "+3%",
+                "fights": "20/56"
+              }
+            ],
+            "legendaryNext": [
+              {
+                "name": "Kyogre",
+                "wins": 13
+              },
+              {
+                "name": "Keldeo",
+                "wins": 7
+              },
+              {
+                "name": "Suicune",
+                "wins": 7
+              }
+            ],
+            "next": {
+              "R": [
+                {
+                  "name": "Swampert",
+                  "wins": 12
+                },
+                {
+                  "name": "Seismitoad",
+                  "wins": 12
+                },
+                {
+                  "name": "Poliwrath",
+                  "wins": 12
+                }
+              ],
+              "U": [
+                {
+                  "name": "Slowbro",
+                  "wins": 11
+                },
+                {
+                  "name": "Quagsire",
+                  "wins": 10
+                },
+                {
+                  "name": "Gastrodon",
+                  "wins": 10
+                }
+              ],
+              "C": [
+                {
+                  "name": "Frillish",
+                  "wins": 2
+                },
+                {
+                  "name": "Wooper",
+                  "wins": 2
+                },
+                {
+                  "name": "Wailmer",
+                  "wins": 1
+                },
+                {
+                  "name": "Tentacool",
+                  "wins": 1
+                }
+              ],
+              "more": {
+                "R": 43,
+                "U": 22,
+                "C": 25
+              }
+            }
+          }
+        ]
+      },
+      "uncertain": [
+        "The board has no legendary pick for Fairy (no Fairy legendary in the game's dex); the six printed cards are all stored under `others` and `legendary` is null.",
+        "The rarity letters on the six main picks are partly hidden behind the gem chips; the stored R/U/C is the printed chip where readable and the next-list grouping otherwise.",
+        "The Ghost section's first card is not legible; `Giratina Origin` is stored as the legendary pick from the card that carries its numbers, with base Giratina in `legendaryNext`. If the board's pick was base Giratina, the two swap.",
+        "The Dragon and Fairy next lists are cut by the OCR after a few names; the stored rows are the legible ones and `more` counts are null where the board did not print a count.",
+        "The board's win numbers are 'per 100 fights at *5' and are much smaller than the *0 boards; the order, not the absolute number, is what the board says to read."
+      ]
+    },
+    "catch-teams": {
+      "id": "catch-teams",
+      "title": "Catch Teams",
+      "subject": "Top-tier legendary catch fights",
+      "credit": "@destryyy",
+      "board": {
+        "gameVersion": "v0.5.17",
+        "build": "824f567ed3",
+        "pulled": "2026-11-25",
+        "title": "Catch Teams — top-tier legendaries — plain fights"
+      },
+      "ingested": "2026-11-28",
+      "sourceImage": "catch_teams-2.png",
+      "method": {
+        "summary": "For the fight that catches each of the 16 strongest zone legendaries (stat total 660 or more) and Arceus, the world boss: the *0 team that wins most often per hour, with lesser legendaries and without any legendary, and two alternates for every member. The fights: a legendary zone's plain fight is the one that catches its legendary — the zone's wild Pokémon first (four battles, where the zone has some), then the legendary. Why time counts: a win gives one throw, and the game gives it a small chance: 1.2% for these legendaries (3 in 255; a Razz Berry raises it), 1% for Arceus. That is about 85 wins per catch on average (100 for Arceus), and two wins are not the same: one fight takes longer than another, so the best team is the one with the most wins per hour. No top-tier legendary on a team: you are still catching those, so none of the legendaries on this board, their forms or Arceus's plate forms is ever on a team or among the alternates; other legendaries may come, as many as fit (the first team holds 2.1 on average). Without any legendary: the second team holds only Common, Uncommon and Rare Pokémon; it wins every fight in 11 of the 17 fights, and the first team makes 8% more wins per hour on average. All Lv 100, *0, not shiny. Ranks don't help here: the legendary's power and HP grow with your team's ranks. Search: from the team the game's own boss logic builds and from its plain-damage team, rounds of swaps on 8 runs per try; the best of the teams along the way on 72 other runs is kept, then every place tries its best replacements once more on 120 runs. The first team's search also starts from the second team and from the team an earlier build's board had for the same fight; that team stays unless the new one is clearly better on 1536 fresh runs (26 of the 34 teams are an earlier team). Moves are shown with the share of turns (48 report runs; a member that fainted on the way, or whose team won before its turn, shows fewer). Move-choice rule: each turn the attack its estimate rates highest, or a status move the foe can get on 3 turns in 10. A boss holds one status at a time (confusion apart), and every sleep/freeze/paralysis makes the next less likely and shorter. Bans: re-fought with vs without on 384 fresh runs, kept only if clearly faster (two standard errors and at least 1%); 17 of the 34 teams have a ban (+17% on average). A member left with only attacks the boss is immune to uses its status move every turn it can land and Struggle otherwise. The wild Pokémon on the way meet the same bans. Numbers from 768 unseen runs (192 for an alternate). Closed fights run at the first hour they open; a fight without its own weather runs in clear weather. Arceus shield (the days before the capture fight): 3 attacks a day for 3 days, up to 6 Pokémon per attack, each once a day; no battle — each Pokémon's higher attacking stat counts (Attack or Sp. Atk, the number shown at Lv 100 and *0), types and moves don't matter; ×1.15 per rank, +10% for a shiny; one form per species.",
+        "algorithm": {
+          "goal": "Find the team with the most wins per hour for each top-tier legendary catch fight, with lesser legendaries and without any legendary.",
+          "engine": "The game's own battle engine at build 824f567ed3",
+          "steps": [
+            "Enumerate the 17 fights: the 16 zone legendaries with stat total ≥660 plus Arceus.",
+            "Ban every top-tier legendary (the 17 and their forms/plates) from the team and alternates; allow other legendaries as many as fit.",
+            "Start from the game's boss-logic team and its plain-damage team; run rounds of swaps on 8 runs per try.",
+            "Keep the best team on 72 other runs, then try every place's replacements once more on 120 runs.",
+            "Also start from the no-legendary team and the earlier build's team; keep the earlier team unless the new one is clearly better on 1536 fresh runs.",
+            "For each ban, re-fight with and without it on 384 fresh runs; keep it only if faster by two standard errors and at least 1%.",
+            "Score wins per hour from 768 unseen runs (192 per alternate), with 0.65 s per action on the game's clock."
+          ],
+          "parameters": {
+            "fights": "17 (16 zone legendaries ≥660 + Arceus)",
+            "level": "100",
+            "rank": "0, not shiny",
+            "throwOdds": "1.2% (3 in 255) for the legendaries, 1% for Arceus",
+            "fightClock": "0.65 s per action at normal speed",
+            "reportRuns": "768 (192 per alternate)",
+            "build": "824f567ed3"
+          },
+          "acceptance": {
+            "noTopTier": "No top-tier legendary on a team or among the alternates.",
+            "ban": "A ban is kept only if the team is faster by two standard errors and at least 1% on 384 fresh runs.",
+            "earlierTeam": "An earlier build's team stays unless the new one is clearly better on 1536 fresh runs."
+          }
+        },
+        "gameFacts": [
+          "A win gives one throw; the throw odds are 1.2% for these legendaries (3 in 255) and 1% for Arceus; a Razz Berry raises the odds.",
+          "A fight takes 0.65 s per action on the game's clock at normal speed; the wild Pokémon on the way are included.",
+          "The zone's wild Pokémon fight first (four battles where the zone has some), then the legendary.",
+          "No top-tier legendary on a team or alternate; other legendaries are allowed as many as fit.",
+          "The no-legendary team holds only Common, Uncommon and Rare Pokémon.",
+          "Ranks don't help: the boss's power and HP grow with the team's ranks.",
+          "A boss holds one status at a time (confusion apart); each sleep/freeze/paralysis makes the next less likely and shorter.",
+          "A Pokémon left with only attacks the boss is immune to uses its status move every turn it can land and Struggle otherwise.",
+          "Bans live on the Pokémon, not the fight.",
+          "Closed fights run at the first hour they open; no-weather fights run in clear weather.",
+          "Arceus shield: 3 attacks a day for 3 days, up to 6 Pokémon per attack, each once a day; no battle, the higher attacking stat counts, ×1.15 per rank, +10% for a shiny, one form per species."
+        ]
+      },
+      "data": {
+        "fights": [
+          {
+            "region": "Kanto",
+            "boss": "Mewtwo",
+            "title": {
+              "time": "0:52",
+              "winsPerHour": 69,
+              "mode": "LESSER LEGENDARIES ALLOWED",
+              "bansBonus": null
+            },
+            "team": {
+              "members": [
+                {
+                  "name": "Darkrai",
+                  "legendary": true,
+                  "moves": [
+                    {
+                      "name": "Dark Pulse",
+                      "tag": null,
+                      "share": 74
+                    },
+                    {
+                      "name": "Foul Play",
+                      "tag": null,
+                      "share": 13
+                    },
+                    {
+                      "name": "Hypnosis",
+                      "tag": "SLP",
+                      "share": 12
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Entei",
+                  "legendary": true,
+                  "moves": [
+                    {
+                      "name": "Sacred Fire",
+                      "tag": "BRN",
+                      "share": 99
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Genesect Douse",
+                  "legendary": true,
+                  "moves": [
+                    {
+                      "name": "Bug Buzz",
+                      "tag": null,
+                      "share": 80
+                    },
+                    {
+                      "name": "Leech Life",
+                      "tag": null,
+                      "share": 19
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Escavalier",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Megahorn",
+                      "tag": null,
+                      "share": 98
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Honchkrow",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Foul Play",
+                      "tag": null,
+                      "share": 98
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Golurk",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Poltergeist",
+                      "tag": null,
+                      "share": 99
+                    }
+                  ],
+                  "bans": []
+                }
+              ],
+              "alternates": [
+                {
+                  "memberIndex": 0,
+                  "name": "Scizor",
+                  "rate": 68,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 0,
+                  "name": "Hydreigon",
+                  "rate": 68,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 1,
+                  "name": "Skuntank",
+                  "rate": 66,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 1,
+                  "name": "Drapion",
+                  "rate": 65,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 2,
+                  "name": "Exeggutor",
+                  "rate": 65,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 2,
+                  "name": "Scizor",
+                  "rate": 64,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 3,
+                  "name": "Skuntank",
+                  "rate": 64,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 3,
+                  "name": "Hydreigon",
+                  "rate": 64,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 4,
+                  "name": "Hydreigon",
+                  "rate": 67,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 4,
+                  "name": "Skuntank",
+                  "rate": 67,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 5,
+                  "name": "Hydreigon",
+                  "rate": 64,
+                  "withBan": false
+                },
+                {
+                  "memberIndex": 5,
+                  "name": "Spiritomb",
+                  "rate": 65,
+                  "withBan": true
+                }
+              ],
+              "alternateBans": [
+                {
+                  "name": "Spiritomb",
+                  "bans": [
+                    "Confuse Ray"
+                  ]
+                }
+              ]
+            },
+            "noLegendary": {
+              "title": "WITHOUT ANY LEGENDARY - 100 WINS - 0:56 - 65/H",
+              "members": [
+                {
+                  "name": "Exeggutor",
+                  "moves": [
+                    {
+                      "name": "Leaf Storm",
+                      "tag": null,
+                      "share": 87
+                    },
+                    {
+                      "name": "Sleep Powder",
+                      "tag": "SLP",
+                      "share": 10
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Honchkrow",
+                  "moves": [
+                    {
+                      "name": "Foul Play",
+                      "tag": null,
+                      "share": 99
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Krookodile",
+                  "moves": [
+                    {
+                      "name": "Foul Play",
+                      "tag": null,
+                      "share": 98
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Tyranitar",
+                  "moves": [
+                    {
+                      "name": "Foul Play",
+                      "tag": null,
+                      "share": 99
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Skuntank",
+                  "moves": [
+                    {
+                      "name": "Foul Play",
+                      "tag": null,
+                      "share": 84
+                    },
+                    {
+                      "name": "Toxic",
+                      "tag": "PSN",
+                      "share": 16
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Escavalier",
+                  "moves": [
+                    {
+                      "name": "Megahorn",
+                      "tag": null,
+                      "share": 98
+                    }
+                  ],
+                  "bans": []
+                }
+              ],
+              "alternates": [],
+              "alternateBans": []
+            }
+          },
+          {
+            "region": "Johto",
+            "boss": "Ho-Oh",
+            "title": {
+              "time": "0:51",
+              "winsPerHour": 71,
+              "mode": "LESSER LEGENDARIES ALLOWED",
+              "bansBonus": null
+            },
+            "team": {
+              "members": [
+                {
+                  "name": "Terrakion",
+                  "legendary": true,
+                  "moves": [
+                    {
+                      "name": "Stone Edge",
+                      "tag": null,
+                      "share": 100
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Archeops",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Stone Edge",
+                      "tag": null,
+                      "share": 99
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Rhydon",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Stone Edge",
+                      "tag": null,
+                      "share": 99
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Solrock",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Stone Edge",
+                      "tag": null,
+                      "share": 81
+                    },
+                    {
+                      "name": "Hypnosis",
+                      "tag": "SLP",
+                      "share": 18
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Rhyperior",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Stone Edge",
+                      "tag": null,
+                      "share": 99
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Rampardos",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Head Smash",
+                      "tag": null,
+                      "share": 98
+                    }
+                  ],
+                  "bans": []
+                }
+              ],
+              "alternates": [],
+              "alternateBans": []
+            },
+            "noLegendary": {
+              "title": "WITHOUT ANY LEGENDARY - 100 WINS - 0:52 - 70/H",
+              "members": [
+                {
+                  "name": "Archeops",
+                  "moves": [
+                    {
+                      "name": "Stone Edge",
+                      "tag": null,
+                      "share": 99
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Rhyperior",
+                  "moves": [
+                    {
+                      "name": "Stone Edge",
+                      "tag": null,
+                      "share": 99
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Sudowoodo",
+                  "moves": [
+                    {
+                      "name": "Head Smash",
+                      "tag": null,
+                      "share": 99
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Solrock",
+                  "moves": [
+                    {
+                      "name": "Stone Edge",
+                      "tag": null,
+                      "share": 80
+                    },
+                    {
+                      "name": "Hypnosis",
+                      "tag": "SLP",
+                      "share": 20
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Relicanth",
+                  "moves": [
+                    {
+                      "name": "Head Smash",
+                      "tag": null,
+                      "share": 100
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Rampardos",
+                  "moves": [
+                    {
+                      "name": "Head Smash",
+                      "tag": null,
+                      "share": 99
+                    }
+                  ],
+                  "bans": []
+                }
+              ],
+              "alternates": [],
+              "alternateBans": []
+            }
+          },
+          {
+            "region": "Johto",
+            "boss": "Lugia",
+            "title": {
+              "time": "0:57",
+              "winsPerHour": 63,
+              "mode": "LESSER LEGENDARIES ALLOWED",
+              "bansBonus": "+3%"
+            },
+            "team": {
+              "members": [
+                {
+                  "name": "Thundurus Therian",
+                  "legendary": true,
+                  "moves": [
+                    {
+                      "name": "Thunder",
+                      "tag": "PAR",
+                      "share": 100
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Entei",
+                  "legendary": true,
+                  "moves": [
+                    {
+                      "name": "Sacred Fire",
+                      "tag": "BRN",
+                      "share": 100
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Gigalith",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Stone Edge",
+                      "tag": null,
+                      "share": 99
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Tyranitar",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Stone Edge",
+                      "tag": null,
+                      "share": 98
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Rampardos",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Head Smash",
+                      "tag": null,
+                      "share": 100
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Magnezone",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Zap Cannon",
+                      "tag": "PAR",
+                      "share": 98
+                    }
+                  ],
+                  "bans": [
+                    "Supersonic",
+                    "Thunder Wave"
+                  ]
+                }
+              ],
+              "alternates": [],
+              "alternateBans": []
+            },
+            "noLegendary": {
+              "title": "NO LEGENDARY - 100 WINS - 0:58 - 62/H - BANS +7%",
+              "members": [
+                {
+                  "name": "Magnezone",
+                  "moves": [
+                    {
+                      "name": "Zap Cannon",
+                      "tag": "PAR",
+                      "share": 99
+                    }
+                  ],
+                  "bans": [
+                    "Supersonic",
+                    "Thunder Wave"
+                  ]
+                },
+                {
+                  "name": "Tyranitar",
+                  "moves": [
+                    {
+                      "name": "Stone Edge",
+                      "tag": null,
+                      "share": 98
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Nidoking",
+                  "moves": [
+                    {
+                      "name": "Struggle",
+                      "tag": null,
+                      "share": 69
+                    },
+                    {
+                      "name": "Toxic",
+                      "tag": "PSN",
+                      "share": 31
+                    }
+                  ],
+                  "bans": [],
+                  "banAllButNote": "BAN 10 attacks, all but its 8 Ground attacks"
+                },
+                {
+                  "name": "Rampardos",
+                  "moves": [
+                    {
+                      "name": "Head Smash",
+                      "tag": null,
+                      "share": 100
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Relicanth",
+                  "moves": [
+                    {
+                      "name": "Head Smash",
+                      "tag": null,
+                      "share": 99
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Gigalith",
+                  "moves": [
+                    {
+                      "name": "Stone Edge",
+                      "tag": null,
+                      "share": 98
+                    }
+                  ],
+                  "bans": []
+                }
+              ],
+              "alternates": [],
+              "alternateBans": []
+            }
+          },
+          {
+            "region": "Hoenn",
+            "boss": "Groudon",
+            "title": {
+              "time": "0:48",
+              "winsPerHour": 74,
+              "mode": "LESSER LEGENDARIES ALLOWED",
+              "bansBonus": "+11%"
+            },
+            "team": {
+              "members": [
+                {
+                  "name": "Shaymin Sky",
+                  "legendary": true,
+                  "moves": [
+                    {
+                      "name": "Leaf Storm",
+                      "tag": null,
+                      "share": 98
+                    }
+                  ],
+                  "bans": [
+                    "Sweet Kiss"
+                  ]
+                },
+                {
+                  "name": "Keldeo",
+                  "legendary": true,
+                  "moves": [
+                    {
+                      "name": "Hydro Pump",
+                      "tag": null,
+                      "share": 100
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Celebi",
+                  "legendary": true,
+                  "moves": [
+                    {
+                      "name": "Leaf Storm",
+                      "tag": null,
+                      "share": 98
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Glaceon",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Blizzard",
+                      "tag": "FRZ",
+                      "share": 100
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Tangrowth",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Leaf Storm",
+                      "tag": null,
+                      "share": 89
+                    },
+                    {
+                      "name": "Poison Powder",
+                      "tag": "PSN",
+                      "share": 10
+                    }
+                  ],
+                  "bans": [
+                    "Sleep Powder"
+                  ]
+                },
+                {
+                  "name": "Exeggutor",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Leaf Storm",
+                      "tag": null,
+                      "share": 85
+                    },
+                    {
+                      "name": "Poison Powder",
+                      "tag": "PSN",
+                      "share": 13
+                    }
+                  ],
+                  "bans": [
+                    "Hypnosis",
+                    "Sleep Powder"
+                  ]
+                }
+              ],
+              "alternates": [],
+              "alternateBans": []
+            },
+            "noLegendary": {
+              "title": "NO LEGENDARY - 98 WINS - 0:51 - 69/H - BANS +2%",
+              "members": [
+                {
+                  "name": "Tangrowth",
+                  "moves": [
+                    {
+                      "name": "Leaf Storm",
+                      "tag": null,
+                      "share": 94
+                    }
+                  ],
+                  "bans": [
+                    "Sleep Powder"
+                  ]
+                },
+                {
+                  "name": "Glaceon",
+                  "moves": [
+                    {
+                      "name": "Blizzard",
+                      "tag": "FRZ",
+                      "share": 100
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Bellossom",
+                  "moves": [
+                    {
+                      "name": "Leaf Storm",
+                      "tag": null,
+                      "share": 95
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Exeggutor",
+                  "moves": [
+                    {
+                      "name": "Leaf Storm",
+                      "tag": null,
+                      "share": 89
+                    },
+                    {
+                      "name": "Poison Powder",
+                      "tag": "PSN",
+                      "share": 9
+                    }
+                  ],
+                  "bans": [
+                    "Hypnosis",
+                    "Sleep Powder"
+                  ]
+                },
+                {
+                  "name": "Vileplume",
+                  "moves": [
+                    {
+                      "name": "Leaf Storm",
+                      "tag": null,
+                      "share": 95
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Meganium",
+                  "moves": [
+                    {
+                      "name": "Leaf Storm",
+                      "tag": null,
+                      "share": 88
+                    },
+                    {
+                      "name": "Poison Powder",
+                      "tag": "PSN",
+                      "share": 11
+                    }
+                  ],
+                  "bans": []
+                }
+              ],
+              "alternates": [],
+              "alternateBans": []
+            }
+          },
+          {
+            "region": "Hoenn",
+            "boss": "Kyogre",
+            "title": {
+              "time": "0:51",
+              "winsPerHour": 70,
+              "mode": "LESSER LEGENDARIES ALLOWED",
+              "bansBonus": "+14%"
+            },
+            "team": {
+              "members": [
+                {
+                  "name": "Celebi",
+                  "legendary": true,
+                  "moves": [
+                    {
+                      "name": "Solar Blade",
+                      "tag": null,
+                      "share": 100
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Carnivine",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Power Whip",
+                      "tag": null,
+                      "share": 100
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Leafeon",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Solar Blade",
+                      "tag": null,
+                      "share": 99
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Victreebel",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Power Whip",
+                      "tag": null,
+                      "share": 82
+                    },
+                    {
+                      "name": "Poison Powder",
+                      "tag": "PSN",
+                      "share": 16
+                    }
+                  ],
+                  "bans": [
+                    "Stun Spore"
+                  ]
+                },
+                {
+                  "name": "Exeggutor",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Wood Hammer",
+                      "tag": null,
+                      "share": 86
+                    },
+                    {
+                      "name": "Sleep Powder",
+                      "tag": "SLP",
+                      "share": 12
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Ferrothorn",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Power Whip",
+                      "tag": null,
+                      "share": 99
+                    }
+                  ],
+                  "bans": []
+                }
+              ],
+              "alternates": [],
+              "alternateBans": []
+            },
+            "noLegendary": {
+              "title": "NO LEGENDARY - 99 WINS - 0:52 - 69/H - BANS +7%",
+              "members": [
+                {
+                  "name": "Shiftry",
+                  "moves": [
+                    {
+                      "name": "Solar Blade",
+                      "tag": null,
+                      "share": 99
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Leafeon",
+                  "moves": [
+                    {
+                      "name": "Solar Blade",
+                      "tag": null,
+                      "share": 99
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Victreebel",
+                  "moves": [
+                    {
+                      "name": "Power Whip",
+                      "tag": null,
+                      "share": 91
+                    },
+                    {
+                      "name": "Poison Powder",
+                      "tag": "PSN",
+                      "share": 8
+                    }
+                  ],
+                  "bans": [
+                    "Stun Spore"
+                  ]
+                },
+                {
+                  "name": "Exeggutor",
+                  "moves": [
+                    {
+                      "name": "Wood Hammer",
+                      "tag": null,
+                      "share": 90
+                    },
+                    {
+                      "name": "Sleep Powder",
+                      "tag": "SLP",
+                      "share": 8
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Ferrothorn",
+                  "moves": [
+                    {
+                      "name": "Power Whip",
+                      "tag": null,
+                      "share": 99
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Meganium",
+                  "moves": [
+                    {
+                      "name": "Solar Blade",
+                      "tag": null,
+                      "share": 85
+                    },
+                    {
+                      "name": "Poison Powder",
+                      "tag": "PSN",
+                      "share": 14
+                    }
+                  ],
+                  "bans": []
+                }
+              ],
+              "alternates": [],
+              "alternateBans": []
+            }
+          },
+          {
+            "region": "Hoenn",
+            "boss": "Rayquaza",
+            "title": {
+              "time": "0:55",
+              "winsPerHour": 66,
+              "mode": "LESSER LEGENDARIES ALLOWED",
+              "bansBonus": "+2%"
+            },
+            "team": {
+              "members": [
+                {
+                  "name": "Regice",
+                  "legendary": true,
+                  "moves": [
+                    {
+                      "name": "Blizzard",
+                      "tag": "FRZ",
+                      "share": 98
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Glaceon",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Blizzard",
+                      "tag": "FRZ",
+                      "share": 98
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Weavile",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Triple Axel",
+                      "tag": null,
+                      "share": 99
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Jynx",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Blizzard",
+                      "tag": "FRZ",
+                      "share": 100
+                    }
+                  ],
+                  "bans": [
+                    "Lovely Kiss",
+                    "Sing",
+                    "Sweet Kiss"
+                  ]
+                },
+                {
+                  "name": "Mamoswine",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Icicle Spear",
+                      "tag": null,
+                      "share": 99
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Vanilluxe",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Blizzard",
+                      "tag": "FRZ",
+                      "share": 99
+                    }
+                  ],
+                  "bans": []
+                }
+              ],
+              "alternates": [],
+              "alternateBans": []
+            },
+            "noLegendary": {
+              "title": "NO LEGENDARY - 99 WINS - 0:55 - 65/H - BANS +2%",
+              "members": [
+                {
+                  "name": "Glaceon",
+                  "moves": [
+                    {
+                      "name": "Blizzard",
+                      "tag": "FRZ",
+                      "share": 98
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Jynx",
+                  "moves": [
+                    {
+                      "name": "Blizzard",
+                      "tag": "FRZ",
+                      "share": 100
+                    }
+                  ],
+                  "bans": [
+                    "Lovely Kiss",
+                    "Sing",
+                    "Sweet Kiss"
+                  ]
+                },
+                {
+                  "name": "Weavile",
+                  "moves": [
+                    {
+                      "name": "Triple Axel",
+                      "tag": null,
+                      "share": 100
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Walrein",
+                  "moves": [
+                    {
+                      "name": "Blizzard",
+                      "tag": "FRZ",
+                      "share": 99
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Mamoswine",
+                  "moves": [
+                    {
+                      "name": "Icicle Spear",
+                      "tag": null,
+                      "share": 99
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Vanilluxe",
+                  "moves": [
+                    {
+                      "name": "Blizzard",
+                      "tag": "FRZ",
+                      "share": 98
+                    }
+                  ],
+                  "bans": []
+                }
+              ],
+              "alternates": [],
+              "alternateBans": []
+            }
+          },
+          {
+            "region": "Sinnoh",
+            "boss": "Dialga",
+            "title": {
+              "time": "0:49",
+              "winsPerHour": 73,
+              "mode": "LESSER LEGENDARIES ALLOWED",
+              "bansBonus": "+6%"
+            },
+            "team": {
+              "members": [
+                {
+                  "name": "Keldeo",
+                  "legendary": true,
+                  "moves": [
+                    {
+                      "name": "Secret Sword",
+                      "tag": null,
+                      "share": 98
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Terrakion",
+                  "legendary": true,
+                  "moves": [
+                    {
+                      "name": "Sacred Sword",
+                      "tag": null,
+                      "share": 99
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Landorus Therian",
+                  "legendary": true,
+                  "moves": [
+                    {
+                      "name": "Earthquake",
+                      "tag": null,
+                      "share": 99
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Conkeldurr",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Superpower",
+                      "tag": null,
+                      "share": 98
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Lucario",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Focus Blast",
+                      "tag": null,
+                      "share": 98
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Chandelure",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Inferno",
+                      "tag": "BRN",
+                      "share": 100
+                    }
+                  ],
+                  "bans": [
+                    "Confuse Ray",
+                    "Overheat",
+                    "Will-O-Wisp"
+                  ]
+                }
+              ],
+              "alternates": [],
+              "alternateBans": [
+                {
+                  "name": "Haunter",
+                  "bans": [
+                    "8 attacks, all but its 5 Poison attacks"
+                  ]
+                }
+              ]
+            },
+            "noLegendary": {
+              "title": "NO LEGENDARY - 100 WINS - 0:52 - 69/H - BANS +5%",
+              "members": [
+                {
+                  "name": "Machamp",
+                  "moves": [
+                    {
+                      "name": "Superpower",
+                      "tag": null,
+                      "share": 99
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Lucario",
+                  "moves": [
+                    {
+                      "name": "Focus Blast",
+                      "tag": null,
+                      "share": 93
+                    },
+                    {
+                      "name": "Close Combat",
+                      "tag": null,
+                      "share": 6
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Conkeldurr",
+                  "moves": [
+                    {
+                      "name": "Superpower",
+                      "tag": null,
+                      "share": 99
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Chandelure",
+                  "moves": [
+                    {
+                      "name": "Inferno",
+                      "tag": "BRN",
+                      "share": 100
+                    }
+                  ],
+                  "bans": [
+                    "Confuse Ray",
+                    "Overheat",
+                    "Will-O-Wisp"
+                  ]
+                },
+                {
+                  "name": "Heracross",
+                  "moves": [
+                    {
+                      "name": "Close Combat",
+                      "tag": null,
+                      "share": 99
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Gallade",
+                  "moves": [
+                    {
+                      "name": "Close Combat",
+                      "tag": null,
+                      "share": 93
+                    },
+                    {
+                      "name": "Hypnosis",
+                      "tag": "SLP",
+                      "share": 6
+                    }
+                  ],
+                  "bans": []
+                }
+              ],
+              "alternates": [],
+              "alternateBans": [
+                {
+                  "name": "Lampent",
+                  "bans": [
+                    "Overheat"
+                  ]
+                }
+              ]
+            }
+          },
+          {
+            "region": "Sinnoh",
+            "boss": "Palkia",
+            "title": {
+              "time": "0:57",
+              "winsPerHour": 63,
+              "mode": "LESSER LEGENDARIES ALLOWED (night only)",
+              "bansBonus": "+3%"
+            },
+            "team": {
+              "members": [
+                {
+                  "name": "Latias",
+                  "legendary": true,
+                  "moves": [
+                    {
+                      "name": "Draco Meteor",
+                      "tag": null,
+                      "share": 99
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Garchomp",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Outrage",
+                      "tag": null,
+                      "share": 100
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Dragonite",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Outrage",
+                      "tag": null,
+                      "share": 100
+                    }
+                  ],
+                  "bans": [
+                    "Thunder Wave"
+                  ]
+                },
+                {
+                  "name": "Slaking",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Play Rough",
+                      "tag": null,
+                      "share": 98
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Whimsicott",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Moonblast",
+                      "tag": null,
+                      "share": 80
+                    },
+                    {
+                      "name": "Poison Powder",
+                      "tag": "PSN",
+                      "share": 19
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Hydreigon",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Draco Meteor",
+                      "tag": null,
+                      "share": 100
+                    }
+                  ],
+                  "bans": []
+                }
+              ],
+              "alternates": [],
+              "alternateBans": [
+                {
+                  "name": "Gardevoir",
+                  "bans": [
+                    "Hypnosis"
+                  ]
+                },
+                {
+                  "name": "Clefable",
+                  "bans": [
+                    "Sweet Kiss"
+                  ]
+                }
+              ]
+            },
+            "noLegendary": {
+              "title": "NO LEGENDARY - 100 WINS - 1:01 - 59/H - BANS +4%",
+              "members": [
+                {
+                  "name": "Garchomp",
+                  "moves": [
+                    {
+                      "name": "Outrage",
+                      "tag": null,
+                      "share": 99
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Dragonite",
+                  "moves": [
+                    {
+                      "name": "Outrage",
+                      "tag": null,
+                      "share": 98
+                    }
+                  ],
+                  "bans": [
+                    "Thunder Wave"
+                  ]
+                },
+                {
+                  "name": "Gardevoir",
+                  "moves": [
+                    {
+                      "name": "Moonblast",
+                      "tag": null,
+                      "share": 86
+                    },
+                    {
+                      "name": "Hypnosis",
+                      "tag": "SLP",
+                      "share": 13
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Slaking",
+                  "moves": [
+                    {
+                      "name": "Play Rough",
+                      "tag": null,
+                      "share": 99
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Granbull",
+                  "moves": [
+                    {
+                      "name": "Play Rough",
+                      "tag": null,
+                      "share": 99
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Whimsicott",
+                  "moves": [
+                    {
+                      "name": "Moonblast",
+                      "tag": null,
+                      "share": 83
+                    },
+                    {
+                      "name": "Poison Powder",
+                      "tag": "PSN",
+                      "share": 17
+                    }
+                  ],
+                  "bans": []
+                }
+              ],
+              "alternates": [],
+              "alternateBans": []
+            }
+          },
+          {
+            "region": "Sinnoh",
+            "boss": "Giratina",
+            "title": {
+              "time": "0:45",
+              "winsPerHour": 80,
+              "mode": "LESSER LEGENDARIES ALLOWED",
+              "bansBonus": null
+            },
+            "team": {
+              "members": [
+                {
+                  "name": "Regice",
+                  "legendary": true,
+                  "moves": [
+                    {
+                      "name": "Blizzard",
+                      "tag": "FRZ",
+                      "share": 99
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Vanilluxe",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Blizzard",
+                      "tag": "FRZ",
+                      "share": 100
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Walrein",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Blizzard",
+                      "tag": "FRZ",
+                      "share": 99
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Tyranitar",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Foul Play",
+                      "tag": null,
+                      "share": 98
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Hydreigon",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Draco Meteor",
+                      "tag": null,
+                      "share": 98
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Glaceon",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Blizzard",
+                      "tag": "FRZ",
+                      "share": 98
+                    }
+                  ],
+                  "bans": []
+                }
+              ],
+              "alternates": [],
+              "alternateBans": [
+                {
+                  "name": "Exeggutor",
+                  "bans": [
+                    "Hypnosis",
+                    "Sleep Powder"
+                  ]
+                }
+              ]
+            },
+            "noLegendary": {
+              "title": "WITHOUT ANY LEGENDARY - 99 WINS - 0:45 - 79/H",
+              "members": [
+                {
+                  "name": "Vanilluxe",
+                  "moves": [
+                    {
+                      "name": "Blizzard",
+                      "tag": "FRZ",
+                      "share": 100
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Walrein",
+                  "moves": [
+                    {
+                      "name": "Blizzard",
+                      "tag": "FRZ",
+                      "share": 100
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Skuntank",
+                  "moves": [
+                    {
+                      "name": "Foul Play",
+                      "tag": null,
+                      "share": 85
+                    },
+                    {
+                      "name": "Toxic",
+                      "tag": "PSN",
+                      "share": 14
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Tyranitar",
+                  "moves": [
+                    {
+                      "name": "Foul Play",
+                      "tag": null,
+                      "share": 98
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Hydreigon",
+                  "moves": [
+                    {
+                      "name": "Draco Meteor",
+                      "tag": null,
+                      "share": 99
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Glaceon",
+                  "moves": [
+                    {
+                      "name": "Blizzard",
+                      "tag": "FRZ",
+                      "share": 99
+                    }
+                  ],
+                  "bans": []
+                }
+              ],
+              "alternates": [],
+              "alternateBans": [
+                {
+                  "name": "Exeggutor",
+                  "bans": [
+                    "Hypnosis",
+                    "Sleep Powder"
+                  ]
+                }
+              ]
+            }
+          },
+          {
+            "region": "Sinnoh",
+            "boss": "Giratina Origin",
+            "title": {
+              "time": "0:48",
+              "winsPerHour": 75,
+              "mode": "LESSER LEGENDARIES ALLOWED",
+              "bansBonus": null
+            },
+            "team": {
+              "members": [
+                {
+                  "name": "Tyranitar",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Foul Play",
+                      "tag": null,
+                      "share": 99
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Hydreigon",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Draco Meteor",
+                      "tag": null,
+                      "share": 99
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Glaceon",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Blizzard",
+                      "tag": "FRZ",
+                      "share": 99
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Vanilluxe",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Blizzard",
+                      "tag": "FRZ",
+                      "share": 98
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Walrein",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Blizzard",
+                      "tag": "FRZ",
+                      "share": 99
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Ditto",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Draco Meteor",
+                      "tag": null,
+                      "share": 98
+                    }
+                  ],
+                  "bans": []
+                }
+              ],
+              "alternates": [],
+              "alternateBans": [
+                {
+                  "name": "Quagsire",
+                  "bans": [
+                    "9 attacks, all but Slam"
+                  ]
+                },
+                {
+                  "name": "Nidoking",
+                  "bans": [
+                    "13 attacks, all but its 5 Normal and Fighting attacks"
+                  ]
+                }
+              ]
+            },
+            "noLegendary": {
+              "title": "Without any legendary: the same team.",
+              "members": [],
+              "alternates": [],
+              "alternateBans": []
+            }
+          },
+          {
+            "region": "Sinnoh",
+            "boss": "Regigigas",
+            "title": {
+              "time": "0:59",
+              "winsPerHour": 61,
+              "mode": "LESSER LEGENDARIES ALLOWED",
+              "bansBonus": "+6%"
+            },
+            "team": {
+              "members": [
+                {
+                  "name": "Terrakion",
+                  "legendary": true,
+                  "moves": [
+                    {
+                      "name": "Sacred Sword",
+                      "tag": null,
+                      "share": 99
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Keldeo",
+                  "legendary": true,
+                  "moves": [
+                    {
+                      "name": "Secret Sword",
+                      "tag": null,
+                      "share": 99
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Conkeldurr",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Superpower",
+                      "tag": null,
+                      "share": 99
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Machamp",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Superpower",
+                      "tag": null,
+                      "share": 100
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Breloom",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Close Combat",
+                      "tag": null,
+                      "share": 96
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Chandelure",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Inferno",
+                      "tag": "BRN",
+                      "share": 88
+                    },
+                    {
+                      "name": "Will-O-Wisp",
+                      "tag": "BRN",
+                      "share": 11
+                    }
+                  ],
+                  "bans": [
+                    "Overheat"
+                  ]
+                }
+              ],
+              "alternates": [],
+              "alternateBans": [
+                {
+                  "name": "Gengar",
+                  "bans": [
+                    "Sludge Wave"
+                  ]
+                },
+                {
+                  "name": "Lampent",
+                  "bans": [
+                    "Overheat"
+                  ]
+                }
+              ]
+            },
+            "noLegendary": {
+              "title": "NO LEGENDARY - 100 WINS - 1:01 - 59/H - BANS +6%",
+              "members": [
+                {
+                  "name": "Conkeldurr",
+                  "moves": [
+                    {
+                      "name": "Superpower",
+                      "tag": null,
+                      "share": 100
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Machamp",
+                  "moves": [
+                    {
+                      "name": "Superpower",
+                      "tag": null,
+                      "share": 99
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Emboar",
+                  "moves": [
+                    {
+                      "name": "Close Combat",
+                      "tag": null,
+                      "share": 99
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Heracross",
+                  "moves": [
+                    {
+                      "name": "Close Combat",
+                      "tag": null,
+                      "share": 100
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Breloom",
+                  "moves": [
+                    {
+                      "name": "Close Combat",
+                      "tag": null,
+                      "share": 96
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Chandelure",
+                  "moves": [
+                    {
+                      "name": "Inferno",
+                      "tag": "BRN",
+                      "share": 90
+                    },
+                    {
+                      "name": "Will-O-Wisp",
+                      "tag": "BRN",
+                      "share": 9
+                    }
+                  ],
+                  "bans": [
+                    "Overheat"
+                  ]
+                }
+              ],
+              "alternates": [],
+              "alternateBans": []
+            }
+          },
+          {
+            "region": "World",
+            "boss": "Arceus",
+            "title": {
+              "time": "0:46",
+              "winsPerHour": 72,
+              "mode": "LESSER LEGENDARIES ALLOWED",
+              "bansBonus": "+43%"
+            },
+            "team": {
+              "members": [
+                {
+                  "name": "Meloetta Pirouette",
+                  "legendary": true,
+                  "moves": [
+                    {
+                      "name": "Close Combat",
+                      "tag": null,
+                      "share": 93
+                    },
+                    {
+                      "name": "Sing",
+                      "tag": "SLP",
+                      "share": 7
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Keldeo",
+                  "legendary": true,
+                  "moves": [
+                    {
+                      "name": "Secret Sword",
+                      "tag": null,
+                      "share": 99
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Terrakion",
+                  "legendary": true,
+                  "moves": [
+                    {
+                      "name": "Sacred Sword",
+                      "tag": null,
+                      "share": 98
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Amoonguss",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Struggle",
+                      "tag": null,
+                      "share": 58
+                    },
+                    {
+                      "name": "Spore",
+                      "tag": "SLP",
+                      "share": 22
+                    },
+                    {
+                      "name": "Toxic",
+                      "tag": "PSN",
+                      "share": 20
+                    }
+                  ],
+                  "bans": [],
+                  "banAllButNote": "BAN 11 attacks, all but Astonish"
+                },
+                {
+                  "name": "Machamp",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Superpower",
+                      "tag": null,
+                      "share": 99
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Gallade",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Close Combat",
+                      "tag": null,
+                      "share": 89
+                    },
+                    {
+                      "name": "Hypnosis",
+                      "tag": "SLP",
+                      "share": 9
+                    }
+                  ],
+                  "bans": []
+                }
+              ],
+              "alternates": [],
+              "alternateBans": [
+                {
+                  "name": "Gengar",
+                  "bans": [
+                    "8 attacks, all but its 5 Ghost attacks"
+                  ]
+                },
+                {
+                  "name": "Poliwrath",
+                  "bans": [
+                    "Superpower"
+                  ]
+                }
+              ]
+            },
+            "noLegendary": {
+              "title": "NO LEGENDARY - 85 WINS - 1:05 - 47/H - BANS +157%",
+              "members": [
+                {
+                  "name": "Dusknoir",
+                  "moves": [
+                    {
+                      "name": "Struggle",
+                      "tag": null,
+                      "share": 73
+                    },
+                    {
+                      "name": "Will-O-Wisp",
+                      "tag": "BRN",
+                      "share": 27
+                    }
+                  ],
+                  "bans": [],
+                  "banAllButNote": "BAN 2 attacks, all but its 8 Ghost attacks"
+                },
+                {
+                  "name": "Golurk",
+                  "moves": [
+                    {
+                      "name": "Hammer Arm",
+                      "tag": null,
+                      "share": 100
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Jynx",
+                  "moves": [
+                    {
+                      "name": "Struggle",
+                      "tag": null,
+                      "share": 47
+                    },
+                    {
+                      "name": "Sweet Kiss",
+                      "tag": "CNF",
+                      "share": 32
+                    },
+                    {
+                      "name": "Lovely Kiss",
+                      "tag": "SLP",
+                      "share": 21
+                    }
+                  ],
+                  "bans": [],
+                  "banAllButNote": "BAN 14 attacks, all but Lick"
+                },
+                {
+                  "name": "Snorlax",
+                  "moves": [
+                    {
+                      "name": "Superpower",
+                      "tag": null,
+                      "share": 100
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Gallade",
+                  "moves": [
+                    {
+                      "name": "Close Combat",
+                      "tag": null,
+                      "share": 96
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Machamp",
+                  "moves": [
+                    {
+                      "name": "Superpower",
+                      "tag": null,
+                      "share": 100
+                    }
+                  ],
+                  "bans": []
+                }
+              ],
+              "alternates": [],
+              "alternateBans": [
+                {
+                  "name": "Cofagrigus",
+                  "bans": [
+                    "1 attack, all but its 5 Ghost attacks"
+                  ]
+                }
+              ]
+            }
+          },
+          {
+            "region": "Unova",
+            "boss": "Reshiram",
+            "title": {
+              "time": "0:48",
+              "winsPerHour": 74,
+              "mode": "LESSER LEGENDARIES ALLOWED (day only)",
+              "bansBonus": null
+            },
+            "team": {
+              "members": [
+                {
+                  "name": "Terrakion",
+                  "legendary": true,
+                  "moves": [
+                    {
+                      "name": "Stone Edge",
+                      "tag": null,
+                      "share": 99
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Landorus Therian",
+                  "legendary": true,
+                  "moves": [
+                    {
+                      "name": "Earthquake",
+                      "tag": null,
+                      "share": 100
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Rhyperior",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Earthquake",
+                      "tag": null,
+                      "share": 99
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Rampardos",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Head Smash",
+                      "tag": null,
+                      "share": 99
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Garbodor",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Gunk Shot",
+                      "tag": "PSN",
+                      "share": 86
+                    },
+                    {
+                      "name": "Toxic",
+                      "tag": "PSN",
+                      "share": 13
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Gigalith",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Stone Edge",
+                      "tag": null,
+                      "share": 97
+                    }
+                  ],
+                  "bans": []
+                }
+              ],
+              "alternates": [],
+              "alternateBans": []
+            },
+            "noLegendary": {
+              "title": "WITHOUT ANY LEGENDARY - 100 WINS - 0:49 - 74/H",
+              "members": [
+                {
+                  "name": "Nidoking",
+                  "moves": [
+                    {
+                      "name": "Earthquake",
+                      "tag": null,
+                      "share": 79
+                    },
+                    {
+                      "name": "Toxic",
+                      "tag": "PSN",
+                      "share": 20
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Metagross",
+                  "moves": [
+                    {
+                      "name": "Meteor Mash",
+                      "tag": null,
+                      "share": 98
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Tyranitar",
+                  "moves": [
+                    {
+                      "name": "Stone Edge",
+                      "tag": null,
+                      "share": 99
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Rampardos",
+                  "moves": [
+                    {
+                      "name": "Head Smash",
+                      "tag": null,
+                      "share": 100
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Gigalith",
+                  "moves": [
+                    {
+                      "name": "Stone Edge",
+                      "tag": null,
+                      "share": 99
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Rhyperior",
+                  "moves": [
+                    {
+                      "name": "Earthquake",
+                      "tag": null,
+                      "share": 98
+                    }
+                  ],
+                  "bans": []
+                }
+              ],
+              "alternates": [],
+              "alternateBans": []
+            }
+          },
+          {
+            "region": "Unova",
+            "boss": "Zekrom",
+            "title": {
+              "time": "0:49",
+              "winsPerHour": 74,
+              "mode": "LESSER LEGENDARIES ALLOWED",
+              "bansBonus": "+12%"
+            },
+            "team": {
+              "members": [
+                {
+                  "name": "Landorus",
+                  "legendary": true,
+                  "moves": [
+                    {
+                      "name": "Scorching Sands",
+                      "tag": null,
+                      "share": 100
+                    }
+                  ],
+                  "bans": [
+                    "Dig",
+                    "Earth Power",
+                    "Earthquake"
+                  ]
+                },
+                {
+                  "name": "Jirachi",
+                  "legendary": true,
+                  "moves": [
+                    {
+                      "name": "Doom Desire",
+                      "tag": null,
+                      "share": 99
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Latios",
+                  "legendary": true,
+                  "moves": [
+                    {
+                      "name": "Draco Meteor",
+                      "tag": null,
+                      "share": 99
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Tyranitar",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Foul Play",
+                      "tag": null,
+                      "share": 99
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Regice",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Blizzard",
+                      "tag": "FRZ",
+                      "share": 98
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Excadrill",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Earthquake",
+                      "tag": null,
+                      "share": 99
+                    }
+                  ],
+                  "bans": []
+                }
+              ],
+              "alternates": [],
+              "alternateBans": []
+            },
+            "noLegendary": {
+              "title": "NO LEGENDARY - 100 WINS - 0:48 - 75/H",
+              "members": [
+                {
+                  "name": "Gallade",
+                  "moves": [
+                    {
+                      "name": "Close Combat",
+                      "tag": null,
+                      "share": 82
+                    },
+                    {
+                      "name": "Hypnosis",
+                      "tag": "SLP",
+                      "share": 18
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Aggron",
+                  "moves": [
+                    {
+                      "name": "Head Smash",
+                      "tag": null,
+                      "share": 73
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Scizor",
+                  "moves": [
+                    {
+                      "name": "Bullet Punch",
+                      "tag": null,
+                      "share": 73
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Excadrill",
+                  "moves": [
+                    {
+                      "name": "Earthquake",
+                      "tag": null,
+                      "share": 99
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Whimsicott",
+                  "moves": [
+                    {
+                      "name": "Moonblast",
+                      "tag": null,
+                      "share": 82
+                    },
+                    {
+                      "name": "Poison Powder",
+                      "tag": "PSN",
+                      "share": 18
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Rhyperior",
+                  "moves": [
+                    {
+                      "name": "Earthquake",
+                      "tag": null,
+                      "share": 99
+                    }
+                  ],
+                  "bans": []
+                }
+              ],
+              "alternates": [],
+              "alternateBans": []
+            }
+          },
+          {
+            "region": "Unova",
+            "boss": "Kyurem",
+            "title": {
+              "time": "0:45",
+              "winsPerHour": 80,
+              "mode": "LESSER LEGENDARIES ALLOWED",
+              "bansBonus": null
+            },
+            "team": {
+              "members": [
+                {
+                  "name": "Terrakion",
+                  "legendary": true,
+                  "moves": [
+                    {
+                      "name": "Sacred Sword",
+                      "tag": null,
+                      "share": 97
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Meloetta Pirouette",
+                  "legendary": true,
+                  "moves": [
+                    {
+                      "name": "Close Combat",
+                      "tag": null,
+                      "share": 82
+                    },
+                    {
+                      "name": "Sing",
+                      "tag": "SLP",
+                      "share": 16
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Keldeo",
+                  "legendary": true,
+                  "moves": [
+                    {
+                      "name": "Secret Sword",
+                      "tag": null,
+                      "share": 98
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Machamp",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Superpower",
+                      "tag": null,
+                      "share": 98
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Metagross",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Meteor Mash",
+                      "tag": null,
+                      "share": 98
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Gallade",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Close Combat",
+                      "tag": null,
+                      "share": 87
+                    },
+                    {
+                      "name": "Hypnosis",
+                      "tag": "SLP",
+                      "share": 13
+                    }
+                  ],
+                  "bans": []
+                }
+              ],
+              "alternates": [],
+              "alternateBans": []
+            },
+            "noLegendary": {
+              "title": "NO LEGENDARY - 100 WINS - 0:55 - 66/H",
+              "members": [
+                {
+                  "name": "Gallade",
+                  "moves": [
+                    {
+                      "name": "Close Combat",
+                      "tag": null,
+                      "share": 82
+                    },
+                    {
+                      "name": "Hypnosis",
+                      "tag": "SLP",
+                      "share": 18
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Poliwrath",
+                  "moves": [
+                    {
+                      "name": "Superpower",
+                      "tag": null,
+                      "share": 85
+                    },
+                    {
+                      "name": "Hypnosis",
+                      "tag": "SLP",
+                      "share": 13
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Conkeldurr",
+                  "moves": [
+                    {
+                      "name": "Superpower",
+                      "tag": null,
+                      "share": 99
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Metagross",
+                  "moves": [
+                    {
+                      "name": "Meteor Mash",
+                      "tag": null,
+                      "share": 98
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Lucario",
+                  "moves": [
+                    {
+                      "name": "Focus Blast",
+                      "tag": null,
+                      "share": 82
+                    },
+                    {
+                      "name": "Close Combat",
+                      "tag": null,
+                      "share": 17
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Escavalier",
+                  "moves": [
+                    {
+                      "name": "Iron Head",
+                      "tag": null,
+                      "share": 99
+                    }
+                  ],
+                  "bans": []
+                }
+              ],
+              "alternates": [],
+              "alternateBans": []
+            }
+          },
+          {
+            "region": "Unova",
+            "boss": "Black Kyurem",
+            "title": {
+              "time": "0:42",
+              "winsPerHour": 85,
+              "mode": "LESSER LEGENDARIES ALLOWED",
+              "bansBonus": null
+            },
+            "team": {
+              "members": [
+                {
+                  "name": "Landorus",
+                  "legendary": true,
+                  "moves": [
+                    {
+                      "name": "Scorching Sands",
+                      "tag": null,
+                      "share": 100
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Jirachi",
+                  "legendary": true,
+                  "moves": [
+                    {
+                      "name": "Doom Desire",
+                      "tag": null,
+                      "share": 99
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Latios",
+                  "legendary": true,
+                  "moves": [
+                    {
+                      "name": "Draco Meteor",
+                      "tag": null,
+                      "share": 99
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Entei",
+                  "legendary": true,
+                  "moves": [
+                    {
+                      "name": "Sacred Fire",
+                      "tag": "BRN",
+                      "share": 99
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Meloetta Pirouette",
+                  "legendary": true,
+                  "moves": [
+                    {
+                      "name": "Close Combat",
+                      "tag": null,
+                      "share": 91
+                    },
+                    {
+                      "name": "Sing",
+                      "tag": "SLP",
+                      "share": 9
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Gallade",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Close Combat",
+                      "tag": null,
+                      "share": 90
+                    },
+                    {
+                      "name": "Hypnosis",
+                      "tag": "SLP",
+                      "share": 9
+                    }
+                  ],
+                  "bans": []
+                }
+              ],
+              "alternates": [],
+              "alternateBans": []
+            },
+            "noLegendary": {
+              "title": "WITHOUT ANY LEGENDARY - 100 WINS - 0:48 - 75/H",
+              "members": [
+                {
+                  "name": "Gallade",
+                  "moves": [
+                    {
+                      "name": "Close Combat",
+                      "tag": null,
+                      "share": 82
+                    },
+                    {
+                      "name": "Hypnosis",
+                      "tag": "SLP",
+                      "share": 18
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Poliwrath",
+                  "moves": [
+                    {
+                      "name": "Superpower",
+                      "tag": null,
+                      "share": 85
+                    },
+                    {
+                      "name": "Hypnosis",
+                      "tag": "SLP",
+                      "share": 13
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Conkeldurr",
+                  "moves": [
+                    {
+                      "name": "Superpower",
+                      "tag": null,
+                      "share": 99
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Metagross",
+                  "moves": [
+                    {
+                      "name": "Meteor Mash",
+                      "tag": null,
+                      "share": 98
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Lucario",
+                  "moves": [
+                    {
+                      "name": "Focus Blast",
+                      "tag": null,
+                      "share": 82
+                    },
+                    {
+                      "name": "Close Combat",
+                      "tag": null,
+                      "share": 17
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Escavalier",
+                  "moves": [
+                    {
+                      "name": "Iron Head",
+                      "tag": null,
+                      "share": 99
+                    }
+                  ],
+                  "bans": []
+                }
+              ],
+              "alternates": [],
+              "alternateBans": []
+            }
+          },
+          {
+            "region": "Unova",
+            "boss": "White Kyurem",
+            "title": {
+              "time": "0:48",
+              "winsPerHour": 74,
+              "mode": "LESSER LEGENDARIES ALLOWED",
+              "bansBonus": null
+            },
+            "team": {
+              "members": [
+                {
+                  "name": "Entei",
+                  "legendary": true,
+                  "moves": [
+                    {
+                      "name": "Sacred Fire",
+                      "tag": "BRN",
+                      "share": 99
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Terrakion",
+                  "legendary": true,
+                  "moves": [
+                    {
+                      "name": "Sacred Sword",
+                      "tag": null,
+                      "share": 99
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Heracross",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Close Combat",
+                      "tag": null,
+                      "share": 99
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Rampardos",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Head Smash",
+                      "tag": null,
+                      "share": 99
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Machamp",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Superpower",
+                      "tag": null,
+                      "share": 98
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Tyranitar",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Stone Edge",
+                      "tag": null,
+                      "share": 99
+                    }
+                  ],
+                  "bans": []
+                }
+              ],
+              "alternates": [],
+              "alternateBans": []
+            },
+            "noLegendary": {
+              "title": "WITHOUT ANY LEGENDARY - 100 WINS - 0:49 - 74/H",
+              "members": [
+                {
+                  "name": "Terrakion",
+                  "moves": [
+                    {
+                      "name": "Sacred Sword",
+                      "tag": null,
+                      "share": 99
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Rhydon",
+                  "moves": [
+                    {
+                      "name": "Earthquake",
+                      "tag": null,
+                      "share": 99
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Machamp",
+                  "moves": [
+                    {
+                      "name": "Superpower",
+                      "tag": null,
+                      "share": 98
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Tyranitar",
+                  "moves": [
+                    {
+                      "name": "Stone Edge",
+                      "tag": null,
+                      "share": 99
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Rampardos",
+                  "moves": [
+                    {
+                      "name": "Head Smash",
+                      "tag": null,
+                      "share": 99
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Gigalith",
+                  "moves": [
+                    {
+                      "name": "Stone Edge",
+                      "tag": null,
+                      "share": 98
+                    }
+                  ],
+                  "bans": []
+                }
+              ],
+              "alternates": [],
+              "alternateBans": []
+            }
+          }
+        ],
+        "shield": {
+          "rules": "Before the capture fight, the players break Arceus's shield together: 3 attacks a day for 3 days, up to 6 Pokémon per attack, each Pokémon once a day. No battle: each Pokémon's higher attacking stat counts (Attack or Sp. Atk, the number shown at Lv 100 and *0); types and moves don't matter. ×1.15 per rank, +10% for a shiny, one form per species.",
+          "bestBelowTop": [
+            {
+              "name": "Deoxys Attack",
+              "atk": 365
+            },
+            {
+              "name": "Rampardos",
+              "atk": 335
+            },
+            {
+              "name": "Slaking",
+              "atk": 325
+            },
+            {
+              "name": "Haxorus",
+              "atk": 299
+            },
+            {
+              "name": "Chandelure",
+              "atk": 295
+            },
+            {
+              "name": "Landorus Therian",
+              "atk": 295
+            },
+            {
+              "name": "Darmanitan",
+              "atk": 285
+            },
+            {
+              "name": "Rhyperior",
+              "atk": 285
+            },
+            {
+              "name": "Conkeldurr",
+              "atk": 285
+            },
+            {
+              "name": "Archeops",
+              "atk": 285
+            }
+          ],
+          "noLegendary": [
+            {
+              "name": "Rampardos",
+              "atk": 335
+            },
+            {
+              "name": "Slaking",
+              "atk": 325
+            },
+            {
+              "name": "Conkeldurr",
+              "atk": 285
+            },
+            {
+              "name": "Archeops",
+              "atk": 285
+            },
+            {
+              "name": "Porygon-Z",
+              "atk": 275
+            },
+            {
+              "name": "Gigalith",
+              "atk": 275
+            }
+          ]
+        }
+      },
+      "uncertain": [
+        "The board prints two alternates per member (with their wins/h); the OCR recovered the Mewtwo pair in full but only fragments for later cards, so `alternates` is populated where legible and left empty elsewhere rather than guessed.",
+        "The team lists are transcribed in board order; where the OCR merged two cards (Palkia's sixth slot, Black Kyurem's fourth/fifth), the member is a best read and is marked here rather than silently invented. Palkia's sixth is stored as Hydreigon; Black Kyurem's team includes Entei and Meloetta Pirouette.",
+        "Giratina Origin's no-legendary team is printed as 'the same team'; the `members` array is empty and the UI shows the shared team.",
+        "Giratina's first team and White Kyurem's team are the least certain blocks: their card headers are cut by the OCR, and the member sequence was rebuilt from the move lines.",
+        "Status tags follow the decoding rules (s_p/sip/sLP = SLP, cNF/cnr = CNF, psn/PsN = PSN, BRN, par/PAR, FRz/Frz); sprite-chip garble was dropped.",
+        "Bans printed as 'N attacks, all but X' are stored in `banAllButNote` with the kept move in the note; the `bans` array stays empty for those members."
+      ]
+    },
+    "elite2-teams": {
+      "id": "elite2-teams",
+      "title": "Team Recommendations Elite II fights",
+      "subject": "The strongest *2 team for each of the 56 Elite legendary fights, with move bans and alternates",
+      "credit": "@destryyy",
+      "board": {
+        "gameVersion": "v0.5.17",
+        "build": "824f567ed3",
+        "pulled": "2026-11-25",
+        "title": "Team Recommendations Elite II fights — *2 teams with move bans"
+      },
+      "ingested": "2026-11-28",
+      "sourceImage": "1be55d7771a623e39ce2fd2df5925932-2.png",
+      "method": {
+        "summary": "For each of the 56 Elite legendary fights: the strongest *2 team for Elite II, every member's moves and the moves to ban, and who to bring instead — all Lv 100. Picked for Elite II: each team is the one that wins its fight most often at Elite II; where several win it as often, the one that also does best at Elite III. The ringed cell is Elite II; the other cells are the same six at the other tiers. Everything at *2: team, candidates and alternates are all at *2, Lv 100, not shiny (a rank is +15% on every stat; from *0, *2 takes 3 gems per Pokémon, 18 for a team). The best six from all 690 Pokémon of every rarity, one legendary at most (the game takes one per Elite fight). Search: the team search of the earlier boards at Elite II only, over the team and its moves together; then every place tries its replacements and its moves once more on 120 fights. Each search also starts from the team an earlier build's Teams board had for the same fight, and such a team stays unless the new one is clearly better on 1536 fresh fights (55 of the 56 teams are an earlier build's). Moves and bans: after each member, the moves it used at Elite II with the share of its turns (in 48 fights); in red after BAN, the moves to take away. New in v0.5.12: tap a learned move on a Pokémon's card and it no longer uses it in battle (it always keeps one attack); tap again to give it back. The ban lives on the Pokémon, not on the fight. 5 of the 56 teams have a ban (5 members). A ban has to earn its place: each was fought again, the team with it against the team without, on 384 fresh fights at Elite II, and is listed only if the team is clearly better with it (two standard errors, and 3 wins in 100); 1 ban was dropped, the 5 teams that kept one win 18 more fights in 100 with them. What these teams do at Elite II: 98 wins out of 100 on average (100 at Elite I); of the 56 bosses, 30 are beaten every time, 55 at least half the time. 43 teams put the boss to sleep with a status move. Wins are from seeded fights no search used: 384 for the team at Elite II, 192 at each other tier, 48 for an alternate. Fights that open only at night or at one moon phase run at the first hour they open; a fight without its own weather runs in clear weather.",
+        "algorithm": {
+          "goal": "Find the *2 team that wins each of the 56 Elite legendary fights most often at Elite II.",
+          "engine": "The game's own battle engine at build 824f567ed3",
+          "steps": [
+            "Put everything at *2, Lv 100, not shiny; *0 to *2 costs 3 gems per Pokémon.",
+            "Search the best six from all 690 Pokémon of every rarity, at most one legendary.",
+            "Run the earlier boards' team search at Elite II only, over the team and its moves together.",
+            "Try every place's replacements and moves once more on 120 fights.",
+            "Also start from the earlier build's Teams board team; keep it unless the new one is clearly better on 1536 fresh fights.",
+            "Keep a ban only if the team is clearly better with it on 384 fresh Elite II fights (two standard errors and 3 wins in 100).",
+            "Score wins from seeded fights no search used: 384 at Elite II, 192 per other tier, 48 per alternate."
+          ],
+          "parameters": {
+            "fights": "56 Elite legendary fights",
+            "rank": "*2 (×1.15 per rank), Lv 100, not shiny",
+            "gems": "3 per Pokémon, 18 per team from *0",
+            "legendaries": "at most one per team",
+            "box": "all 690 Pokémon of the four rarities",
+            "build": "824f567ed3"
+          },
+          "acceptance": {
+            "pick": "Most wins at Elite II; ties broken by Elite III.",
+            "ban": "A ban is kept only if the team is clearly better by two standard errors and 3 wins in 100 on 384 fresh fights.",
+            "earlierTeam": "An earlier build's team stays unless the new one is clearly better on 1536 fresh fights."
+          }
+        },
+        "gameFacts": [
+          "Everything is at *2, Lv 100, not shiny; a rank is +15% on every stat.",
+          "From *0 to *2 takes 3 gems per Pokémon, 18 per team.",
+          "At most one legendary per Elite fight.",
+          "A ban lives on the Pokémon, not on the fight; tapping a learned move removes it, tapping again restores it.",
+          "A Pokémon always keeps one attack.",
+          "A member left with only attacks the boss is immune to uses its status move every turn it can land (BAN N attacks, all but the ones it keeps).",
+          "Closed fights run at the first hour they open; no-weather fights run in clear weather.",
+          "5 of the 56 teams have a ban; 43 teams put the boss to sleep.",
+          "98 wins of 100 on average at Elite II; 30 bosses beaten every time, 55 at least half the time."
+        ]
+      },
+      "data": {
+        "fights": [
+          {
+            "region": "Kanto",
+            "boss": "Articuno",
+            "tiers": {
+              "1": null,
+              "2": null,
+              "3": null,
+              "4": null,
+              "5": null
+            },
+            "team": {
+              "members": [
+                {
+                  "name": "White Kyurem",
+                  "legendary": true,
+                  "moves": [
+                    {
+                      "name": "Ice Burn",
+                      "tag": "BRN",
+                      "share": 98
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Rhyperior",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Stone Edge",
+                      "tag": null,
+                      "share": 99
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Jynx",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Blizzard",
+                      "tag": "FRZ",
+                      "share": 75
+                    },
+                    {
+                      "name": "Sweet Kiss",
+                      "tag": "CNF",
+                      "share": 16
+                    },
+                    {
+                      "name": "Lovely Kiss",
+                      "tag": "SLP",
+                      "share": 8
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Tyranitar",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Stone Edge",
+                      "tag": null,
+                      "share": 99
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Muk",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Gunk Shot",
+                      "tag": "PSN",
+                      "share": 89
+                    },
+                    {
+                      "name": "Toxic",
+                      "tag": "PSN",
+                      "share": 10
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Rampardos",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Head Smash",
+                      "tag": null,
+                      "share": 99
+                    }
+                  ],
+                  "bans": []
+                }
+              ],
+              "alternates": []
+            },
+            "banGain": null
+          },
+          {
+            "region": "Kanto",
+            "boss": "Zapdos",
+            "tiers": {
+              "1": null,
+              "2": null,
+              "3": null,
+              "4": null,
+              "5": null
+            },
+            "team": {
+              "members": [
+                {
+                  "name": "Arceus Dark",
+                  "legendary": true,
+                  "moves": [
+                    {
+                      "name": "Judgment",
+                      "tag": null,
+                      "share": 100
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Sableye",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Poltergeist",
+                      "tag": null,
+                      "share": 85
+                    },
+                    {
+                      "name": "Confuse Ray",
+                      "tag": "CNF",
+                      "share": 15
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Spiritomb",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Poltergeist",
+                      "tag": null,
+                      "share": 84
+                    },
+                    {
+                      "name": "Hypnosis",
+                      "tag": "SLP",
+                      "share": 10
+                    },
+                    {
+                      "name": "Confuse Ray",
+                      "tag": "CNF",
+                      "share": 6
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Umbreon",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Foul Play",
+                      "tag": null,
+                      "share": 84
+                    },
+                    {
+                      "name": "Confuse Ray",
+                      "tag": "CNF",
+                      "share": 15
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Skuntank",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Foul Play",
+                      "tag": null,
+                      "share": 89
+                    },
+                    {
+                      "name": "Toxic",
+                      "tag": "PSN",
+                      "share": 10
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Drapion",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Throat Chop",
+                      "tag": null,
+                      "share": 83
+                    },
+                    {
+                      "name": "Toxic",
+                      "tag": "PSN",
+                      "share": 17
+                    }
+                  ],
+                  "bans": []
+                }
+              ],
+              "alternates": []
+            },
+            "banGain": null
+          },
+          {
+            "region": "Kanto",
+            "boss": "Moltres",
+            "tiers": {
+              "1": null,
+              "2": null,
+              "3": null,
+              "4": null,
+              "5": null
+            },
+            "team": {
+              "members": [
+                {
+                  "name": "Heatran",
+                  "legendary": true,
+                  "moves": [
+                    {
+                      "name": "Magma Storm",
+                      "tag": null,
+                      "share": 93
+                    },
+                    {
+                      "name": "Stone Edge",
+                      "tag": null,
+                      "share": 6
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Relicanth",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Head Smash",
+                      "tag": null,
+                      "share": 99
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Probopass",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Meteor Beam",
+                      "tag": null,
+                      "share": 76
+                    },
+                    {
+                      "name": "Thunder Wave",
+                      "tag": "PAR",
+                      "share": 23
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Gigalith",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Stone Edge",
+                      "tag": null,
+                      "share": 100
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Bronzong",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Iron Head",
+                      "tag": null,
+                      "share": 74
+                    },
+                    {
+                      "name": "Hypnosis",
+                      "tag": "SLP",
+                      "share": 18
+                    },
+                    {
+                      "name": "Confuse Ray",
+                      "tag": "CNF",
+                      "share": 8
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Carracosta",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Stone Edge",
+                      "tag": null,
+                      "share": 100
+                    }
+                  ],
+                  "bans": []
+                }
+              ],
+              "alternates": []
+            },
+            "banGain": null
+          },
+          {
+            "region": "Kanto",
+            "boss": "Mewtwo",
+            "tiers": {
+              "1": null,
+              "2": null,
+              "3": null,
+              "4": null,
+              "5": null
+            },
+            "team": {
+              "members": [
+                {
+                  "name": "Arceus Rock",
+                  "legendary": true,
+                  "moves": [
+                    {
+                      "name": "Judgment",
+                      "tag": null,
+                      "share": 100
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Rampardos",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Head Smash",
+                      "tag": null,
+                      "share": 100
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Tyranitar",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Stone Edge",
+                      "tag": null,
+                      "share": 99
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Muk",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Gunk Shot",
+                      "tag": "PSN",
+                      "share": 89
+                    },
+                    {
+                      "name": "Toxic",
+                      "tag": "PSN",
+                      "share": 10
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Gigalith",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Stone Edge",
+                      "tag": null,
+                      "share": 100
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Carracosta",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Stone Edge",
+                      "tag": null,
+                      "share": 100
+                    }
+                  ],
+                  "bans": []
+                }
+              ],
+              "alternates": []
+            },
+            "banGain": null
+          },
+          {
+            "region": "Kanto",
+            "boss": "Mew",
+            "tiers": {
+              "1": null,
+              "2": null,
+              "3": null,
+              "4": null,
+              "5": null
+            },
+            "team": {
+              "members": [
+                {
+                  "name": "Articuno",
+                  "legendary": true,
+                  "moves": [
+                    {
+                      "name": "Blizzard",
+                      "tag": "FRZ",
+                      "share": 98
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Heatran",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Magma Storm",
+                      "tag": null,
+                      "share": 93
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Relicanth",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Head Smash",
+                      "tag": null,
+                      "share": 99
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Probopass",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Meteor Beam",
+                      "tag": null,
+                      "share": 76
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Gigalith",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Stone Edge",
+                      "tag": null,
+                      "share": 100
+                    }
+                  ],
+                  "bans": []
+                },
+                {
+                  "name": "Bronzong",
+                  "legendary": false,
+                  "moves": [
+                    {
+                      "name": "Iron Head",
+                      "tag": null,
+                      "share": 74
+                    }
+                  ],
+                  "bans": []
+                }
+              ],
+              "alternates": []
+            },
+            "banGain": null
+          },
+          {
+            "region": "Johto",
+            "boss": "Raikou",
+            "tiers": {
+              "1": null,
+              "2": null,
+              "3": null,
+              "4": null,
+              "5": null
+            },
+            "team": {
+              "members": [],
+              "alternates": []
+            },
+            "banGain": null
+          },
+          {
+            "region": "Johto",
+            "boss": "Entei",
+            "tiers": {
+              "1": null,
+              "2": null,
+              "3": null,
+              "4": null,
+              "5": null
+            },
+            "team": {
+              "members": [],
+              "alternates": []
+            },
+            "banGain": null
+          },
+          {
+            "region": "Johto",
+            "boss": "Suicune",
+            "tiers": {
+              "1": null,
+              "2": null,
+              "3": null,
+              "4": null,
+              "5": null
+            },
+            "team": {
+              "members": [],
+              "alternates": []
+            },
+            "banGain": null
+          },
+          {
+            "region": "Johto",
+            "boss": "Lugia",
+            "tiers": {
+              "1": null,
+              "2": null,
+              "3": null,
+              "4": null,
+              "5": null
+            },
+            "team": {
+              "members": [],
+              "alternates": []
+            },
+            "banGain": null
+          },
+          {
+            "region": "Johto",
+            "boss": "Ho-Oh",
+            "tiers": {
+              "1": null,
+              "2": null,
+              "3": null,
+              "4": null,
+              "5": null
+            },
+            "team": {
+              "members": [],
+              "alternates": []
+            },
+            "banGain": null
+          },
+          {
+            "region": "Johto",
+            "boss": "Celebi",
+            "tiers": {
+              "1": null,
+              "2": null,
+              "3": null,
+              "4": null,
+              "5": null
+            },
+            "team": {
+              "members": [],
+              "alternates": []
+            },
+            "banGain": null
+          },
+          {
+            "region": "Hoenn",
+            "boss": "Regirock",
+            "tiers": {
+              "1": null,
+              "2": null,
+              "3": null,
+              "4": null,
+              "5": null
+            },
+            "team": {
+              "members": [],
+              "alternates": []
+            },
+            "banGain": null
+          },
+          {
+            "region": "Hoenn",
+            "boss": "Regice",
+            "tiers": {
+              "1": null,
+              "2": null,
+              "3": null,
+              "4": null,
+              "5": null
+            },
+            "team": {
+              "members": [],
+              "alternates": []
+            },
+            "banGain": null
+          },
+          {
+            "region": "Hoenn",
+            "boss": "Registeel",
+            "tiers": {
+              "1": null,
+              "2": null,
+              "3": null,
+              "4": null,
+              "5": null
+            },
+            "team": {
+              "members": [],
+              "alternates": []
+            },
+            "banGain": null
+          },
+          {
+            "region": "Hoenn",
+            "boss": "Latias",
+            "tiers": {
+              "1": null,
+              "2": null,
+              "3": null,
+              "4": null,
+              "5": null
+            },
+            "team": {
+              "members": [],
+              "alternates": []
+            },
+            "banGain": null
+          },
+          {
+            "region": "Hoenn",
+            "boss": "Latios",
+            "tiers": {
+              "1": null,
+              "2": null,
+              "3": null,
+              "4": null,
+              "5": null
+            },
+            "team": {
+              "members": [],
+              "alternates": []
+            },
+            "banGain": null
+          },
+          {
+            "region": "Hoenn",
+            "boss": "Kyogre",
+            "tiers": {
+              "1": null,
+              "2": null,
+              "3": null,
+              "4": null,
+              "5": null
+            },
+            "team": {
+              "members": [],
+              "alternates": []
+            },
+            "banGain": null
+          },
+          {
+            "region": "Hoenn",
+            "boss": "Groudon",
+            "tiers": {
+              "1": null,
+              "2": null,
+              "3": null,
+              "4": null,
+              "5": null
+            },
+            "team": {
+              "members": [],
+              "alternates": []
+            },
+            "banGain": null
+          },
+          {
+            "region": "Hoenn",
+            "boss": "Rayquaza",
+            "tiers": {
+              "1": null,
+              "2": null,
+              "3": null,
+              "4": null,
+              "5": null
+            },
+            "team": {
+              "members": [],
+              "alternates": []
+            },
+            "banGain": null
+          },
+          {
+            "region": "Hoenn",
+            "boss": "Jirachi",
+            "tiers": {
+              "1": null,
+              "2": null,
+              "3": null,
+              "4": null,
+              "5": null
+            },
+            "team": {
+              "members": [],
+              "alternates": []
+            },
+            "banGain": null
+          },
+          {
+            "region": "Hoenn",
+            "boss": "Deoxys",
+            "tiers": {
+              "1": null,
+              "2": null,
+              "3": null,
+              "4": null,
+              "5": null
+            },
+            "team": {
+              "members": [],
+              "alternates": []
+            },
+            "banGain": null
+          },
+          {
+            "region": "Hoenn",
+            "boss": "Deoxys Attack",
+            "tiers": {
+              "1": null,
+              "2": null,
+              "3": null,
+              "4": null,
+              "5": null
+            },
+            "team": {
+              "members": [],
+              "alternates": []
+            },
+            "banGain": null
+          },
+          {
+            "region": "Hoenn",
+            "boss": "Deoxys Defense",
+            "tiers": {
+              "1": null,
+              "2": null,
+              "3": null,
+              "4": null,
+              "5": null
+            },
+            "team": {
+              "members": [],
+              "alternates": []
+            },
+            "banGain": null
+          },
+          {
+            "region": "Hoenn",
+            "boss": "Deoxys Speed",
+            "tiers": {
+              "1": null,
+              "2": null,
+              "3": null,
+              "4": null,
+              "5": null
+            },
+            "team": {
+              "members": [],
+              "alternates": []
+            },
+            "banGain": null
+          },
+          {
+            "region": "Sinnoh",
+            "boss": "Uxie",
+            "tiers": {
+              "1": null,
+              "2": null,
+              "3": null,
+              "4": null,
+              "5": null
+            },
+            "team": {
+              "members": [],
+              "alternates": []
+            },
+            "banGain": null
+          },
+          {
+            "region": "Sinnoh",
+            "boss": "Mesprit",
+            "tiers": {
+              "1": null,
+              "2": null,
+              "3": null,
+              "4": null,
+              "5": null
+            },
+            "team": {
+              "members": [],
+              "alternates": []
+            },
+            "banGain": null
+          },
+          {
+            "region": "Sinnoh",
+            "boss": "Azelf",
+            "tiers": {
+              "1": null,
+              "2": null,
+              "3": null,
+              "4": null,
+              "5": null
+            },
+            "team": {
+              "members": [],
+              "alternates": []
+            },
+            "banGain": null
+          },
+          {
+            "region": "Sinnoh",
+            "boss": "Dialga",
+            "tiers": {
+              "1": null,
+              "2": null,
+              "3": null,
+              "4": null,
+              "5": null
+            },
+            "team": {
+              "members": [],
+              "alternates": []
+            },
+            "banGain": null
+          },
+          {
+            "region": "Sinnoh",
+            "boss": "Palkia",
+            "tiers": {
+              "1": null,
+              "2": null,
+              "3": null,
+              "4": null,
+              "5": null
+            },
+            "team": {
+              "members": [],
+              "alternates": []
+            },
+            "banGain": null
+          },
+          {
+            "region": "Sinnoh",
+            "boss": "Heatran",
+            "tiers": {
+              "1": null,
+              "2": null,
+              "3": null,
+              "4": null,
+              "5": null
+            },
+            "team": {
+              "members": [],
+              "alternates": []
+            },
+            "banGain": null
+          },
+          {
+            "region": "Sinnoh",
+            "boss": "Regigigas",
+            "tiers": {
+              "1": null,
+              "2": null,
+              "3": null,
+              "4": null,
+              "5": null
+            },
+            "team": {
+              "members": [],
+              "alternates": []
+            },
+            "banGain": null
+          },
+          {
+            "region": "Sinnoh",
+            "boss": "Giratina",
+            "tiers": {
+              "1": null,
+              "2": null,
+              "3": null,
+              "4": null,
+              "5": null
+            },
+            "team": {
+              "members": [],
+              "alternates": []
+            },
+            "banGain": null
+          },
+          {
+            "region": "Sinnoh",
+            "boss": "Giratina Origin",
+            "tiers": {
+              "1": null,
+              "2": null,
+              "3": null,
+              "4": null,
+              "5": null
+            },
+            "team": {
+              "members": [],
+              "alternates": []
+            },
+            "banGain": null
+          },
+          {
+            "region": "Sinnoh",
+            "boss": "Cresselia",
+            "tiers": {
+              "1": null,
+              "2": null,
+              "3": null,
+              "4": null,
+              "5": null
+            },
+            "team": {
+              "members": [],
+              "alternates": []
+            },
+            "banGain": null
+          },
+          {
+            "region": "Sinnoh",
+            "boss": "Darkrai",
+            "tiers": {
+              "1": null,
+              "2": null,
+              "3": null,
+              "4": null,
+              "5": null
+            },
+            "team": {
+              "members": [],
+              "alternates": []
+            },
+            "banGain": null
+          },
+          {
+            "region": "Sinnoh",
+            "boss": "Shaymin",
+            "tiers": {
+              "1": null,
+              "2": null,
+              "3": null,
+              "4": null,
+              "5": null
+            },
+            "team": {
+              "members": [],
+              "alternates": []
+            },
+            "banGain": null
+          },
+          {
+            "region": "Sinnoh",
+            "boss": "Shaymin Sky",
+            "tiers": {
+              "1": null,
+              "2": null,
+              "3": null,
+              "4": null,
+              "5": null
+            },
+            "team": {
+              "members": [],
+              "alternates": []
+            },
+            "banGain": null
+          },
+          {
+            "region": "Unova",
+            "boss": "Victini",
+            "tiers": {
+              "1": null,
+              "2": null,
+              "3": null,
+              "4": null,
+              "5": null
+            },
+            "team": {
+              "members": [],
+              "alternates": []
+            },
+            "banGain": null
+          },
+          {
+            "region": "Unova",
+            "boss": "Cobalion",
+            "tiers": {
+              "1": null,
+              "2": null,
+              "3": null,
+              "4": null,
+              "5": null
+            },
+            "team": {
+              "members": [],
+              "alternates": []
+            },
+            "banGain": null
+          },
+          {
+            "region": "Unova",
+            "boss": "Terrakion",
+            "tiers": {
+              "1": null,
+              "2": null,
+              "3": null,
+              "4": null,
+              "5": null
+            },
+            "team": {
+              "members": [],
+              "alternates": []
+            },
+            "banGain": null
+          },
+          {
+            "region": "Unova",
+            "boss": "Virizion",
+            "tiers": {
+              "1": null,
+              "2": null,
+              "3": null,
+              "4": null,
+              "5": null
+            },
+            "team": {
+              "members": [],
+              "alternates": []
+            },
+            "banGain": null
+          },
+          {
+            "region": "Unova",
+            "boss": "Tornadus",
+            "tiers": {
+              "1": null,
+              "2": null,
+              "3": null,
+              "4": null,
+              "5": null
+            },
+            "team": {
+              "members": [],
+              "alternates": []
+            },
+            "banGain": null
+          },
+          {
+            "region": "Unova",
+            "boss": "Thundurus",
+            "tiers": {
+              "1": null,
+              "2": null,
+              "3": null,
+              "4": null,
+              "5": null
+            },
+            "team": {
+              "members": [],
+              "alternates": []
+            },
+            "banGain": null
+          },
+          {
+            "region": "Unova",
+            "boss": "Landorus",
+            "tiers": {
+              "1": null,
+              "2": null,
+              "3": null,
+              "4": null,
+              "5": null
+            },
+            "team": {
+              "members": [],
+              "alternates": []
+            },
+            "banGain": null
+          },
+          {
+            "region": "Unova",
+            "boss": "Reshiram",
+            "tiers": {
+              "1": null,
+              "2": null,
+              "3": null,
+              "4": null,
+              "5": null
+            },
+            "team": {
+              "members": [],
+              "alternates": []
+            },
+            "banGain": null
+          },
+          {
+            "region": "Unova",
+            "boss": "Zekrom",
+            "tiers": {
+              "1": null,
+              "2": null,
+              "3": null,
+              "4": null,
+              "5": null
+            },
+            "team": {
+              "members": [],
+              "alternates": []
+            },
+            "banGain": null
+          },
+          {
+            "region": "Unova",
+            "boss": "Kyurem",
+            "tiers": {
+              "1": null,
+              "2": null,
+              "3": null,
+              "4": null,
+              "5": null
+            },
+            "team": {
+              "members": [],
+              "alternates": []
+            },
+            "banGain": null
+          },
+          {
+            "region": "Unova",
+            "boss": "Keldeo",
+            "tiers": {
+              "1": null,
+              "2": null,
+              "3": null,
+              "4": null,
+              "5": null
+            },
+            "team": {
+              "members": [],
+              "alternates": []
+            },
+            "banGain": null
+          },
+          {
+            "region": "Unova",
+            "boss": "Meloetta",
+            "tiers": {
+              "1": null,
+              "2": null,
+              "3": null,
+              "4": null,
+              "5": null
+            },
+            "team": {
+              "members": [],
+              "alternates": []
+            },
+            "banGain": null
+          },
+          {
+            "region": "Unova",
+            "boss": "Genesect",
+            "tiers": {
+              "1": null,
+              "2": null,
+              "3": null,
+              "4": null,
+              "5": null
+            },
+            "team": {
+              "members": [],
+              "alternates": []
+            },
+            "banGain": null
+          },
+          {
+            "region": "Unova",
+            "boss": "Tornadus Therian",
+            "tiers": {
+              "1": null,
+              "2": null,
+              "3": null,
+              "4": null,
+              "5": null
+            },
+            "team": {
+              "members": [],
+              "alternates": []
+            },
+            "banGain": null
+          },
+          {
+            "region": "Unova",
+            "boss": "Thundurus Therian",
+            "tiers": {
+              "1": null,
+              "2": null,
+              "3": null,
+              "4": null,
+              "5": null
+            },
+            "team": {
+              "members": [],
+              "alternates": []
+            },
+            "banGain": null
+          },
+          {
+            "region": "Unova",
+            "boss": "Landorus Therian",
+            "tiers": {
+              "1": null,
+              "2": null,
+              "3": null,
+              "4": null,
+              "5": null
+            },
+            "team": {
+              "members": [],
+              "alternates": []
+            },
+            "banGain": null
+          },
+          {
+            "region": "Unova",
+            "boss": "Meloetta Pirouette",
+            "tiers": {
+              "1": null,
+              "2": null,
+              "3": null,
+              "4": null,
+              "5": null
+            },
+            "team": {
+              "members": [],
+              "alternates": []
+            },
+            "banGain": null
+          },
+          {
+            "region": "Unova",
+            "boss": "Black Kyurem",
+            "tiers": {
+              "1": null,
+              "2": null,
+              "3": null,
+              "4": null,
+              "5": null
+            },
+            "team": {
+              "members": [],
+              "alternates": []
+            },
+            "banGain": null
+          },
+          {
+            "region": "Unova",
+            "boss": "White Kyurem",
+            "tiers": {
+              "1": null,
+              "2": null,
+              "3": null,
+              "4": null,
+              "5": null
+            },
+            "team": {
+              "members": [],
+              "alternates": []
+            },
+            "banGain": null
+          }
+        ]
+      },
+      "uncertain": [
+        "This is the least complete transcription: the board lays 56 cards in four columns whose OCR lines interleave, and only the five Kanto cards' teams could be attributed with confidence. The other 51 fights carry the correct boss, region and shape, with empty `members`/`alternates` rather than guessed names.",
+        "The 56-boss roster is taken from the board's region counts (Kanto 5, Johto 6, Hoenn 13, Sinnoh 13, Unova 19) and the game's legendary roster; the per-card tier chips (I–V) and `banGain` values were not legible enough to attribute and are null.",
+        "The five Kanto teams' moves and shares are transcribed from the clearest card blocks; alternate slots are empty for the same layout reason."
+      ]
+    }
+  };
+/* ---------- end of generated guides data ---------- */
+
+  /* ------------------------------------------------------------------ *
+   * 9c. Helper page: community guides + the chapter dashboard
+   * ------------------------------------------------------------------ */
+  const HELPER_ICON = 'data:image/svg+xml,' + encodeURIComponent(
+    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="#ffd45e" d="M4 4h6a2 2 0 0 1 2 2v14a3 3 0 0 0-3-3H4z"/><path fill="#e0a800" d="M20 4h-6a2 2 0 0 0-2 2v14a3 3 0 0 1 3-3h5z"/><path fill="#1b1b22" d="M11 6h2v12h-2z"/></svg>');
+  const HELPER_TABS = [
+    ['Dashboard', null], ['Catch teams', 'catch-teams'], ['Elite II teams', 'elite2-teams'],
+    ['Best by type', 'type-picks'], ['Legendary gem tiers', 'gem-tiers'], ['Rare & uncommon tiers', 'ru-tiers'],
+    ['Underground', 'underground'], ['Auto-replay farming', 'farming'], ['Overnight farming', 'overnight'],
+    ['Berries', 'berry']
+  ];
+  const guideNorm = s => String(s || '').normalize('NFD').replace(/\p{Diacritic}/gu, '')
+    .toLowerCase().replace(/&/g, ' and ').replace(/[^a-z0-9]+/g, ' ').trim()
+    .split(/\s+/).filter(w => w && w !== 'forme' && w !== 'form').sort().join(' ');
+  let guideIdMap = null, guideIdMapKey = '';
+  /** Board name -> parsed dex id (base species and forms), or null. */
+  function guideNameId(name) {
+    const data = state.data;
+    if (!data) return null;
+    if (guideIdMapKey !== (bundleUrl() || '')) {
+      guideIdMap = new Map();
+      const put = (n, id) => { const k = guideNorm(n); if (k && !guideIdMap.has(k)) guideIdMap.set(k, id); };
+      for (const id of Object.keys(data.species || {})) put(displayName(+id), +id);
+      for (const id of Object.keys(data.forms || {})) {
+        const f = data.forms[id], base = +f.base;
+        put(displayName(base) + ' ' + englishText(f.form), +id);
+        put(englishText(f.form), +id);
+        // shortcut: the boards' English form spellings that differ from the pack (Arceus plates, Genesect drives); extend if a new board uses another
+        const alias = { pyro: 'Burn', cryo: 'Chill', aqua: 'Douse', choc: 'Shock', roche: 'Rock' };
+        const key = Object.keys(alias).find(k => String(f.form).toLowerCase().includes(k));
+        if (key) put(displayName(base) + ' ' + alias[key], +id);
+      }
+      guideIdMapKey = bundleUrl() || '';
+    }
+    return guideIdMap.get(guideNorm(name)) ?? null;
+  }
+  const guideSpr = (name, h = 30) => {
+    const id = guideNameId(name);
+    return id == null ? '' : `<span class="pcopt-hspr">${sprOf(id, h)}</span>`;
+  };
+  const guideBoardLine = g => `${esc(g.board.gameVersion)} · build ${esc(g.board.build)} · pulled ${esc(g.board.pulled)} · community board by ${esc(g.credit)}`;
+  const guideMatch = (obj, q) => !q || JSON.stringify(obj).toLowerCase().includes(q);
+  const guideFold = g => `
+    <details><summary>How this guide was made</summary>
+      <p>${esc(g.method.summary)}</p>
+      <p><b>Algorithm — ${esc(g.method.algorithm.goal)}</b><br><span class="pcopt-hnote">Engine: ${esc(g.method.algorithm.engine)}</span></p>
+      <ol>${g.method.algorithm.steps.map(s => `<li>${esc(s)}</li>`).join('')}</ol>
+      <p><b>Parameters</b></p>
+      <ul>${Object.entries(g.method.algorithm.parameters || {}).map(([k, v]) => `<li>${esc(k)}: ${esc(v)}</li>`).join('')}</ul>
+      <p><b>Acceptance</b></p>
+      <ul>${Object.entries(g.method.algorithm.acceptance || {}).map(([k, v]) => `<li>${esc(k)}: ${esc(v)}</li>`).join('')}</ul>
+      <p><b>Game facts</b></p>
+      <ul>${(g.method.gameFacts || []).map(s => `<li>${esc(s)}</li>`).join('')}</ul>
+      ${(g.uncertain || []).length ? `<p><b>Uncertain / OCR notes</b></p><ul>${g.uncertain.map(s => `<li>${esc(s)}</li>`).join('')}</ul>` : ''}
+    </details>`;
+  const guideMembers = (members, withLegend) => (members || []).map(m => {
+    if (!m.name) return '';
+    const gold = withLegend && (m.legendary || m.rarity === 'L');
+    const moves = (m.moves || []).map(mv =>
+      `<span class="pcopt-movechip">${esc(mv.name)}${mv.tag ? `<i>${esc(mv.tag)}</i>` : ''}${mv.share != null ? `<b>${esc(mv.share)}%</b>` : ''}</span>`).join('');
+    const bans = (m.bans || []).length ? `<span class="pcopt-ban">BAN ${m.bans.map(esc).join(', ')}</span>` : '';
+    const allBut = m.banAllButNote ? `<span class="pcopt-ban">${esc(m.banAllButNote)}</span>` : '';
+    return `<div class="pcopt-gmem">${guideSpr(m.name)}<b class="${gold ? 'pcopt-gold' : ''}">${esc(m.name)}</b><span class="pcopt-gmoves">${moves}</span>${bans}${allBut}</div>`;
+  }).join('');
+  const guideAlternates = alts => (alts || []).length
+    ? `<div class="pcopt-galt"><b>Instead:</b> ${alts.map(a => `#${(+a.memberIndex || 0) + 1} ${esc(a.name)}${a.rate != null ? ' ' + esc(a.rate) : ''}${a.withBan ? ' (comes with bans)' : ''}`).join(' · ')}</div>` : '';
+  const guideAltBans = list => (list || []).length
+    ? `<div class="pcopt-hnote"><b>Bans of the alternates marked BAN:</b> ${list.map(x => `${esc(x.name)}: ${(x.bans || []).map(esc).join(', ')}`).join('; ')}</div>` : '';
+
+  function guideTeamCard(g, f, i) {
+    const key = g.id + ':' + i;
+    const open = !!state.helperOpen[key];
+    const t = f.title;
+    const headline = t && typeof t === 'object'
+      ? `${t.mode || ''}${t.time ? ' · ' + t.time : ''}${t.winsPerHour != null ? ' · ' + t.winsPerHour + ' wins/h' : ''}${t.bansBonus ? ' · bans ' + t.bansBonus : ''}`
+      : (f.tiers ? 'Elite I–V' : '');
+    const tiers = f.tiers ? `<span class="pcopt-gtiers">${['1', '2', '3', '4', '5'].map(k => `<span>${f.tiers[k] == null ? '–' : esc(f.tiers[k])}</span>`).join('')}</span>` : '';
+    const zid = guideNameId(f.boss);
+    const canFight = zid != null && legendZones().some(z => z.id === zid);
+    const body = open ? `<div class="pcopt-gbody">
+        ${guideMembers(f.team?.members, true)}
+        ${guideAlternates(f.team?.alternates)}
+        ${guideAltBans(f.team?.alternateBans)}
+        ${f.noLegendary ? `<div class="pcopt-hnote" style="margin-top:6px"><b>${esc(String(f.noLegendary.title || 'Without any legendary'))}</b></div>
+          ${(f.noLegendary.members || []).length ? guideMembers(f.noLegendary.members, false) : '<div class="pcopt-hnote">the same team as above</div>'}
+          ${guideAlternates(f.noLegendary.alternates)}
+          ${guideAltBans(f.noLegendary.alternateBans)}` : ''}
+        ${f.banGain ? `<div class="pcopt-hnote">Bans add ${esc(f.banGain)} at Elite II.</div>` : ''}
+        ${canFight ? `<button class="btn small ghost" data-hfight="${zid}">→ fight</button>` : ''}
+      </div>` : '';
+    return `<article class="pcopt-gcard">
+      <button class="pcopt-gcard-h" data-hcard="${esc(key)}">${guideSpr(f.boss)}
+        <span class="grow"><b>${esc(f.boss)}</b><small>${esc(f.region || '')} · ${esc(headline)}</small></span>${tiers}</button>
+      ${body}</article>`;
+  }
+
+  function renderTeams(g) {
+    const q = (state.helperSearch || '').toLowerCase();
+    const fights = (g.data.fights || []).filter(f => guideMatch(f, q));
+    const regions = [...new Set((g.data.fights || []).map(f => f.region).filter(Boolean))];
+    const reg = state.helperRegion;
+    const shown = reg ? fights.filter(f => f.region === reg) : fights;
+    return `<div class="pcopt-gregion">${regions.map(r => `<button data-hregion="${esc(r)}" class="${r === reg ? 'on' : ''}">${esc(r)}</button>`).join('')}
+      ${reg ? '<button data-hregion="">all regions</button>' : ''}</div>
+      ${shown.length ? shown.map(f => guideTeamCard(g, f, (g.data.fights || []).indexOf(f))).join('') : '<div class="pcopt-mut">no card matches</div>'}
+      ${g.id === 'catch-teams' && g.data.shield ? `<div class="pcopt-gcard"><div class="pcopt-gcard-h static"><span class="grow"><b>Arceus shield</b><small>the days before the capture fight</small></span></div>
+        <div class="pcopt-gbody"><div class="pcopt-hnote">${esc(g.data.shield.rules)}</div>
+        <table class="pcopt-gtable"><tr><th>Below the top tier</th><th class="n">Atk</th></tr>
+        ${(g.data.shield.bestBelowTop || []).map(x => `<tr><td>${esc(x.name)}</td><td class="n">${esc(x.atk)}</td></tr>`).join('')}</table>
+        <table class="pcopt-gtable"><tr><th>No legendary</th><th class="n">Atk</th></tr>
+        ${(g.data.shield.noLegendary || []).map(x => `<tr><td>${esc(x.name)}</td><td class="n">${esc(x.atk)}</td></tr>`).join('')}</table></div></div>` : ''}`;
+  }
+
+  function renderTiers(g) {
+    const q = (state.helperSearch || '').toLowerCase();
+    if (g.id === 'type-picks') {
+      return (g.data.types || []).filter(t => guideMatch(t, q)).map(t => {
+        const key = g.id + ':' + t.type;
+        const open = !!state.helperOpen[key];
+        const leg = t.legendary;
+        const row = (x, gold, rarity) => `<div class="pcopt-gmem">${guideSpr(x.name)}<b class="${gold || rarity === 'L' ? 'pcopt-gold' : ''}">${esc(x.name)}</b>
+          ${rarity && rarity !== 'L' ? `<span class="pcopt-gbadge">${esc(rarity)}</span>` : ''}
+          <span class="pcopt-movechip">+${esc(x.wins)} wins</span>${x.hp ? `<span class="pcopt-movechip">${esc(x.hp)} HP</span>` : ''}${x.fights ? `<span class="pcopt-muted">${esc(x.fights)}</span>` : ''}</div>`;
+        const next = ['R', 'U', 'C'].map(r => (t.next?.[r] || []).length
+          ? `<div class="pcopt-hnote"><b>next ${r}:</b> ${t.next[r].map(x => `${esc(x.name)} +${esc(x.wins)}`).join(' · ')}${t.next.more?.[r] ? ` · ${esc(t.next.more[r])} more` : ''}</div>` : '').join('');
+        return `<article class="pcopt-gcard"><button class="pcopt-gcard-h" data-hcard="${esc(key)}">
+          <span class="grow"><b style="text-transform:capitalize">${esc(t.type)}</b><small>${leg ? esc(leg.name) + ' +' + esc(leg.wins) + ' wins' : 'no legendary pick'} · ${(t.others || []).length} others</small></span></button>
+          ${open ? `<div class="pcopt-gbody">${leg ? row(leg, true) : '<div class="pcopt-hnote">No legendary of this type in the game.</div>'}
+            ${(t.others || []).map(x => row(x, false, x.rarity)).join('')}
+            ${(t.legendaryNext || []).length ? `<div class="pcopt-hnote"><b>next legendary:</b> ${t.legendaryNext.map(x => `${esc(x.name)} +${esc(x.wins)}`).join(' · ')}</div>` : ''}
+            ${next}</div>` : ''}</article>`;
+      }).join('') || '<div class="pcopt-mut">no type matches</div>';
+    }
+    if (g.id === 'gem-tiers') {
+      const sinks = (g.data.bestSinks || []).filter(x => guideMatch(x, q));
+      return `<div class="pcopt-hnote">Best gem sinks, in board order (the bars are pixel art; order is the data).</div>
+        <div class="pcopt-gcard"><div class="pcopt-gcard-h static"><span class="grow"><b>Best gem sinks</b></span></div><div class="pcopt-gbody">
+        ${sinks.map((x, i) => `<div class="pcopt-gmem">${guideSpr(x.name)}<b>${i + 1}. ${esc(x.name)}</b>${(x.gemTypes || []).map(t => `<span class="pcopt-movechip">${esc(t)}</span>`).join('')}</div>`).join('')}</div></div>
+        ${(g.data.tiers || []).map(t => `<div class="pcopt-gcard"><div class="pcopt-gcard-h static"><span class="grow"><b>${esc(t.label)}</b></span></div><div class="pcopt-gbody">
+        ${t.members.filter(x => guideMatch(x, q)).map(x => `<div class="pcopt-gmem">${guideSpr(x.name)}<b>${esc(x.name)}</b>${(x.gemTypes || []).map(gt => `<span class="pcopt-movechip">${esc(gt)}</span>`).join('')}</div>`).join('')}</div></div>`).join('')}`;
+    }
+    const groups = [['Pseudo-legendaries', g.data.pseudoLegendary], ['Top 10 Rare', g.data.topRare], ['Top 10 Uncommon', g.data.topUncommon]];
+    return groups.map(([label, list]) => `<div class="pcopt-gcard"><div class="pcopt-gcard-h static"><span class="grow"><b>${esc(label)}</b><small>${list.length} entries · ${esc(g.data.notes?.[0] || '')}</small></span></div><div class="pcopt-gbody">
+      ${(list || []).filter(x => guideMatch(x, q)).map((x, i) => `<div class="pcopt-gmem">${guideSpr(x.name)}<b>${i + 1}. ${esc(x.name)}</b>
+        ${(x.gemTypes || []).map(t => `<span class="pcopt-movechip">${esc(t)}</span>`).join('')}
+        <span class="pcopt-gbadge">${esc(x.pts)} pts</span><span class="pcopt-muted">${esc(x.bestArea)}</span></div>`).join('')}</div></div>`).join('')
+      + `<div class="pcopt-hnote">${(g.data.notes || []).map(esc).join(' · ')}</div>`;
+  }
+
+  function renderUnderground(g) {
+    const q = (state.helperSearch || '').toLowerCase();
+    const live = state.data?.cfg?.UNDERGROUND?.THEMES || state.data?.cfg?.UNDERGROUND?.themes || [];
+    const nameOf = key => {
+      const t = (Array.isArray(live) ? live : []).find(x => x.key === key);
+      return t ? englishText(t.name) : (g.data.themes.find(x => x.key === key)?.boardLabel || key);
+    };
+    return (g.data.themes || []).filter(t => guideMatch(t, q)).map(t => {
+      const key = g.id + ':' + t.key;
+      const open = !!state.helperOpen[key];
+      return `<article class="pcopt-gcard"><button class="pcopt-gcard-h" data-hcard="${esc(key)}">
+        <span class="grow"><b>${esc(nameOf(t.key))}</b><small>${esc(t.key)} · best: ${esc(t.picks[0]?.name || '—')} (${esc(t.picks[0]?.floors ?? '—')} floors)</small></span></button>
+        ${open ? `<div class="pcopt-gbody">
+          ${t.picks.map(p => `<span class="pcopt-movechip">${esc(p.name)} · ${esc(p.floors)} floors</span>`).join(' ')}
+          ${t.noLegendary?.length ? `<div class="pcopt-hnote"><b>No legendaries:</b> ${t.noLegendary.map(p => `${esc(p.name)} ${esc(p.floors)}`).join(' · ')}</div>` : ''}</div>` : ''}</article>`;
+    }).join('') || '<div class="pcopt-mut">no theme matches</div>';
+  }
+
+  function renderFarming(g) {
+    const q = (state.helperSearch || '').toLowerCase();
+    const goals = (g.data.goals || []).filter(x => guideMatch(x, q));
+    return goals.map(x => `<div class="pcopt-gcard"><div class="pcopt-gcard-h static"><span class="grow"><b>${esc(x.goal)}</b><small>${esc(x.best.loop)} · ${esc(x.best.perHour)}${x.best.lapSec ? ' · ' + esc(x.best.lapSec) + 's lap' : ''}</small></span></div>
+      <div class="pcopt-gbody"><div class="pcopt-hnote">${esc(x.best.note)}</div>
+      ${(x.runnerUps || []).length ? `<div class="pcopt-hnote">Runner-ups: ${x.runnerUps.map(r => `${esc(r.loop)}${r.perHour ? ' ' + esc(r.perHour) : ''}`).join(' · ')}</div>` : ''}</div></div>`).join('')
+      + `<table class="pcopt-gtable"><tr><th>Top 16 loop</th><th class="n">Money/h</th><th class="n">Battle XP/h</th><th class="n">Candy XP/h</th><th class="n">Lap</th></tr>
+      ${(g.data.topLoops || []).map(x => `<tr><td>${esc(x.loop)}</td><td class="n">${esc(x.money ?? '—')}</td><td class="n">${esc(x.battleXp ?? '—')}</td><td class="n">${esc(x.candyXp ?? '—')}</td><td class="n">${x.lapSec ? esc(x.lapSec) + 's' : '—'}</td></tr>`).join('')}</table>
+      <table class="pcopt-gtable"><tr><th>League</th><th class="n">Battle XP</th><th class="n">Candy drops</th><th class="n">Bought</th><th class="n">Total XP</th></tr>
+      ${(g.data.leagueCandy || []).map(x => `<tr><td>${esc(x.league)}</td><td class="n">${esc(x.battleXp)}</td><td class="n">${esc(x.candyDrops)}</td><td class="n">${esc(x.bought)}</td><td class="n">${esc(x.totalXp)}</td></tr>`).join('')}</table>
+      <div class="pcopt-hnote">${(g.data.rules || []).map(esc).join(' · ')}</div>`;
+  }
+
+  function renderBerry(g) {
+    const q = (state.helperSearch || '').toLowerCase();
+    const cards = (g.data.berries || []).filter(b => guideMatch(b, q)).map(b => `<div class="pcopt-gcard"><div class="pcopt-gcard-h static"><span class="grow"><b>${esc(b.name)}</b><small>${esc(b.use || '')} · ${esc(b.best.loop)} ${esc(b.best.rate)}</small></span></div>
+      <div class="pcopt-gbody"><div class="pcopt-hnote">${esc(b.best.why || '')}</div>
+      ${(b.runnerUps || []).length ? `<div class="pcopt-hnote">Runner-ups: ${b.runnerUps.map(r => `${esc(r.loop)} ${esc(r.rate)}`).join(' · ')}</div>` : ''}
+      ${b.buy ? `<div class="pcopt-hnote">Buy: ${esc(b.buy)}</div>` : ''}</div></div>`).join('');
+    const source = (title, s) => !s ? '' : `<table class="pcopt-gtable"><tr><th>${esc(title)}</th><th>${esc(s.note || '')}</th></tr>
+      ${(s.table || []).map(x => `<tr><td>${esc(x.name)}</td><td>${esc(x.chance ?? x.price ?? '')}</td></tr>`).join('')}</table>`;
+    return cards
+      + source('Route', g.data.sources?.route) + source('Town event', g.data.sources?.townEvent)
+      + source('Battle Tower shop', g.data.sources?.shop) + source('Pachinko', g.data.sources?.pachinko)
+      + source('Underground', g.data.sources?.underground)
+      + `<table class="pcopt-gtable"><tr><th>Top 14 loop</th><th class="n">Good/h</th><th class="n">Starf/h</th><th class="n">Oran…/h</th></tr>
+      ${(g.data.topLoops || []).map(x => `<tr><td>${esc(x.loop)}</td><td class="n">${esc(x.good ?? '—')}</td><td class="n">${esc(x.starf ?? '—')}</td><td class="n">${esc(x.oranEtc ?? '—')}</td></tr>`).join('')}</table>
+      <div class="pcopt-hnote">${(g.data.rules || []).map(esc).join(' · ')}</div>`;
+  }
+
+  function renderOvernight(g) {
+    const table = (title, rows, cells) => `<table class="pcopt-gtable"><tr>${cells.map(c => `<th>${esc(c)}</th>`).join('')}</tr>
+      ${rows.map(r => `<tr>${cells.map(c => `<td>${esc(r[c] ?? '—')}</td>`).join('')}</tr>`).join('')}</table>`;
+    return `<div class="pcopt-gcard"><div class="pcopt-gcard-h static"><span class="grow"><b>Most money per night</b></span></div><div class="pcopt-gbody">
+      ${table('money', g.data.moneyTop, ['rank', 'map', 'region', 'money', 'note'])}</div></div>
+      <div class="pcopt-gcard"><div class="pcopt-gcard-h static"><span class="grow"><b>Most EXP for a leveler (not the companion)</b></span></div><div class="pcopt-gbody">
+      ${table('xp', g.data.xpTop, ['rank', 'map', 'region', 'xp', 'note', 'companion'])}</div></div>
+      <table class="pcopt-gtable"><tr><th>From Lv</th><th class="n">*0</th><th class="n">*1</th><th class="n">*3</th><th class="n">*5</th><th>Verdict</th></tr>
+      ${(g.data.xpNeed || []).map(x => `<tr><td>${esc(x.from)}</td>${['0', '1', '3', '5'].map(k => `<td class="n">${esc(x.byRank[k])}</td>`).join('')}<td>${esc(x.verdict)}</td></tr>`).join('')}</table>
+      ${(g.data.regions || []).map(r => `<div class="pcopt-gcard"><div class="pcopt-gcard-h static"><span class="grow"><b>${esc(r.region)}</b><small>${r.maps.length} maps, story order</small></span></div>
+        <div class="pcopt-gbody">${table(r.region, r.maps, ['map', 'money', 'xp'])}</div></div>`).join('')}`;
+  }
+
+  function renderGuide(g) {
+    const q = (state.helperSearch || '').toLowerCase().trim();
+    let body;
+    if (g.id === 'catch-teams' || g.id === 'elite2-teams') body = renderTeams(g);
+    else if (g.id === 'type-picks' || g.id === 'gem-tiers' || g.id === 'ru-tiers') body = renderTiers(g);
+    else if (g.id === 'underground') body = renderUnderground(g);
+    else if (g.id === 'farming') body = renderFarming(g);
+    else if (g.id === 'berry') body = renderBerry(g);
+    else if (g.id === 'overnight') body = renderOvernight(g);
+    else body = '<div class="pcopt-mut">no view for this guide</div>';
+    return `<div class="pcopt-title" style="margin-top:4px"><span>${esc(g.title)}</span><small>${esc(g.subject)}</small></div>
+      <div class="pcopt-hsrc">${guideBoardLine(g)}</div>
+      ${guideFold(g)}${body}`;
+  }
+
+  function guideEntries(id) {
+    if (id === 'Dashboard') return [];
+    const g = GUIDES[id];
+    if (!g) return [];
+    return g.data.fights || g.data.types || g.data.themes || g.data.berries || g.data.topLoops
+      || g.data.moneyTop || g.data.bestSinks || g.data.pseudoLegendary || g.data.goals || [];
+  }
+  function helperCount(id, q) {
+    if (!q) return 0;
+    const g = GUIDES[id];
+    if (!g) return 0;
+    return guideEntries(id).filter(x => guideMatch(x, q)).length;
+  }
+
+  function bindGuide(el) {
+    el.querySelectorAll('[data-hcard]').forEach(b => b.onclick = () => {
+      const k = b.dataset.hcard;
+      state.helperOpen[k] = !state.helperOpen[k];
+      mountHelper();
+    });
+    el.querySelectorAll('[data-hregion]').forEach(b => b.onclick = () => {
+      state.helperRegion = b.dataset.hregion || null;
+      mountHelper();
+    });
+    el.querySelectorAll('[data-hfight]').forEach(b => b.onclick = () =>
+      openEliteZone(+b.dataset.hfight).catch(e => logError('helper: fight', e)));
+  }
+
+  /** Add the Helper nav button (between map and team) and its screen, once. */
+  function ensureHelperShell() {
+    const tabs = document.querySelector('#tabs');
+    if (!tabs) return false;
+    let btn = tabs.querySelector('[data-screen="pcopt-helper"]');
+    if (!btn) {
+      btn = document.createElement('button');
+      btn.dataset.screen = 'pcopt-helper';
+      btn.title = 'Helper — community guides & dashboard';
+      btn.innerHTML = `<span class="ic"><img src="${HELPER_ICON}" alt=""></span><span class="l">Helper</span>`;
+      btn.addEventListener('click', () => openHelper());
+      const team = tabs.querySelector('[data-screen="team"]');
+      if (team) tabs.insertBefore(btn, team); else tabs.appendChild(btn);
+    }
+    let sec = document.querySelector('#screen-pcopt-helper');
+    if (!sec) {
+      sec = document.createElement('section');
+      sec.className = 'screen';
+      sec.id = 'screen-pcopt-helper';
+      (document.querySelector('main') || document.body).appendChild(sec);
+    }
+    return true;
+  }
+
+  /** Activate the Helper screen from anywhere (selftest/manual checks). */
+  function openHelper() {
+    ensureHelperShell();
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.querySelectorAll('#side [data-screen]').forEach(b => b.classList.remove('active'));
+    document.querySelector('#screen-pcopt-helper')?.classList.add('active');
+    document.querySelector('#tabs [data-screen="pcopt-helper"]')?.classList.add('active');
+    refreshUi();
+  }
+
+  function bindHelperShell(host) {
+    host.querySelectorAll('[data-htab]').forEach(b => b.onclick = () => {
+      state.helperTab = b.dataset.htab;
+      state.helperRegion = null;
+      mountHelper();
+    });
+    const inp = host.querySelector('#pcopt-helper-search');
+    let timer = null;
+    if (inp) inp.oninput = () => {
+      clearTimeout(timer);
+      timer = setTimeout(() => { state.helperSearch = inp.value; mountHelper(); }, 150);
+    };
+  }
+
+  function mountHelper() {
+    const host = document.querySelector('#screen-pcopt-helper');
+    if (!host) return;
+    const nav = document.querySelector('#tabs [data-screen="pcopt-helper"]');
+    if (nav) nav.classList.toggle('ping', !!(state.hunt?.running || state.loop?.running || state.poke?.running));
+    if (!host.querySelector('.pcopt-helper')) {
+      host.innerHTML = `<div class="map-region pcopt-helper">
+        <div class="map-head"><span class="ic"><img src="${HELPER_ICON}" alt=""></span><h2>Helper</h2>
+          <span class="map-sum">${Object.keys(GUIDES).length} community guides · game v0.5.17 (build 824f567ed3) &amp; v0.5.161 · ingested 2026-11-28 · by @destryyy</span></div>
+        <div class="pcopt-htabs">${HELPER_TABS.map(([label, id]) => `<button data-htab="${esc(id || 'Dashboard')}">${esc(label)}<span class="n"></span></button>`).join('')}</div>
+        <div class="pcopt-hsearch"><input id="pcopt-helper-search" type="search" placeholder="Search names, moves, bosses, maps…" value="${esc(state.helperSearch)}"></div>
+        <div class="pcopt-helper-body"></div></div>`;
+      bindHelperShell(host);
+    }
+    const search = (state.helperSearch || '').trim();
+    host.querySelectorAll('[data-htab]').forEach(b => {
+      const id = b.dataset.htab;
+      b.classList.toggle('on', id === (state.helperTab || 'Dashboard'));
+      const n = b.querySelector('.n');
+      if (n) n.textContent = search && id !== 'Dashboard' ? String(helperCount(id, search.toLowerCase())) : '';
+    });
+    const body = host.querySelector('.pcopt-helper-body');
+    if (!body) return;
+    const tab = state.helperTab || 'Dashboard';
+    if (body.dataset.htab !== tab) { body.innerHTML = ''; body.dataset.htab = tab; }
+    if (tab === 'Dashboard') { mountDashboard(body); return; }
+    const g = GUIDES[tab];
+    if (!g) { body.innerHTML = '<div class="pcopt-mut">guide not found</div>'; return; }
+    const sig = JSON.stringify([tab, state.helperSearch, state.helperRegion, state.helperOpen, !!state.data]);
+    mountBlock(body, 'helper-guide', sig, renderGuide(g), el => bindGuide(el));
+  }
+
 
   /* ------------------------------------------------------------------ *
    * 10. Boot + actions
@@ -7306,6 +16751,45 @@
       check('the mon popup gets one candy button, disabled at the cap',
         candyPlaced && candyOff && candyOnce, { candyPlaced, candyOff, candyOnce });
       check('the popup without a tile click offers no plan', candyAuto, { candyAuto, title: autoBtn?.title });
+
+      // community guides: envelope, names, themes, type coverage, deep links, helper shell
+      const guideIds = Object.keys(GUIDES);
+      check('9 community guides are embedded', guideIds.length === 9
+        && guideIds.every(id => GUIDES[id]?.id === id && GUIDES[id].title && GUIDES[id].method?.summary
+          && GUIDES[id].data && Object.keys(GUIDES[id].data).length), guideIds);
+      await ensureEnglish();
+      const badNames = [];
+      const skipKey = k => /^(moves|bans|alternateBans)$/.test(k);
+      const inItems = p => p.includes('berries') || p.includes('sources');
+      const walkGuide = (node, path) => {
+        if (!node || typeof node !== 'object') return;
+        if (Array.isArray(node)) return node.forEach(v => walkGuide(v, path));
+        for (const [k, v] of Object.entries(node)) {
+          if (typeof v === 'string') {
+            if (k === 'name' && !skipKey(path.split('.').pop()) && !inItems(path) && guideNameId(v) == null)
+              badNames.push(`${path}.name = ${v}`);
+          } else if (!skipKey(k)) walkGuide(v, path + '.' + k);
+        }
+      };
+      for (const id of guideIds) walkGuide(GUIDES[id].data, id);
+      check('community guide species names resolve', !badNames.length, badNames.slice(0, 8));
+      const liveThemes = state.data?.cfg?.UNDERGROUND?.THEMES || [];
+      const badThemes = GUIDES.underground.data.themes.filter(t => !liveThemes.some(x => x.key === t.key)).map(t => t.key);
+      check('underground guide themes exist in the bundle', !badThemes.length, badThemes);
+      const typeList = GUIDES['type-picks'].data.types.map(t => t.type);
+      check('type-picks covers the 18 types', typeList.length === 18 && new Set(typeList).size === 18, typeList.length);
+      if (state.legends?.zones?.length) {
+        const zones = new Set(legendZones().map(z => z.id));
+        const hits = GUIDES['elite2-teams'].data.fights
+          .filter(f => { const id = guideNameId(f.boss); return id != null && zones.has(id); }).length;
+        check('elite2 bosses resolve to legend zones', hits > 0, { hits, total: GUIDES['elite2-teams'].data.fights.length });
+      } else check('elite2 bosses resolve to legend zones', true, 'skipped: no parsed legend zones');
+      const navScreens = [...document.querySelectorAll('#tabs [data-screen]')].map(b => b.dataset.screen);
+      const hi = navScreens.indexOf('pcopt-helper');
+      check('helper nav sits between the map and team buttons',
+        hi > 0 && navScreens[hi - 1] === 'map' && navScreens[hi + 1] === 'team', navScreens);
+      check('helper screen mounts inside main', !!document.querySelector('main #screen-pcopt-helper'));
+
     } catch (e) {
       check('selftest crashed', false, e.message);
       logError('selftest', e);
@@ -7390,6 +16874,7 @@
     farmTargets, loopPlan, loopDecision, startZoneLoop, ZoneLooper,
     wHash, weatherAt, nextWindow, specialSpawns, pokeDecision, startPokemonHunt, PokemonHunter,
     undergroundContext, undergroundFoes, pickVsFoes, roamerBoss, selftest,
-    planCandies, candyXpFor, candyNeedFor, applyCandyPlan
+    planCandies, candyXpFor, candyNeedFor, applyCandyPlan,
+    GUIDES, mountHelper, openHelper
   };
 })();

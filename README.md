@@ -40,15 +40,17 @@ Open `http://localhost:8765/pokecatch-team-optimizer.user.js`, accept Tampermonk
 - **Roamer hunt**: restarts the roaming legendary's chapter until it is caught
 - **Item Hunter**: pick a farmable story item and the chapter reruns until it drops
 - **Pokémon hunter**: pick a missing mon with a weather, night/day or season spawn and the script restarts its chapter inside the next window, then goes back to watching
-- **Dashboard**: run state, data source, errors, and the hunts on the Progress screen
+- **Dashboard**: run state, data source, errors, and the hunts on the Helper page
+- **Helper page**: community guides (farming, berries, overnight, gem and investment tiers, catch and Elite II teams, underground) plus the dashboard, between Progress and Team in the side nav
 - **English names**: bundle ids read through the game's English language pack
-- **Selftest**: 92 checks against the live save and synthetic cases
+- **Selftest**: 99 checks against the live save and synthetic cases
 
 ## Where the blocks appear
 
 | Screen | What the script adds |
 |---|---|
-| Progress | Dashboard with chapter and step, level cap, eligible mons, data source, errors, and the roamer hunt, item hunter and Pokémon hunter card rows |
+| Progress | Chapter and step, level cap, eligible mons, data source, errors (the dashboard itself now lives on the Helper page) |
+| Helper | The chapter dashboard (roamer hunt, item hunter, Pokémon hunter) plus the nine community guide tabs, search and region filters |
 | Team/PC | Chapter optimizer with simulate line, team rows, template select and apply, segment rows |
 | Adventure | A copy of the game's template bar; one click loads a template. While the Pokémon hunter runs, a line above the bar shows the hunted mon and its window countdown. The chapter list shows legend zones first |
 | Legend, elite, underground and raid pickers | The optimizer beside the game's own Optimize button, with odds and apply to team. Elite fights also get the gold Optimize button back in the picker header, wired to a port of the game's own Optimize: its counter-value greedy with the elite legend cap, not the script's refined optimizer |
@@ -67,17 +69,21 @@ The roamer hunt, the item hunter and the Pokémon hunter share one restart gate:
 
 ## Development
 
-No build step and no dependencies: one file, `pokecatch-team-optimizer.user.js`. Edit it, then reinstall through one of the methods above.
+No build step and no dependencies: one file, `pokecatch-team-optimizer.user.js`. Edit it, then reinstall through one of the methods above. The userscript stays single-file for distribution; the community-guide data is a generated block inside it.
 
 ```bash
 node --check pokecatch-team-optimizer.user.js
+node tools/embed-guides.mjs      # validate guides/data/*.json and regenerate the embedded block
+node tools/regen-guides.mjs      # fetch the live bundle and re-validate every name/theme/shield
 ```
 
-The script logs every action with `[pcopt]`, and the last 400 entries stay in `window.__pcopt.logs`. In the game console, `window.__pcopt.selftest()` runs the 92 checks and returns `{ ok, ms, results }`. `window.__pcopt.compareWithPokeApi(uid, info)` cross-checks one mon against PokeAPI; no button calls it.
+The nine community boards live in `guides/data/` (one JSON per guide), each with its board provenance, its methodology and algorithm, and the transcribed data. Edit those files, never the generated `9c-0` block. `tools/embed-guides.mjs` validates and regenerates the block idempotently; `tools/regen-guides.mjs` runs after each game update, resolving every species/form name against the live dex and recomputing the Arceus-shield attacker list. See `guides/README.md` for the ingestion round.
+
+The script logs every action with `[pcopt]`, and the last 400 entries stay in `window.__pcopt.logs`. In the game console, `window.__pcopt.selftest()` runs the 99 checks and returns `{ ok, ms, results }`. `window.__pcopt.compareWithPokeApi(uid, info)` cross-checks one mon against PokeAPI; no button calls it. `window.__pcopt.GUIDES`, `mountHelper()` and `openHelper()` expose the guide data and the Helper page.
 
 Two places carry the version: `@version` in the header and the `VERSION` constant near the top.
 
-The file is one IIFE in numbered sections: 0 helpers, 1 game data from the bundle, 2 type chart, 3 save access, 4 battle math, 5 chapter events, 6 optimizers (6c chapter simulation, 6b legendary fights, the elite raid chart, the game's own Optimize), 7 roamer hunt (7b item hunter, 7c Pokémon hunter), 8 team editing (8b PokéAPI cross-check and shiny raids, 8c in-game picker controls), 9 UI (9b blocks mounted in the game's screens), 10 boot and actions. `grep -n '^ *\* [0-9]' pokecatch-team-optimizer.user.js` lists them.
+The file is one IIFE in numbered sections: 0 helpers, 1 game data from the bundle, 2 type chart, 3 save access, 4 battle math, 5 chapter events, 6 optimizers (6c chapter simulation, 6b legendary fights, the elite raid chart, the game's own Optimize), 7 roamer hunt (7b item hunter, 7c Pokémon hunter), 8 team editing (8b PokéAPI cross-check and shiny raids, 8c in-game picker controls), 9 UI (9b blocks mounted in the game's screens, 9c-0 generated guide data, 9c the Helper page), 10 boot and actions. `grep -n '^ *\* [0-9]' pokecatch-team-optimizer.user.js` lists them.
 
 ## Contributing
 
