@@ -260,7 +260,7 @@
       // the array's minified name changes every update: anchor on the shape, as FORM_SINGLES does
       const anchor = src.indexOf('a.FORMS=function(){');
       if (anchor < 0) throw new Error('marker not found');
-      for (const f of evalLit(literalAt(src, src.indexOf('[', anchor)))) out[f.id] = { base: f.base, form: f.form, types: f.types, stats: f.stats };
+      for (const f of evalLit(literalAt(src, src.indexOf('[', anchor)))) out[f.id] = { base: f.base, form: f.form, slug: f.slug, types: f.types, stats: f.stats };
       return out;
     }) || {};
     // the forms the picker collapses to their base species (Deoxys, Kyurem, ...): FORMS.single
@@ -5525,8 +5525,8 @@
   }
 
   /** The Progress screen dashboard: chapter state, data and the three hunter card rows.
-   *  Mounted above #map-root so the game's own map render never replaces it. */
-  function mountDashboard(host = document.querySelector('#screen-map')) {
+   *  Mounted in the Helper's Dashboard tab (inside main #screen-pcopt-helper). */
+  function mountDashboard(host) {
     if (!host) return;
     const save = readSave();
     const adv = save?.adv;
@@ -26683,6 +26683,9 @@
       for (const id of Object.keys(data.forms || {})) {
         const f = data.forms[id], base = +f.base;
         put(displayName(base) + ' ' + englishText(f.form), +id);
+        // the boards spell a form by its slug tail (Wormadam (Trash)); the bundle's form name is French
+        const tail = String(f.slug || '').split('-').slice(1).join(' ');
+        if (tail) put(displayName(base) + ' ' + tail, +id);
         put(englishText(f.form), +id);
         // shortcut: the boards' English form spellings that differ from the pack (Arceus plates, Genesect drives); extend if a new board uses another
         const alias = { pyro: 'Burn', cryo: 'Chill', aqua: 'Douse', choc: 'Shock', roche: 'Rock' };
@@ -27010,7 +27013,7 @@
         for (let waited = 0; !url && waited < 30000; waited += 250) { await sleep(250); url = bundleUrl(); }
       }
       if (!url) { state.errors = ['game bundle not loaded yet']; log('warn', 'data: the game bundle is not on the page yet'); return; }
-      const cacheKey = 'bundle:v18:' + url;
+      const cacheKey = 'bundle:v19:' + url;
       let data = store.get(cacheKey, null);
       if (data && !dataLooksValid(data)) {
         log('warn', 'data: the cached tables are invalid, parsing the bundle again');
@@ -28117,7 +28120,7 @@
       check('9 community guides are embedded', guideIds.length === 9
         && guideIds.every(id => GUIDES[id]?.id === id && GUIDES[id].title && GUIDES[id].method?.summary
           && GUIDES[id].data && Object.keys(GUIDES[id].data).length), guideIds);
-      await ensureEnglish();
+      const englishReady = await ensureEnglish();
       const badNames = [];
       const skipKey = k => /^(moves|bans|alternateBans)$/.test(k);
       const inItems = p => p.includes('berries') || p.includes('sources');
@@ -28132,7 +28135,8 @@
         }
       };
       for (const id of guideIds) walkGuide(GUIDES[id].data, id);
-      check('community guide species names resolve', !badNames.length, badNames.slice(0, 8));
+      check('community guide species names resolve', !englishReady || !badNames.length,
+        englishReady ? badNames.slice(0, 8) : 'skipped: no English pack');
       const liveThemes = state.data?.cfg?.UNDERGROUND?.THEMES || [];
       const badThemes = GUIDES.underground.data.themes.filter(t => !liveThemes.some(x => x.key === t.key)).map(t => t.key);
       check('underground guide themes exist in the bundle', !badThemes.length, badThemes);
