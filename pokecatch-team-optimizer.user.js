@@ -5275,9 +5275,10 @@
    * ------------------------------------------------------------------ */
   /** Shared styles for the injected blocks (the game's classes still do most of the work). */
   function ensureStyle() {
-    if (document.getElementById('pcopt-style')) return;
+    const id = 'pcopt-style-' + VERSION;
+    if (document.getElementById(id)) return;
     const st = document.createElement('style');
-    st.id = 'pcopt-style';
+    st.id = id;
     st.textContent = `
       .pcopt-block{margin:10px;padding:10px 14px;border-radius:12px;border:2px solid var(--line);
         background:color-mix(in srgb,var(--panel) 92%,transparent);color:var(--text)}
@@ -28302,6 +28303,8 @@
       check('helper nav sits between the map and team buttons',
         hi > 0 && navScreens[hi - 1] === 'map' && navScreens[hi + 1] === 'team', navScreens);
       check('helper screen mounts inside main', !!document.querySelector('main #screen-pcopt-helper'));
+      // another copy (released userscript) may hold an older #pcopt-style; this one must still mount its own
+      check('this copy stylesheet is mounted', !!document.getElementById('pcopt-style-' + VERSION));
 
     } catch (e) {
       check('selftest crashed', false, e.message);
