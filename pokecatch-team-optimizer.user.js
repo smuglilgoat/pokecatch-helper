@@ -5306,19 +5306,18 @@
         align-items:center;gap:8px;flex-wrap:wrap}
       .pcopt-title small{color:var(--muted);font-weight:400;font-size:11px}
       .pcopt-elite{width:min(860px,100%)}
-      .pcopt-elite .modal-body{padding:0}
       .pcopt-elite-head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;
-        padding:16px 18px 10px;position:sticky;top:0;z-index:2;background:var(--panel);border-bottom:2px solid var(--line)}
+        padding:0 0 10px;border-bottom:2px solid var(--line)}
       .pcopt-elite-head h3{margin:0 0 4px}
-      .pcopt-elite-gems{display:flex;flex-wrap:wrap;gap:6px;padding:10px 18px;border-bottom:2px solid var(--line)}
+      .pcopt-elite-gems{display:flex;flex-wrap:wrap;gap:6px;padding:10px 0;border-bottom:2px solid var(--line)}
       .pcopt-gemchip{display:inline-flex;align-items:center;gap:4px;font-size:12px;padding:3px 7px;
         border-radius:8px;background:var(--panel-2)}
       .pcopt-gemchip img{width:16px;height:16px;object-fit:contain}
       .pcopt-gemchip small{color:var(--muted)}
-      .pcopt-elite-wave{padding:12px 18px 4px;font-weight:700;font-size:13px;color:var(--muted);
+      .pcopt-elite-wave{padding:12px 0 4px;font-weight:700;font-size:13px;color:var(--muted);
         text-transform:uppercase;letter-spacing:.04em}
       .pcopt-elite-row{display:grid;grid-template-columns:54px minmax(0,1fr) auto;gap:10px;
-        padding:9px 18px;border-bottom:1px solid var(--line);align-items:start}
+        padding:9px 0;border-bottom:1px solid var(--line);align-items:start}
       .pcopt-elite-row.done{opacity:.5}
       .pcopt-elite-row.next{background:color-mix(in srgb,var(--yellow) 10%,transparent);box-shadow:inset 3px 0 0 var(--yellow)}
       .pcopt-elite-boss{position:relative;display:flex;justify-content:center}
@@ -5341,7 +5340,6 @@
       .pcopt-tier.done{background:var(--green);color:#fff}
       .pcopt-tier.next{box-shadow:0 0 0 2px var(--yellow);color:var(--text)}
       .pcopt-elite-act{padding-top:2px}
-      .pcopt-elite .modal-actions{padding:10px 18px 16px}
       /* Helper page (community guides + dashboard) */
       .pcopt-helper{padding:0}
       #screen-pcopt-helper{padding:0 4px 8px}
@@ -5614,9 +5612,6 @@
       <div class="map-sum" style="margin:2px 0"><span>cap <b>${state.events?.cap ?? '-'}</b></span><span>${state.eligible || 0} can join${save?.link ? ' · link ' + esc(save.link.to) : ''}</span>${state.roamer ? `<span>roamer <b>${esc(displayName(state.roamer.id))}</b> ${(state.roamer.catch * 100).toFixed(1)}%</span>` : ''}</div>
       <div class="pcopt-mut">data: ${state.data ? Object.keys(state.data.species).length + ' species · ' + (state.legends?.zones.length ?? 0) + ' zones' : 'not loaded'}
         · chart ${esc(state.chartSource || '-')} · bundle ${esc((bundleUrl() || '').split('/').pop() || '-')}</div>
-      <div class="pcopt-row" style="margin-top:6px">
-        <button class="btn small ghost" data-act="elite">Elite raids</button>
-      </div>
       ${state.leagueInfo ? `<div class="pcopt-mut">${esc(state.leagueInfo)}</div>` : ''}
       ${state.waiting ? `<div class="pcopt-mut">${esc(state.waiting)}</div>` : ''}
       ${updateLine()}${errLine()}
@@ -5655,7 +5650,6 @@
       el.querySelectorAll('[data-farm]').forEach(b => b.onclick = () => { state.loopSel = b.dataset.farm; refreshUi(); });
       el.querySelectorAll('[data-farm] img').forEach(img => img.onerror = () => { img.style.display = 'none'; });
       el.querySelectorAll('[data-spawn]').forEach(b => b.onclick = () => { state.pokeSel = b.dataset.spawn; refreshUi(); });
-      el.querySelector('[data-act="elite"]')?.addEventListener('click', () => openEliteModal().catch(e => logError('elite: chart', e)));
       el.querySelector('[data-act="hunt"]').onclick = () => {
         if (state.hunt?.running) { state.hunt.stop('stopped by hand'); return; }
         startRoamerHunt(state.huntSel);
@@ -5672,24 +5666,13 @@
     if (el) refreshHuntCards(el, save, now);
   }
 
-  /* --- Elite raids: a game-modal chart, with a shortcut into each fight ----- */
-  let eliteNavGen = 0, eliteOutside = null, eliteEsc = null;
+  /* --- Elite raids: the chart in the Helper tab, with a shortcut into each fight ----- */
+  let eliteNavGen = 0;
 
-  /** Remove the chart and leave #modal-root closed when nothing else uses it. */
-  function closeEliteModal() {
-    const root = document.querySelector('#modal-root');
-    root?.querySelector('.modal.pcopt-elite')?.remove();
-    if (root && !root.querySelector('.modal')) root.classList.remove('open');
-    if (root && eliteOutside) root.removeEventListener('click', eliteOutside);
-    if (eliteEsc) document.removeEventListener('keydown', eliteEsc);
-    eliteOutside = eliteEsc = null;
-  }
-
-  /** Close the chart, open the map, select the zone and click its elite fight. */
+  /** Open the map, select the zone and click its elite fight. */
   async function openEliteZone(id) {
     const gen = ++eliteNavGen;
     const alive = () => gen === eliteNavGen;
-    closeEliteModal();
     const zone = legendZones().find(z => z.id === id);
     const name = zone ? pokeName(state.data, id) : '#' + id;
     if (!zone) {
@@ -5748,18 +5731,12 @@
     }
   }
 
-  /** The chart, on demand: every legend elite with its gate, carry and progress. */
-  async function openEliteModal() {
-    ensureStyle();
+  /** The elite chart, in the Helper tab: every legend elite with its gate, carry and progress. */
+  function mountEliteRaids(body) {
     if (!state.data || !state.legends) {
-      try { await ensureData(); } catch (e) { logError('elite: data', e); }
+      body.innerHTML = '<div class="pcopt-mut">elite: game data not loaded</div>';
+      return;
     }
-    if (!state.data || !state.legends) { state.waiting = 'elite: game data not loaded'; refreshUi(); return; }
-    const root = document.querySelector('#modal-root');
-    if (!root) { state.waiting = 'elite: the game modal root is missing'; refreshUi(); return; }
-    closeEliteModal();
-    // another game modal may be open: its own close button empties the root
-    document.querySelector('#modal-root .dc-x')?.click();
     const rows = eliteChronology(state.data, state.legends);
     const save = readSave() || {};
     const held = save.under?.gems || {};
@@ -5804,41 +5781,31 @@
         <div class="pcopt-elite-act"><button class="btn small ghost" data-elite-go="${r.zone.id}"${done ? ' disabled title="Elite V already cleared"' : ''}>Go</button></div>
       </div>`;
     };
-    let body = '';
+    let bodyHtml = '';
     for (let w = 1; w <= 4; w++) {
       const wave = rows.filter(r => r.wave === w);
       if (!wave.length) continue;
-      body += `<div class="pcopt-elite-wave">Wave ${w} <span class="pcopt-mut">rows ${wave[0].rank}-${wave[wave.length - 1].rank}</span></div>`
+      bodyHtml += `<div class="pcopt-elite-wave">Wave ${w} <span class="pcopt-mut">rows ${wave[0].rank}-${wave[wave.length - 1].rank}</span></div>`
         + wave.map(rowHtml).join('');
     }
     const cleared = rows.filter(r => eliteProgressOf(save, r.zone.id) >= 5).length;
-    const modal = document.createElement('div');
-    modal.className = 'modal pcopt-elite';
-    modal.innerHTML = `<div class="modal-body">
-      <div class="pcopt-elite-head">
-        <div><h3>Elite raids</h3>
-          <div class="pcopt-mut">Catch the base first, then clear Elite I to V. Gems pay at I, II and IV. Boss damage rises ×1.15 per tier. One legendary per team.</div></div>
-        <button class="dc-x" data-elite-close title="Close" aria-label="Close"><i class="dc-x-ic"></i></button>
-      </div>
+    const html = `<div class="pcopt-elite">
+      <div class="pcopt-elite-head"><div><h3>Elite raids</h3>
+        <div class="pcopt-mut">Catch the base first, then clear Elite I to V. Gems pay at I, II and IV. Boss damage rises ×1.15 per tier. One legendary per team.</div></div></div>
       <div class="pcopt-elite-gems">${familiesHtml}</div>
-      <div class="pcopt-mut" style="padding:8px 18px 0">${rows.length} raids · ${cleared} fully cleared · cheapest first, as far as the gates allow</div>
-      ${body}
-    </div>
-    <div class="modal-actions"><button class="btn small ghost" data-elite-close>Close</button></div>`;
-    root.classList.add('open');
-    root.appendChild(modal);
-    modal.querySelectorAll('[data-elite-close]').forEach(b => b.onclick = closeEliteModal);
-    modal.querySelectorAll('[data-elite-go]').forEach(b => b.onclick = () => {
-      if (b.disabled) return;
-      b.disabled = true;
-      openEliteZone(+b.dataset.eliteGo).catch(e => logError('elite: shortcut', e));
+      <div class="pcopt-mut">${rows.length} raids · ${cleared} fully cleared · cheapest first, as far as the gates allow</div>
+      ${bodyHtml}</div>`;
+    // the rows depend on the legend zones and on the save's elite progress
+    const sig = JSON.stringify([rows.map(r => r.zone.id).join(','),
+      rows.map(r => eliteProgressOf(save, r.zone.id)).join(','), Object.entries(held).sort().join(',')]);
+    mountBlock(body, 'helper-elite', sig, html, el => {
+      el.querySelectorAll('[data-elite-go]').forEach(b => b.onclick = () => {
+        if (b.disabled) return;
+        b.disabled = true;
+        openEliteZone(+b.dataset.eliteGo).catch(e => logError('helper: elite', e));
+      });
+      el.querySelectorAll('img').forEach(img => img.onerror = () => { img.style.visibility = 'hidden'; });
     });
-    modal.querySelectorAll('img').forEach(img => img.onerror = () => { img.style.visibility = 'hidden'; });
-    eliteOutside = e => { if (e.target === root) closeEliteModal(); };
-    root.addEventListener('click', eliteOutside);
-    eliteEsc = e => { if (e.key === 'Escape') closeEliteModal(); };
-    document.addEventListener('keydown', eliteEsc);
-    log('info', 'elite chart: open', { rows: rows.length, cleared });
   }
 
   /** The Adventure screen: the game's own team-template bar, between the route timeline and the arena.
@@ -27830,7 +27797,7 @@
   const HELPER_ICON = 'data:image/svg+xml,' + encodeURIComponent(
     '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="#ffd45e" d="M4 4h6a2 2 0 0 1 2 2v14a3 3 0 0 0-3-3H4z"/><path fill="#e0a800" d="M20 4h-6a2 2 0 0 0-2 2v14a3 3 0 0 1 3-3h5z"/><path fill="#1b1b22" d="M11 6h2v12h-2z"/></svg>');
   const HELPER_TABS = [
-    ['Dashboard', null], ['Catch teams', 'catch-teams'], ['Elite II teams', 'elite2-teams'],
+    ['Dashboard', null], ['Elite raids', 'elite-raids'], ['Catch teams', 'catch-teams'], ['Elite II teams', 'elite2-teams'],
     ['Best by type', 'type-picks'], ['Legendary gem tiers', 'gem-tiers'], ['Rare & uncommon tiers', 'ru-tiers'],
     ['Underground', 'underground'], ['Auto-replay farming', 'farming'], ['Overnight farming', 'overnight'],
     ['Berries', 'berry']
@@ -28153,6 +28120,7 @@
     const tab = state.helperTab || 'Dashboard';
     if (body.dataset.htab !== tab) { body.innerHTML = ''; body.dataset.htab = tab; }
     if (tab === 'Dashboard') { mountDashboard(body); return; }
+    if (tab === 'elite-raids') { mountEliteRaids(body); return; }
     const g = GUIDES[tab];
     if (!g) { body.innerHTML = '<div class="pcopt-mut">guide not found</div>'; return; }
     const sig = JSON.stringify([tab, state.helperSearch, state.helperRegion, state.helperOpen, !!state.data]);
@@ -29402,7 +29370,7 @@
     applyTeam, bundleUrl, httpGet, canJoinTeam, showMovesPanel, pokeApiSpecies, compareWithPokeApi, cmpVersion,
     parseLegends, legendBoss, simulateLegend, pickLegendTeam, evaluateLegendTeam, runLegendOptimizer,
     legendFightOnce, legendOdds, legendParts, legendTeamScore, legendCandidates, refineLegendTeam, logs,
-    eliteChronology, carryFor, eliteTierChips, openEliteModal, openEliteZone,
+    eliteChronology, carryFor, eliteTierChips, openEliteZone,
     projectCandidates, evolvedBranches, refreshChapter,
     chapterPlan, segmentPlans, prepareSegments, switchSegment, freeTemplates, switchTemplate, simulateChapter, searchChapterTeam, rollBattleFoes, simBattle, simAct, simOhko, simGeneric, autoScore, ensureEnglish,
     raidDps, raidBoss, raidPicks, raidRankScore, annotateRaidSuggestions, huntDecision, huntPlacement, roamList, huntPacing,
